@@ -16,9 +16,9 @@ export default async function DashboardPage() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 text-center">
         <p className="text-sm text-gray-500 mb-1">RP Restaurantes</p>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Panel de control</h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-900 mb-6">
           Bienvenido,{' '}
-          <span className="font-medium text-gray-800">{user.email}</span>
+          <span className="font-medium text-gray-900">{user.email}</span>
         </p>
         <LogoutButton />
       </div>
