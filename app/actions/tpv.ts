@@ -76,7 +76,7 @@ export type OrderItem = {
 export type OrderWithItems = {
   id: string
   order_number: number
-  status: string
+  status: 'open' | 'paid' | 'cancelled'
   opened_at: string
   total: number
   table: { id: string; name: string }
@@ -233,6 +233,8 @@ export async function getOrderWithItems(orderId: string): Promise<OrderWithItems
     .eq('id', order.table_id)
     .single()
 
+  if (!table) return null
+
   const { data: items } = await supabase
     .from('order_items')
     .select('id, product_name, product_price, tax_rate, quantity, unit_price, total_price, modifiers, notes, status')
@@ -386,16 +388,20 @@ export async function updateOrderItemQuantity(
   itemId: string,
   quantity: number
 ): Promise<{ error?: string }> {
-  if (quantity <= 0) return removeOrderItem(itemId)
-
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  if (quantity <= 0) return removeOrderItem(itemId)
 
   const { data: item } = await supabase
     .from('order_items')
     .select('unit_price')
     .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
     .single()
 
   if (!item) return { error: 'Línea no encontrada' }
@@ -404,6 +410,7 @@ export async function updateOrderItemQuantity(
     .from('order_items')
     .update({ quantity, total_price: Number(item.unit_price) * quantity })
     .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
 
   if (error) return { error: 'No se pudo actualizar la cantidad' }
   return {}
@@ -414,6 +421,9 @@ export async function removeOrderItem(itemId: string): Promise<{ error?: string 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
   const { error } = await supabase
     .from('order_items')
     .update({
@@ -422,6 +432,7 @@ export async function removeOrderItem(itemId: string): Promise<{ error?: string 
       cancelled_by: user.id,
     })
     .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
 
   if (error) return { error: 'No se pudo eliminar la línea' }
   return {}
@@ -432,10 +443,14 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
   const { data: order } = await supabase
     .from('orders')
     .select('table_id')
     .eq('id', orderId)
+    .eq('restaurant_id', restaurantId)
     .single()
 
   if (!order) return { error: 'Comanda no encontrada' }
@@ -537,22 +552,26 @@ export async function processPayment(
 
   if (ticketError || !ticket) return { error: 'Error al crear el ticket' }
 
+  // Insert payment(s)
   const now = new Date().toISOString()
   if (params.method === 'mixed') {
-    await supabase.from('payments').insert([
+    const { error: payError } = await supabase.from('payments').insert([
       { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'cash', amount: params.cashAmount, change_given: 0, processed_by: user.id, processed_at: now },
       { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'card', amount: params.cardAmount, change_given: 0, processed_by: user.id, processed_at: now },
     ])
+    if (payError) return { error: 'Error al registrar el pago' }
   } else if (params.method === 'cash') {
-    await supabase.from('payments').insert({
+    const { error: payError } = await supabase.from('payments').insert({
       restaurant_id: restaurantId, ticket_id: ticket.id, method: 'cash',
       amount: total, change_given: params.changeGiven, processed_by: user.id, processed_at: now,
     })
+    if (payError) return { error: 'Error al registrar el pago' }
   } else {
-    await supabase.from('payments').insert({
+    const { error: payError } = await supabase.from('payments').insert({
       restaurant_id: restaurantId, ticket_id: ticket.id, method: params.method,
       amount: total, change_given: 0, processed_by: user.id, processed_at: now,
     })
+    if (payError) return { error: 'Error al registrar el pago' }
   }
 
   await supabase.from('orders').update({ status: 'paid', closed_by: user.id, closed_at: now }).eq('id', orderId)
