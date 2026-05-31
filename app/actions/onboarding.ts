@@ -52,11 +52,13 @@ export async function getOnboardingData(): Promise<OnboardingData> {
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
-  const { data: restaurant } = await supabase
+  const { data: restaurant, error: restaurantError } = await supabase
     .from('restaurants')
     .select('id, name, address, phone, schedule, onboarding_step, onboarding_completed')
     .eq('id', restaurantId)
     .single()
+
+  if (restaurantError) console.error('[onboarding] restaurant error:', restaurantError.message)
 
   const { data: zonesData } = await supabase
     .from('zones')
@@ -96,7 +98,9 @@ export async function getOnboardingData(): Promise<OnboardingData> {
       .map(p => ({ id: p.id, name: p.name, price: p.price })),
   }))
 
-  return { restaurant: restaurant!, zones, categories }
+  if (!restaurant) redirect('/login')
+
+  return { restaurant, zones, categories }
 }
 
 export async function saveRestaurantData(data: {
@@ -274,6 +278,9 @@ export async function completeOnboarding(): Promise<never> {
     .from('restaurants')
     .update({ onboarding_completed: true })
     .eq('id', restaurantId)
+
+  // Persiste el estado en user_metadata para que el proxy lo lea del JWT (sin DB query)
+  await supabase.auth.updateUser({ data: { onboarding_completed: true } })
 
   const cookieStore = await cookies()
   cookieStore.set('sb-onboarding', 'done', {

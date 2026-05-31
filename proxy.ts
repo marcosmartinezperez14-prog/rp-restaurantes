@@ -43,7 +43,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  const onboardingDone = request.cookies.get('sb-onboarding')?.value === 'done'
+  const cookieDone = request.cookies.get('sb-onboarding')?.value === 'done'
+  const metaDone = user.user_metadata?.onboarding_completed === true
+  const onboardingDone = cookieDone || metaDone
 
   if (!onboardingDone && !pathname.startsWith('/onboarding')) {
     return NextResponse.redirect(new URL('/onboarding', request.url))
