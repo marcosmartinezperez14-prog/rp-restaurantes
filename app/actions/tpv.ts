@@ -1,0 +1,562 @@
+'use server'
+
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type TableStatus = 'free' | 'occupied' | 'reserved' | 'billing'
+export type OrderItemStatus = 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
+export type PaymentMethod = 'cash' | 'card' | 'bizum' | 'mixed'
+
+export type ModifierOption = {
+  id: string
+  name: string
+  price_adjustment: number
+}
+
+export type ModifierGroup = {
+  id: string
+  name: string
+  is_required: boolean
+  min_selections: number
+  max_selections: number
+  options: ModifierOption[]
+}
+
+export type ProductWithModifiers = {
+  id: string
+  name: string
+  price: number
+  tax_rate: number
+  is_available: boolean
+  category_id: string
+  modifierGroups: ModifierGroup[]
+}
+
+export type Category = {
+  id: string
+  name: string
+}
+
+export type TableWithOrder = {
+  id: string
+  name: string
+  capacity: number
+  status: TableStatus
+  openOrder?: { id: string; total: number; opened_at: string }
+}
+
+export type ZoneWithTables = {
+  id: string
+  name: string
+  color: string
+  tables: TableWithOrder[]
+}
+
+export type SelectedModifier = {
+  option_id: string
+  name: string
+  price_adjustment: number
+}
+
+export type OrderItem = {
+  id: string
+  product_name: string
+  product_price: number
+  tax_rate: number
+  quantity: number
+  unit_price: number
+  total_price: number
+  modifiers: SelectedModifier[]
+  notes: string | null
+  status: OrderItemStatus
+}
+
+export type OrderWithItems = {
+  id: string
+  order_number: number
+  status: string
+  opened_at: string
+  total: number
+  table: { id: string; name: string }
+  items: OrderItem[]
+}
+
+export type ProcessPaymentParams =
+  | { method: 'cash'; cashAmount: number; changeGiven: number }
+  | { method: 'card'; amount: number }
+  | { method: 'bizum'; amount: number }
+  | { method: 'mixed'; cashAmount: number; cardAmount: number }
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+async function getRestaurantId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('users')
+    .select('restaurant_id')
+    .eq('id', userId)
+    .single()
+  return data?.restaurant_id ?? null
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+
+export async function getZonesWithTables(): Promise<ZoneWithTables[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: zones } = await supabase
+    .from('zones')
+    .select('id, name, color')
+    .eq('restaurant_id', restaurantId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('position')
+
+  if (!zones || zones.length === 0) return []
+
+  const { data: tables } = await supabase
+    .from('tables')
+    .select('id, zone_id, name, capacity, status')
+    .eq('restaurant_id', restaurantId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('position')
+
+  const tableIds = (tables ?? []).map(t => t.id)
+
+  const { data: openOrders } = tableIds.length > 0
+    ? await supabase
+        .from('orders')
+        .select('id, table_id, total, opened_at')
+        .in('table_id', tableIds)
+        .eq('status', 'open')
+        .is('deleted_at', null)
+    : { data: [] as { id: string; table_id: string; total: number; opened_at: string }[] }
+
+  return zones.map(zone => ({
+    id: zone.id,
+    name: zone.name,
+    color: zone.color,
+    tables: (tables ?? [])
+      .filter(t => t.zone_id === zone.id)
+      .map(t => {
+        const order = (openOrders ?? []).find(o => o.table_id === t.id)
+        return {
+          id: t.id,
+          name: t.name,
+          capacity: t.capacity,
+          status: t.status as TableStatus,
+          openOrder: order
+            ? { id: order.id, total: Number(order.total), opened_at: order.opened_at }
+            : undefined,
+        }
+      }),
+  }))
+}
+
+export async function getOpenOrder(tableId: string): Promise<{ orderId: string } | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data } = await supabase
+    .from('orders')
+    .select('id')
+    .eq('table_id', tableId)
+    .eq('status', 'open')
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  return data ? { orderId: data.id } : null
+}
+
+export async function createOrder(tableId: string): Promise<{ orderId: string } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const today = new Date().toISOString().split('T')[0]
+
+  const { data: order, error } = await supabase
+    .from('orders')
+    .insert({
+      restaurant_id: restaurantId,
+      table_id: tableId,
+      status: 'open',
+      type: 'dine_in',
+      opened_by: user.id,
+      opened_at: new Date().toISOString(),
+      order_date: today,
+    })
+    .select('id')
+    .single()
+
+  if (error || !order) return { error: 'No se pudo crear la comanda' }
+
+  await supabase.from('tables').update({ status: 'occupied' }).eq('id', tableId)
+
+  return { orderId: order.id }
+}
+
+export async function getOrderWithItems(orderId: string): Promise<OrderWithItems | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id, order_number, status, opened_at, total, table_id')
+    .eq('id', orderId)
+    .eq('restaurant_id', restaurantId)
+    .maybeSingle()
+
+  if (!order) return null
+
+  const { data: table } = await supabase
+    .from('tables')
+    .select('id, name')
+    .eq('id', order.table_id)
+    .single()
+
+  const { data: items } = await supabase
+    .from('order_items')
+    .select('id, product_name, product_price, tax_rate, quantity, unit_price, total_price, modifiers, notes, status')
+    .eq('order_id', orderId)
+    .neq('status', 'cancelled')
+    .order('created_at')
+
+  return {
+    id: order.id,
+    order_number: order.order_number,
+    status: order.status,
+    opened_at: order.opened_at,
+    total: Number(order.total),
+    table: { id: table!.id, name: table!.name },
+    items: (items ?? []).map(item => ({
+      id: item.id,
+      product_name: item.product_name,
+      product_price: Number(item.product_price),
+      tax_rate: Number(item.tax_rate),
+      quantity: item.quantity,
+      unit_price: Number(item.unit_price),
+      total_price: Number(item.total_price),
+      modifiers: (item.modifiers as SelectedModifier[]) ?? [],
+      notes: item.notes,
+      status: item.status as OrderItemStatus,
+    })),
+  }
+}
+
+export async function getMenuData(): Promise<{ categories: Category[]; products: ProductWithModifiers[] }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('id, name')
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('position')
+
+  const { data: products } = await supabase
+    .from('products')
+    .select('id, name, price, tax_rate, is_available, category_id')
+    .eq('restaurant_id', restaurantId)
+    .eq('is_visible', true)
+    .is('deleted_at', null)
+    .order('position')
+
+  const productIds = (products ?? []).map(p => p.id)
+
+  const { data: groups } = productIds.length > 0
+    ? await supabase
+        .from('product_modifier_groups')
+        .select('id, product_id, name, is_required, min_selections, max_selections, position')
+        .in('product_id', productIds)
+        .is('deleted_at', null)
+        .order('position')
+    : { data: [] as { id: string; product_id: string; name: string; is_required: boolean; min_selections: number; max_selections: number; position: number }[] }
+
+  const groupIds = (groups ?? []).map(g => g.id)
+
+  const { data: options } = groupIds.length > 0
+    ? await supabase
+        .from('product_modifier_options')
+        .select('id, group_id, name, price_adjustment, position')
+        .in('group_id', groupIds)
+        .eq('is_active', true)
+        .is('deleted_at', null)
+        .order('position')
+    : { data: [] as { id: string; group_id: string; name: string; price_adjustment: number; position: number }[] }
+
+  return {
+    categories: categories ?? [],
+    products: (products ?? []).map(p => ({
+      id: p.id,
+      name: p.name,
+      price: Number(p.price),
+      tax_rate: Number(p.tax_rate),
+      is_available: p.is_available,
+      category_id: p.category_id,
+      modifierGroups: (groups ?? [])
+        .filter(g => g.product_id === p.id)
+        .map(g => ({
+          id: g.id,
+          name: g.name,
+          is_required: g.is_required,
+          min_selections: g.min_selections,
+          max_selections: g.max_selections,
+          options: (options ?? [])
+            .filter(o => o.group_id === g.id)
+            .map(o => ({ id: o.id, name: o.name, price_adjustment: Number(o.price_adjustment) })),
+        })),
+    })),
+  }
+}
+
+export async function addOrderItem(
+  orderId: string,
+  productId: string,
+  quantity: number,
+  modifiers: SelectedModifier[],
+  notes?: string
+): Promise<{ itemId: string } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: product } = await supabase
+    .from('products')
+    .select('name, price, tax_rate')
+    .eq('id', productId)
+    .single()
+
+  if (!product) return { error: 'Producto no encontrado' }
+
+  const basePrice = Number(product.price)
+  const unitPrice = basePrice + modifiers.reduce((sum, m) => sum + m.price_adjustment, 0)
+  const totalPrice = unitPrice * quantity
+
+  const { data: item, error } = await supabase
+    .from('order_items')
+    .insert({
+      restaurant_id: restaurantId,
+      order_id: orderId,
+      product_id: productId,
+      product_name: product.name,
+      product_price: basePrice,
+      tax_rate: Number(product.tax_rate),
+      quantity,
+      unit_price: unitPrice,
+      total_price: totalPrice,
+      modifiers,
+      notes: notes ?? null,
+      status: 'pending',
+    })
+    .select('id')
+    .single()
+
+  if (error || !item) return { error: 'No se pudo añadir el producto' }
+  return { itemId: item.id }
+}
+
+export async function updateOrderItemQuantity(
+  itemId: string,
+  quantity: number
+): Promise<{ error?: string }> {
+  if (quantity <= 0) return removeOrderItem(itemId)
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: item } = await supabase
+    .from('order_items')
+    .select('unit_price')
+    .eq('id', itemId)
+    .single()
+
+  if (!item) return { error: 'Línea no encontrada' }
+
+  const { error } = await supabase
+    .from('order_items')
+    .update({ quantity, total_price: Number(item.unit_price) * quantity })
+    .eq('id', itemId)
+
+  if (error) return { error: 'No se pudo actualizar la cantidad' }
+  return {}
+}
+
+export async function removeOrderItem(itemId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { error } = await supabase
+    .from('order_items')
+    .update({
+      status: 'cancelled',
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: user.id,
+    })
+    .eq('id', itemId)
+
+  if (error) return { error: 'No se pudo eliminar la línea' }
+  return {}
+}
+
+export async function cancelOrder(orderId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: order } = await supabase
+    .from('orders')
+    .select('table_id')
+    .eq('id', orderId)
+    .single()
+
+  if (!order) return { error: 'Comanda no encontrada' }
+
+  await supabase
+    .from('order_items')
+    .update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: user.id })
+    .eq('order_id', orderId)
+    .neq('status', 'cancelled')
+
+  const { error } = await supabase
+    .from('orders')
+    .update({ status: 'cancelled', closed_by: user.id, closed_at: new Date().toISOString() })
+    .eq('id', orderId)
+
+  if (error) return { error: 'No se pudo cancelar la comanda' }
+
+  await supabase.from('tables').update({ status: 'free' }).eq('id', order.table_id)
+  return {}
+}
+
+export async function processPayment(
+  orderId: string,
+  params: ProcessPaymentParams
+): Promise<{ ticketId: string } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id, table_id, subtotal, tax_amount, total')
+    .eq('id', orderId)
+    .eq('status', 'open')
+    .maybeSingle()
+
+  if (!order) return { error: 'Comanda no encontrada o ya cobrada' }
+
+  const { data: restaurant } = await supabase
+    .from('restaurants')
+    .select('name, nif, address')
+    .eq('id', restaurantId)
+    .single()
+
+  if (!restaurant) return { error: 'Error al cargar los datos del restaurante' }
+
+  const { data: items } = await supabase
+    .from('order_items')
+    .select('tax_rate, total_price')
+    .eq('order_id', orderId)
+    .neq('status', 'cancelled')
+
+  const taxMap = new Map<number, { base: number; amount: number }>()
+  for (const item of items ?? []) {
+    const rate = Number(item.tax_rate)
+    const totalWithTax = Number(item.total_price)
+    const base = totalWithTax / (1 + rate / 100)
+    const taxAmount = totalWithTax - base
+    const prev = taxMap.get(rate) ?? { base: 0, amount: 0 }
+    taxMap.set(rate, { base: prev.base + base, amount: prev.amount + taxAmount })
+  }
+  const taxBreakdown = Array.from(taxMap.entries()).map(([rate, v]) => ({
+    rate,
+    base: Number(v.base.toFixed(2)),
+    amount: Number(v.amount.toFixed(2)),
+  }))
+
+  const { data: seqNum, error: seqError } = await supabase
+    .rpc('get_next_ticket_number', { p_restaurant_id: restaurantId })
+
+  if (seqError || seqNum === null) return { error: 'Error al generar el número de ticket' }
+
+  const total = Number(order.total)
+  const ticketNumber = `A-${String(seqNum).padStart(8, '0')}`
+
+  const { data: ticket, error: ticketError } = await supabase
+    .from('tickets')
+    .insert({
+      restaurant_id: restaurantId,
+      order_id: orderId,
+      ticket_number: ticketNumber,
+      series: 'A',
+      sequential_number: seqNum,
+      issuer_name: restaurant.name,
+      issuer_nif: restaurant.nif,
+      issuer_address: restaurant.address ?? '',
+      issued_at: new Date().toISOString(),
+      subtotal: Number(order.subtotal),
+      tax_breakdown: taxBreakdown,
+      tax_total: Number(order.tax_amount),
+      total,
+      payment_method: params.method,
+    })
+    .select('id')
+    .single()
+
+  if (ticketError || !ticket) return { error: 'Error al crear el ticket' }
+
+  const now = new Date().toISOString()
+  if (params.method === 'mixed') {
+    await supabase.from('payments').insert([
+      { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'cash', amount: params.cashAmount, change_given: 0, processed_by: user.id, processed_at: now },
+      { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'card', amount: params.cardAmount, change_given: 0, processed_by: user.id, processed_at: now },
+    ])
+  } else if (params.method === 'cash') {
+    await supabase.from('payments').insert({
+      restaurant_id: restaurantId, ticket_id: ticket.id, method: 'cash',
+      amount: total, change_given: params.changeGiven, processed_by: user.id, processed_at: now,
+    })
+  } else {
+    await supabase.from('payments').insert({
+      restaurant_id: restaurantId, ticket_id: ticket.id, method: params.method,
+      amount: total, change_given: 0, processed_by: user.id, processed_at: now,
+    })
+  }
+
+  await supabase.from('orders').update({ status: 'paid', closed_by: user.id, closed_at: now }).eq('id', orderId)
+  await supabase.from('tables').update({ status: 'free' }).eq('id', order.table_id)
+
+  return { ticketId: ticket.id }
+}
