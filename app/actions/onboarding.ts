@@ -158,14 +158,20 @@ export async function saveZonesAndTables(zones: ZoneInput[]): Promise<ActionResu
     await supabase.from('zones').delete().in('id', zoneIdsToDelete)
   }
 
-  for (const zone of zones) {
+  for (const [zonePos, zone] of zones.entries()) {
     let zoneId = zone.id
     if (zoneId) {
       await supabase.from('zones').update({ name: zone.name }).eq('id', zoneId)
     } else {
       const { data: newZone } = await supabase
         .from('zones')
-        .insert({ restaurant_id: restaurantId, name: zone.name })
+        .insert({
+          restaurant_id: restaurantId,
+          name: zone.name,
+          color: '#94a3b8',
+          is_active: true,
+          position: zonePos,
+        })
         .select('id')
         .single()
       zoneId = newZone?.id
@@ -184,11 +190,24 @@ export async function saveZonesAndTables(zones: ZoneInput[]): Promise<ActionResu
       await supabase.from('tables').delete().in('id', tableIdsToDelete)
     }
 
-    for (const table of zone.tables) {
+    for (const [tablePos, table] of zone.tables.entries()) {
+      const tableName = `Mesa ${table.number}`
       if (table.id) {
-        await supabase.from('tables').update({ number: table.number }).eq('id', table.id)
+        await supabase
+          .from('tables')
+          .update({ number: table.number, name: tableName, position: tablePos })
+          .eq('id', table.id)
       } else {
-        await supabase.from('tables').insert({ zone_id: zoneId, number: table.number })
+        await supabase.from('tables').insert({
+          zone_id: zoneId,
+          restaurant_id: restaurantId,
+          number: table.number,
+          name: tableName,
+          capacity: 4,
+          status: 'free',
+          is_active: true,
+          position: tablePos,
+        })
       }
     }
   }
@@ -221,14 +240,17 @@ export async function saveMenuData(categories: CategoryInput[]): Promise<ActionR
     await supabase.from('categories').delete().in('id', categoryIdsToDelete)
   }
 
-  for (const category of categories) {
+  for (const [catPos, category] of categories.entries()) {
     let categoryId = category.id
     if (categoryId) {
-      await supabase.from('categories').update({ name: category.name }).eq('id', categoryId)
+      await supabase
+        .from('categories')
+        .update({ name: category.name, position: catPos })
+        .eq('id', categoryId)
     } else {
       const { data: newCategory } = await supabase
         .from('categories')
-        .insert({ restaurant_id: restaurantId, name: category.name })
+        .insert({ restaurant_id: restaurantId, name: category.name, position: catPos })
         .select('id')
         .single()
       categoryId = newCategory?.id
@@ -247,17 +269,22 @@ export async function saveMenuData(categories: CategoryInput[]): Promise<ActionR
       await supabase.from('products').delete().in('id', productIdsToDelete)
     }
 
-    for (const product of category.products) {
+    for (const [productPos, product] of category.products.entries()) {
       if (product.id) {
         await supabase
           .from('products')
-          .update({ name: product.name, price: product.price })
+          .update({ name: product.name, price: product.price, position: productPos })
           .eq('id', product.id)
       } else {
         await supabase.from('products').insert({
           category_id: categoryId,
+          restaurant_id: restaurantId,
           name: product.name,
           price: product.price,
+          tax_rate: 10,
+          is_available: true,
+          is_visible: true,
+          position: productPos,
         })
       }
     }
@@ -291,4 +318,76 @@ export async function completeOnboarding(): Promise<never> {
   })
 
   redirect('/dashboard')
+}
+
+// Repairs existing data created by the old onboarding (missing restaurant_id, is_active, etc.)
+export async function repairExistingData(): Promise<{ fixed: number; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) return { fixed: 0, error: 'No se encontró el restaurante.' }
+
+  let fixed = 0
+
+  // 1. Fix zones: set is_active=true and color if missing
+  const { data: zones } = await supabase
+    .from('zones')
+    .select('id, color, is_active')
+    .eq('restaurant_id', restaurantId)
+
+  for (const [i, zone] of (zones ?? []).entries()) {
+    const patch: Record<string, unknown> = { position: i }
+    if (!zone.is_active) patch.is_active = true
+    if (!zone.color) patch.color = '#94a3b8'
+    await supabase.from('zones').update(patch).eq('id', zone.id)
+    fixed++
+  }
+
+  // 2. Fix tables: set restaurant_id, name, status, is_active, capacity
+  const zoneIds = (zones ?? []).map(z => z.id)
+  if (zoneIds.length > 0) {
+    const { data: tables } = await supabase
+      .from('tables')
+      .select('id, zone_id, number, name, status, is_active, capacity, restaurant_id')
+      .in('zone_id', zoneIds)
+
+    for (const [i, table] of (tables ?? []).entries()) {
+      const patch: Record<string, unknown> = { position: i }
+      if (!table.restaurant_id) patch.restaurant_id = restaurantId
+      if (!table.name) patch.name = `Mesa ${table.number}`
+      if (!table.status) patch.status = 'free'
+      if (!table.is_active) patch.is_active = true
+      if (!table.capacity) patch.capacity = 4
+      await supabase.from('tables').update(patch).eq('id', table.id)
+      fixed++
+    }
+  }
+
+  // 3. Fix products: set restaurant_id, is_visible, is_available, tax_rate
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('restaurant_id', restaurantId)
+
+  const categoryIds = (categories ?? []).map(c => c.id)
+  if (categoryIds.length > 0) {
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, restaurant_id, is_visible, is_available, tax_rate')
+      .in('category_id', categoryIds)
+
+    for (const [i, product] of (products ?? []).entries()) {
+      const patch: Record<string, unknown> = { position: i }
+      if (!product.restaurant_id) patch.restaurant_id = restaurantId
+      if (product.is_visible === null || product.is_visible === undefined) patch.is_visible = true
+      if (product.is_available === null || product.is_available === undefined) patch.is_available = true
+      if (!product.tax_rate) patch.tax_rate = 10
+      await supabase.from('products').update(patch).eq('id', product.id)
+      fixed++
+    }
+  }
+
+  return { fixed }
 }

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from './LogoutButton'
+import RepairButton from './RepairButton'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -27,6 +28,7 @@ export default async function DashboardPage() {
           >
             Ir al TPV
           </Link>
+          <RepairButton />
           <LogoutButton />
         </div>
       </div>
