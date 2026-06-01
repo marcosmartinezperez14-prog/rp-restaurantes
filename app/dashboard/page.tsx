@@ -1,5 +1,5 @@
-// app/dashboard/page.tsx
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import LogoutButton from './LogoutButton'
 
@@ -20,7 +20,15 @@ export default async function DashboardPage() {
           Bienvenido,{' '}
           <span className="font-medium text-gray-900">{user.email}</span>
         </p>
-        <LogoutButton />
+        <div className="flex flex-col gap-3">
+          <Link
+            href="/tpv"
+            className="w-full py-3 bg-[#2563eb] text-white font-bold rounded-xl hover:bg-blue-700 transition-colors text-sm"
+          >
+            Ir al TPV
+          </Link>
+          <LogoutButton />
+        </div>
       </div>
     </div>
   )
