@@ -200,6 +200,13 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
 
   if (!tableCheck) return { error: 'Mesa no encontrada' }
 
+  const { data: orderNumber, error: rpcError } = await supabase
+    .rpc('get_next_order_number', { p_restaurant_id: restaurantId })
+
+  if (rpcError || orderNumber === null) {
+    return { error: `No se pudo obtener el número de comanda: ${rpcError?.message ?? 'sin respuesta'}` }
+  }
+
   const today = new Date().toISOString().split('T')[0]
 
   const { data: order, error } = await supabase
@@ -209,6 +216,7 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
       table_id: tableId,
       status: 'open',
       type: 'dine_in',
+      order_number: orderNumber,
       opened_by: user.id,
       opened_at: new Date().toISOString(),
       order_date: today,
