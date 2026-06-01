@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPV — Mapa de mesas v2</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f1f5f9; color: #1e293b; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* NAV */
+  .nav { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 24px; height: 58px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px #0001; }
+  .nav-brand { font-size: 17px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+  .nav-brand span { color: #3b82f6; }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .nav-user { font-size: 13px; color: #64748b; }
+  .nav-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .nav-btn:hover { background: #e2e8f0; }
+
+  /* MAIN */
+  .main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+  .refresh-btn { background: #fff; border: 1px solid #e2e8f0; color: #3b82f6; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px #0001; }
+
+  /* STATS */
+  .stats-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat-chip { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 2px #0001; }
+  .stat-color { width: 10px; height: 10px; border-radius: 50%; }
+  .stat-num { font-size: 20px; font-weight: 800; }
+  .stat-label { font-size: 12px; color: #94a3b8; font-weight: 500; }
+
+  /* ZONE */
+  .zone { margin-bottom: 32px; }
+  .zone-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .zone-bar { width: 4px; height: 18px; border-radius: 2px; flex-shrink: 0; }
+  .zone-name { font-size: 14px; font-weight: 700; color: #334155; letter-spacing: 0.06em; text-transform: uppercase; }
+  .zone-count { font-size: 12px; color: #94a3b8; background: #f1f5f9; padding: 2px 8px; border-radius: 10px; }
+  .zone-divider { flex: 1; height: 1px; background: #e2e8f0; }
+
+  /* TABLE GRID */
+  .tables-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+
+  /* TABLE CARD */
+  .table-card { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px 14px; cursor: pointer; transition: box-shadow 0.15s, transform 0.1s; min-height: 128px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px #0001; }
+  .table-card:hover { box-shadow: 0 4px 12px #0002; transform: translateY(-2px); }
+
+  .table-card.occupied { border-color: #fca5a5; background: #fff5f5; }
+  .table-card.free     { border-color: #bbf7d0; }
+  .table-card.reserved { border-color: #fde68a; background: #fffbeb; }
+  .table-card.billing  { border-color: #93c5fd; background: #eff6ff; }
+
+  .table-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .table-name { font-size: 17px; font-weight: 800; color: #0f172a; }
+
+  .status-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .status-badge.free     { background: #dcfce7; color: #16a34a; }
+  .status-badge.occupied { background: #fee2e2; color: #dc2626; }
+  .status-badge.reserved { background: #fef9c3; color: #ca8a04; }
+  .status-badge.billing  { background: #dbeafe; color: #2563eb; }
+
+  .table-capacity { display: flex; align-items: center; gap: 4px; color: #94a3b8; font-size: 12px; margin-top: 6px; }
+
+  .table-bottom { margin-top: 10px; }
+  .table-time { font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
+  .table-total { font-size: 17px; font-weight: 800; color: #dc2626; }
+  .table-total.billing { color: #2563eb; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-brand">⚡ <span>RP</span> Restaurantes &nbsp;·&nbsp; TPV</div>
+  <div class="nav-right">
+    <span class="nav-user">El Rincón</span>
+    <button class="nav-btn">← Dashboard</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-header">
+    <div class="page-title">Mapa de mesas</div>
+    <button class="refresh-btn">↺ Actualizar</button>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-chip">
+      <div class="stat-color" style="background:#ef4444"></div>
+      <div class="stat-num" style="color:#ef4444">4</div>
+      <div class="stat-label">Ocupadas</div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-color" style="background:#22c55e"></div>
+      <div class="stat-num" style="color:#22c55e">6</div>
+      <div class="stat-label">Libres</div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-color" style="background:#eab308"></div>
+      <div class="stat-num" style="color:#eab308">1</div>
+      <div class="stat-label">Reservadas</div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-color" style="background:#3b82f6"></div>
+      <div class="stat-num" style="color:#3b82f6">1</div>
+      <div class="stat-label">Cobrando</div>
+    </div>
+  </div>
+
+  <!-- SALÓN -->
+  <div class="zone">
+    <div class="zone-header">
+      <div class="zone-bar" style="background:#f97316"></div>
+      <span class="zone-name">Salón</span>
+      <span class="zone-count">6 mesas</span>
+      <div class="zone-divider"></div>
+    </div>
+    <div class="tables-grid">
+
+      <div class="table-card occupied">
+        <div class="table-top">
+          <span class="table-name">Mesa 1</span>
+          <span class="status-badge occupied">Ocupada</span>
+        </div>
+        <div class="table-capacity">👤 4 pax</div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 45 min</div>
+          <div class="table-total">47,50 €</div>
+        </div>
+      </div>
+
+      <div class="table-card free">
+        <div class="table-top">
+          <span class="table-name">Mesa 2</span>
+          <span class="status-badge free">Libre</span>
+        </div>
+        <div class="table-capacity">👤 2 pax</div>
+        <div class="table-bottom" style="color:#94a3b8; font-size:12px;">Toca para abrir</div>
+      </div>
+
+      <div class="table-card billing">
+        <div class="table-top">
+          <span class="table-name">Mesa 3</span>
+          <span class="status-badge billing">Cobrando</span>
+        </div>
+        <div class="table-capacity">👤 3 pax</div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 1h 12min</div>
+          <div class="table-total billing">89,00 €</div>
+        </div>
+      </div>
+
+      <div class="table-card occupied">
+        <div class="table-top">
+          <span class="table-name">Mesa 4</span>
+          <span class="status-badge occupied">Ocupada</span>
+        </div>
+        <div class="table-capacity">👤 6 pax</div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 22 min</div>
+          <div class="table-total">31,20 €</div>
+        </div>
+      </div>
+
+      <div class="table-card free">
+        <div class="table-top">
+          <span class="table-name">Mesa 5</span>
+          <span class="status-badge free">Libre</span>
+        </div>
+        <div class="table-capacity">👤 4 pax</div>
+        <div class="table-bottom" style="color:#94a3b8; font-size:12px;">Toca para abrir</div>
+      </div>
+
+      <div class="table-card reserved">
+        <div class="table-top">
+          <span class="table-name">Mesa 6</span>
+          <span class="status-badge reserved">Reservada</span>
+        </div>
+        <div class="table-capacity">👤 5 pax</div>
+        <div class="table-bottom" style="color:#94a3b8; font-size:12px;">Reserva 21:00</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TERRAZA -->
+  <div class="zone">
+    <div class="zone-header">
+      <div class="zone-bar" style="background:#06b6d4"></div>
+      <span class="zone-name">Terraza</span>
+      <span class="zone-count">4 mesas</span>
+      <div class="zone-divider"></div>
+    </div>
+    <div class="tables-grid">
+
+      <div class="table-card occupied">
+        <div class="table-top">
+          <span class="table-name">T-1</span>
+          <span class="status-badge occupied">Ocupada</span>
+        </div>
+        <div class="table-capacity">👤 2 pax</div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 8 min</div>
+          <div class="table-total">12,00 €</div>
+        </div>
+      </div>
+
+      <div class="table-card free">
+        <div class="table-top"><span class="table-name">T-2</span><span class="status-badge free">Libre</span></div>
+        <div class="table-capacity">👤 2 pax</div>
+        <div class="table-bottom" style="color:#94a3b8; font-size:12px;">Toca para abrir</div>
+      </div>
+
+      <div class="table-card free">
+        <div class="table-top"><span class="table-name">T-3</span><span class="status-badge free">Libre</span></div>
+        <div class="table-capacity">👤 4 pax</div>
+        <div class="table-bottom" style="color:#94a3b8; font-size:12px;">Toca para abrir</div>
+      </div>
+
+      <div class="table-card free">
+        <div class="table-top"><span class="table-name">T-4</span><span class="status-badge free">Libre</span></div>
+        <div class="table-capacity">👤 4 pax</div>
+        <div class="table-bottom" style="color:#94a3b8; font-size:12px;">Toca para abrir</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

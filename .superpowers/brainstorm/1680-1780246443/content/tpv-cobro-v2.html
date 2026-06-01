@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPV — Cobro v2</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f4f6f9; color: #1e293b; font-family: 'Segoe UI', system-ui, sans-serif; display: flex; justify-content: center; padding: 32px 24px; }
+
+  .panel { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow: hidden; width: 400px; }
+
+  .panel-header { padding: 18px 20px; border-bottom: 1px solid #f1f5f9; }
+  .panel-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .panel-total { font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 4px; }
+
+  .summary { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; }
+  .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; padding: 3px 0; }
+  .summary-row.total { font-size: 14px; font-weight: 700; color: #0f172a; padding-top: 8px; margin-top: 4px; border-top: 1px solid #f1f5f9; }
+
+  .cobro-body { padding: 16px 20px; }
+  .section-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+
+  .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 18px; }
+  .method-btn {
+    padding: 13px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    background: #fafbfc;
+    transition: all .1s;
+  }
+  .method-btn:hover { border-color: #93c5fd; background: #f0f7ff; color: #2563eb; }
+  .method-btn.active { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+
+  .cash-box { background: #f8fafc; border: 1px solid #e8edf2; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .cash-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+  .cash-row + .cash-row { border-top: 1px solid #f1f5f9; }
+  .cash-lbl { font-size: 12px; color: #64748b; }
+  .cash-val { font-size: 15px; font-weight: 700; color: #0f172a; }
+  .cash-input { border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 15px; font-weight: 700; width: 100px; text-align: right; color: #0f172a; background: #fff; outline: none; }
+  .cash-input:focus { border-color: #3b82f6; }
+  .cash-change { font-size: 18px; font-weight: 800; color: #15803d; }
+
+  .btn-confirm { width: 100%; background: #15803d; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">Cobro — Mesa 1</div>
+    <div class="panel-total">47,50 €</div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-row"><span>Paella Valenciana ×2</span><span>29,00 €</span></div>
+    <div class="summary-row"><span>Solomillo a la plancha ×1</span><span>18,00 €</span></div>
+    <div class="summary-row"><span>Agua mineral ×1</span><span>1,50 €</span></div>
+    <div class="summary-row total"><span>Total</span><span>47,50 €</span></div>
+  </div>
+
+  <div class="cobro-body">
+    <div class="section-label">Método de pago</div>
+    <div class="method-grid">
+      <div class="method-btn active">Efectivo</div>
+      <div class="method-btn">Tarjeta</div>
+      <div class="method-btn">Bizum</div>
+      <div class="method-btn">Mixto</div>
+    </div>
+
+    <div class="cash-box">
+      <div class="cash-row">
+        <span class="cash-lbl">Total</span>
+        <span class="cash-val">47,50 €</span>
+      </div>
+      <div class="cash-row">
+        <span class="cash-lbl">Entrega cliente</span>
+        <input class="cash-input" value="50,00">
+      </div>
+      <div class="cash-row">
+        <span class="cash-lbl">Cambio</span>
+        <span class="cash-change">2,50 €</span>
+      </div>
+    </div>
+
+    <button class="btn-confirm">Confirmar cobro</button>
+  </div>
+</div>
+
+</body>
+</html>

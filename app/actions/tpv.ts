@@ -216,7 +216,7 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
     .select('id')
     .single()
 
-  if (error || !order) return { error: 'No se pudo crear la comanda' }
+  if (error || !order) return { error: error?.message ?? 'No se pudo crear la comanda' }
 
   await supabase.from('tables').update({ status: 'occupied' }).eq('id', tableId)
 
@@ -622,5 +622,59 @@ export async function updateOrderItemNote(
     .eq('restaurant_id', restaurantId)
 
   if (error) return { error: 'No se pudo actualizar la nota' }
+  return {}
+}
+
+export async function reserveTable(tableId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: tableCheck } = await supabase
+    .from('tables')
+    .select('id, status')
+    .eq('id', tableId)
+    .eq('restaurant_id', restaurantId)
+    .maybeSingle()
+
+  if (!tableCheck) return { error: 'Mesa no encontrada' }
+  if (tableCheck.status !== 'free') return { error: 'La mesa no está libre' }
+
+  const { error } = await supabase
+    .from('tables')
+    .update({ status: 'reserved' })
+    .eq('id', tableId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function cancelReservation(tableId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: tableCheck } = await supabase
+    .from('tables')
+    .select('id, status')
+    .eq('id', tableId)
+    .eq('restaurant_id', restaurantId)
+    .maybeSingle()
+
+  if (!tableCheck) return { error: 'Mesa no encontrada' }
+  if (tableCheck.status !== 'reserved') return { error: 'La mesa no está reservada' }
+
+  const { error } = await supabase
+    .from('tables')
+    .update({ status: 'free' })
+    .eq('id', tableId)
+
+  if (error) return { error: error.message }
   return {}
 }

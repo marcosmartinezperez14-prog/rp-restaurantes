@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPV — Diseño sobrio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f4f6f9; color: #1e293b; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+
+  h2 { font-size: 15px; font-weight: 600; color: #64748b; margin-bottom: 20px; letter-spacing: 0.04em; text-transform: uppercase; padding: 20px 24px 0; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 16px 24px 24px; }
+
+  /* ── SHARED ── */
+  .panel { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .panel-header { padding: 18px 20px; border-bottom: 1px solid #f1f5f9; }
+  .panel-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .panel-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+
+  /* ── MODAL MODIFICADORES ── */
+  .mod-group { padding: 16px 20px; border-bottom: 1px solid #f8fafc; }
+  .mod-group-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .mod-group-name { font-size: 13px; font-weight: 700; color: #334155; letter-spacing: 0.02em; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge.req  { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .badge.opt  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .mod-hint { font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
+
+  .option { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; border: 1px solid #e8edf2; border-radius: 8px; margin-bottom: 5px; cursor: pointer; transition: border-color .12s, background .12s; }
+  .option:hover { border-color: #93c5fd; background: #f8fbff; }
+  .option.sel  { border-color: #3b82f6; background: #f0f7ff; }
+  .option-left { display: flex; align-items: center; gap: 10px; }
+
+  /* radio / checkbox custom */
+  .ctrl { width: 16px; height: 16px; border: 1.5px solid #cbd5e1; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .ctrl.sq { border-radius: 3px; }
+  .ctrl.on { border-color: #3b82f6; background: #3b82f6; }
+  .ctrl.on::after { content: ''; width: 6px; height: 6px; background: #fff; border-radius: 50%; }
+  .ctrl.sq.on::after { border-radius: 1px; }
+
+  .opt-name { font-size: 13px; color: #1e293b; }
+  .opt-price { font-size: 12px; font-weight: 600; color: #3b82f6; }
+  .opt-price.free { color: #64748b; font-weight: 400; }
+
+  .mod-footer { padding: 14px 20px; border-top: 1px solid #f1f5f9; }
+  .mod-footer-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .mod-footer-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mod-footer-price { font-size: 22px; font-weight: 800; color: #0f172a; }
+
+  .btn-primary { width: 100%; background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  /* ── COBRO ── */
+  .summary { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; }
+  .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; padding: 3px 0; }
+  .summary-row.total { font-size: 14px; font-weight: 700; color: #0f172a; padding-top: 8px; margin-top: 4px; border-top: 1px solid #f1f5f9; }
+
+  .cobro-body { padding: 16px 20px; }
+  .section-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+
+  .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 18px; }
+  .method-btn { padding: 11px 8px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; text-align: center; font-size: 13px; font-weight: 600; color: #475569; background: #fafbfc; transition: all .1s; }
+  .method-btn:hover { border-color: #93c5fd; background: #f0f7ff; color: #2563eb; }
+  .method-btn.active { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+  .method-btn .micon { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 3px; color: #94a3b8; }
+  .method-btn.active .micon { color: #2563eb; }
+
+  .cash-box { background: #f8fafc; border: 1px solid #e8edf2; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .cash-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; }
+  .cash-row + .cash-row { border-top: 1px solid #f1f5f9; }
+  .cash-lbl { font-size: 12px; color: #64748b; }
+  .cash-val { font-size: 15px; font-weight: 700; color: #0f172a; }
+  .cash-input { border: 1px solid #d1d5db; border-radius: 6px; padding: 7px 10px; font-size: 15px; font-weight: 700; width: 100px; text-align: right; color: #0f172a; background: #fff; outline: none; }
+  .cash-input:focus { border-color: #3b82f6; }
+  .cash-change { font-size: 18px; font-weight: 800; color: #15803d; }
+
+  .btn-confirm { width: 100%; background: #15803d; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; }
+  .btn-confirm:hover { background: #166534; }
+
+  /* ── MAP PREVIEW ── */
+  .map-preview { padding: 20px 24px 24px; }
+  .map-nav { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px 10px 0 0; padding: 0 20px; height: 50px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; }
+  .map-nav-brand { font-size: 14px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+  .map-nav-pill { background: #2563eb; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.04em; }
+  .map-nav-btn { background: #f4f6f9; border: 1px solid #e2e8f0; color: #475569; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; }
+
+  .map-body { background: #fff; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 10px 10px; padding: 16px; }
+  .stats-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .stat { background: #f8fafc; border: 1px solid #e8edf2; border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .stat-n { font-size: 17px; font-weight: 800; }
+  .stat-l { font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+  .zone-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .zone-accent { width: 3px; height: 16px; border-radius: 2px; }
+  .zone-lbl { font-size: 12px; font-weight: 700; color: #475569; letter-spacing: 0.06em; text-transform: uppercase; }
+  .zone-ct { font-size: 11px; color: #94a3b8; background: #f4f6f9; padding: 1px 7px; border-radius: 10px; }
+  .zone-line { flex:1; height: 1px; background: #f1f5f9; }
+
+  .tables { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tbl { width: 90px; height: 90px; border: 1.5px solid; border-radius: 10px; padding: 10px 9px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; }
+  .tbl.free     { border-color: #bbf7d0; background: #fff; }
+  .tbl.occupied { border-color: #fca5a5; background: #fffafa; }
+  .tbl.billing  { border-color: #93c5fd; background: #f8fbff; }
+  .tbl-name { font-size: 14px; font-weight: 800; color: #0f172a; }
+  .tbl-cap  { font-size: 11px; color: #94a3b8; }
+  .tbl-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; align-self: flex-start; }
+  .tbl-badge.free     { background: #dcfce7; color: #15803d; }
+  .tbl-badge.occupied { background: #fee2e2; color: #b91c1c; }
+  .tbl-badge.billing  { background: #dbeafe; color: #1d4ed8; }
+  .tbl-total { font-size: 12px; font-weight: 700; color: #b91c1c; }
+  .tbl-total.billing { color: #1d4ed8; }
+</style>
+</head>
+<body>
+
+<h2>Vista previa — Diseño sobrio y profesional</h2>
+
+<!-- MAPA -->
+<div class="map-preview">
+  <div class="map-nav">
+    <div class="map-nav-brand">
+      RP Restaurantes
+      <span class="map-nav-pill">TPV</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="map-nav-btn">Actualizar</button>
+      <button class="map-nav-btn">Dashboard</button>
+    </div>
+  </div>
+  <div class="map-body">
+    <div class="stats-row">
+      <div class="stat"><div class="stat-dot" style="background:#ef4444"></div><div class="stat-n" style="color:#ef4444">4</div><div class="stat-l">Ocupadas</div></div>
+      <div class="stat"><div class="stat-dot" style="background:#22c55e"></div><div class="stat-n" style="color:#22c55e">6</div><div class="stat-l">Libres</div></div>
+      <div class="stat"><div class="stat-dot" style="background:#3b82f6"></div><div class="stat-n" style="color:#3b82f6">1</div><div class="stat-l">Cobrando</div></div>
+    </div>
+    <div class="zone-header">
+      <div class="zone-accent" style="background:#f97316"></div>
+      <span class="zone-lbl">Salón</span>
+      <span class="zone-ct">6 mesas</span>
+      <div class="zone-line"></div>
+    </div>
+    <div class="tables">
+      <div class="tbl occupied">
+        <div><div class="tbl-name">Mesa 1</div><div class="tbl-cap">4 personas</div></div>
+        <div><div style="font-size:10px;color:#94a3b8">45 min</div><div class="tbl-total">47,50 €</div></div>
+      </div>
+      <div class="tbl free">
+        <div><div class="tbl-name">Mesa 2</div><div class="tbl-cap">2 personas</div></div>
+        <div><div class="tbl-badge free">Libre</div></div>
+      </div>
+      <div class="tbl billing">
+        <div><div class="tbl-name">Mesa 3</div><div class="tbl-cap">3 personas</div></div>
+        <div><div style="font-size:10px;color:#94a3b8">1h 12m</div><div class="tbl-total billing">89,00 €</div></div>
+      </div>
+      <div class="tbl occupied">
+        <div><div class="tbl-name">Mesa 4</div><div class="tbl-cap">6 personas</div></div>
+        <div><div style="font-size:10px;color:#94a3b8">22 min</div><div class="tbl-total">31,20 €</div></div>
+      </div>
+      <div class="tbl free">
+        <div><div class="tbl-name">Mesa 5</div><div class="tbl-cap">4 personas</div></div>
+        <div><div class="tbl-badge free">Libre</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL + COBRO -->
+<div class="grid">
+
+  <!-- MODAL -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Solomillo a la plancha</div>
+      <div class="panel-sub">Selecciona las opciones</div>
+    </div>
+
+    <div class="mod-group">
+      <div class="mod-group-head">
+        <span class="mod-group-name">Punto de cocción</span>
+        <span class="badge req">Obligatorio · 1 opción</span>
+      </div>
+      <div class="option"><div class="option-left"><div class="ctrl"></div><span class="opt-name">Muy poco hecho</span></div><span class="opt-price free">—</span></div>
+      <div class="option sel"><div class="option-left"><div class="ctrl on"></div><span class="opt-name">Poco hecho</span></div><span class="opt-price free">—</span></div>
+      <div class="option"><div class="option-left"><div class="ctrl"></div><span class="opt-name">Al punto</span></div><span class="opt-price free">—</span></div>
+      <div class="option"><div class="option-left"><div class="ctrl"></div><span class="opt-name">Muy hecho</span></div><span class="opt-price free">—</span></div>
+    </div>
+
+    <div class="mod-group">
+      <div class="mod-group-head">
+        <span class="mod-group-name">Guarnición</span>
+        <span class="badge opt">Opcional · hasta 2</span>
+      </div>
+      <div class="option sel"><div class="option-left"><div class="ctrl sq on"></div><span class="opt-name">Patatas fritas</span></div><span class="opt-price free">—</span></div>
+      <div class="option"><div class="option-left"><div class="ctrl sq"></div><span class="opt-name">Ensalada mixta</span></div><span class="opt-price free">—</span></div>
+      <div class="option"><div class="option-left"><div class="ctrl sq"></div><span class="opt-name">Pimientos asados</span></div><span class="opt-price">+1,50 €</span></div>
+    </div>
+
+    <div class="mod-footer">
+      <div class="mod-footer-row">
+        <span class="mod-footer-label">Total</span>
+        <span class="mod-footer-price">18,00 €</span>
+      </div>
+      <button class="btn-primary">Añadir a la comanda</button>
+    </div>
+  </div>
+
+  <!-- COBRO -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Cobro — Mesa 1</div>
+      <div class="panel-sub" style="font-size:24px;font-weight:900;color:#0f172a;margin-top:4px">47,50 €</div>
+    </div>
+
+    <div class="summary">
+      <div class="summary-row"><span>Paella Valenciana ×2</span><span>29,00 €</span></div>
+      <div class="summary-row"><span>Solomillo a la plancha ×1</span><span>18,00 €</span></div>
+      <div class="summary-row"><span>Agua mineral ×1</span><span>1,50 €</span></div>
+      <div class="summary-row total"><span>Total</span><span>47,50 €</span></div>
+    </div>
+
+    <div class="cobro-body">
+      <div class="section-label">Método de pago</div>
+      <div class="method-grid">
+        <div class="method-btn active"><span class="micon">EFECTIVO</span>Efectivo</div>
+        <div class="method-btn"><span class="micon">TARJETA</span>Tarjeta</div>
+        <div class="method-btn"><span class="micon">BIZUM</span>Bizum</div>
+        <div class="method-btn"><span class="micon">MIXTO</span>Mixto</div>
+      </div>
+
+      <div class="cash-box">
+        <div class="cash-row">
+          <span class="cash-lbl">Total</span>
+          <span class="cash-val">47,50 €</span>
+        </div>
+        <div class="cash-row">
+          <span class="cash-lbl">Entrega cliente</span>
+          <input class="cash-input" value="50,00">
+        </div>
+        <div class="cash-row">
+          <span class="cash-lbl">Cambio</span>
+          <span class="cash-change">2,50 €</span>
+        </div>
+      </div>
+
+      <button class="btn-confirm">Confirmar cobro</button>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

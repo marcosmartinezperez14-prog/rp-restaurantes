@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPV — Mapa de mesas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* NAV */
+  .nav { background: #1a1a2e; border-bottom: 1px solid #2d2d4e; padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-brand { font-size: 18px; font-weight: 700; color: #fff; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-user { font-size: 13px; color: #94a3b8; }
+  .nav-btn { background: #2d2d4e; border: none; color: #e2e8f0; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+
+  /* MAIN */
+  .main { padding: 20px; }
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #fff; }
+
+  /* ZONE */
+  .zone { margin-bottom: 28px; }
+  .zone-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .zone-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .zone-name { font-size: 15px; font-weight: 600; color: #cbd5e1; letter-spacing: 0.05em; text-transform: uppercase; }
+  .zone-count { font-size: 12px; color: #64748b; }
+  .zone-divider { flex: 1; height: 1px; background: #1e1e3a; }
+
+  /* TABLE GRID */
+  .tables-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+
+  /* TABLE CARD */
+  .table-card { background: #1a1a2e; border: 2px solid; border-radius: 12px; padding: 14px 12px; cursor: pointer; transition: transform 0.1s, opacity 0.1s; min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; }
+  .table-card:hover { transform: scale(1.03); }
+  .table-card.free    { border-color: #22c55e33; }
+  .table-card.occupied { border-color: #ef444455; background: #1f1a1a; }
+  .table-card.reserved { border-color: #eab30855; }
+  .table-card.billing  { border-color: #3b82f655; }
+
+  .table-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .table-name { font-size: 16px; font-weight: 700; color: #fff; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .status-dot.free     { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+  .status-dot.occupied { background: #ef4444; box-shadow: 0 0 6px #ef444488; }
+  .status-dot.reserved { background: #eab308; box-shadow: 0 0 6px #eab30888; }
+  .status-dot.billing  { background: #3b82f6; box-shadow: 0 0 6px #3b82f688; }
+
+  .table-mid { display: flex; align-items: center; gap: 5px; color: #64748b; font-size: 12px; margin-top: 6px; }
+
+  .table-bottom { margin-top: 8px; }
+  .table-time { font-size: 11px; color: #94a3b8; }
+  .table-total { font-size: 15px; font-weight: 700; color: #22c55e; margin-top: 2px; }
+  .table-status-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .table-status-label.free     { color: #22c55e; }
+  .table-status-label.occupied { color: #ef4444; }
+  .table-status-label.reserved { color: #eab308; }
+  .table-status-label.billing  { color: #3b82f6; }
+
+  /* LEGEND */
+  .legend { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* FAB */
+  .fab { position: fixed; bottom: 24px; right: 24px; background: #3b82f6; color: #fff; border: none; border-radius: 50%; width: 52px; height: 52px; font-size: 20px; cursor: pointer; box-shadow: 0 4px 16px #3b82f666; display: flex; align-items: center; justify-content: center; }
+
+  /* STATS BAR */
+  .stats-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-chip { background: #1a1a2e; border: 1px solid #2d2d4e; border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
+  .stat-num { font-size: 18px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: #64748b; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-brand">⚡ RP Restaurantes — TPV</div>
+  <div class="nav-right">
+    <span class="nav-user">Restaurante El Rincón</span>
+    <button class="nav-btn">Dashboard</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">Mapa de mesas</div>
+
+  <div class="stats-bar">
+    <div class="stat-chip">
+      <div class="status-dot occupied"></div>
+      <div class="stat-num" style="color:#ef4444">4</div>
+      <div class="stat-label">ocupadas</div>
+    </div>
+    <div class="stat-chip">
+      <div class="status-dot free"></div>
+      <div class="stat-num" style="color:#22c55e">6</div>
+      <div class="stat-label">libres</div>
+    </div>
+    <div class="stat-chip">
+      <div class="status-dot reserved"></div>
+      <div class="stat-num" style="color:#eab308">1</div>
+      <div class="stat-label">reservadas</div>
+    </div>
+    <div class="stat-chip">
+      <div class="status-dot billing"></div>
+      <div class="stat-num" style="color:#3b82f6">1</div>
+      <div class="stat-label">cobrando</div>
+    </div>
+  </div>
+
+  <!-- ZONA SALÓN -->
+  <div class="zone">
+    <div class="zone-header">
+      <div class="zone-dot" style="background:#f97316"></div>
+      <span class="zone-name">Salón</span>
+      <span class="zone-count">6 mesas</span>
+      <div class="zone-divider"></div>
+    </div>
+    <div class="tables-grid">
+      <div class="table-card occupied">
+        <div class="table-top">
+          <span class="table-name">Mesa 1</span>
+          <div class="status-dot occupied"></div>
+        </div>
+        <div class="table-mid">
+          <span>👤</span><span>4 pax</span>
+        </div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 45 min</div>
+          <div class="table-total">47,50 €</div>
+        </div>
+      </div>
+      <div class="table-card free">
+        <div class="table-top">
+          <span class="table-name">Mesa 2</span>
+          <div class="status-dot free"></div>
+        </div>
+        <div class="table-mid"><span>👤</span><span>2 pax</span></div>
+        <div class="table-bottom">
+          <div class="table-status-label free">Libre</div>
+        </div>
+      </div>
+      <div class="table-card billing">
+        <div class="table-top">
+          <span class="table-name">Mesa 3</span>
+          <div class="status-dot billing"></div>
+        </div>
+        <div class="table-mid"><span>👤</span><span>3 pax</span></div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 1h 12min</div>
+          <div class="table-total" style="color:#3b82f6">89,00 €</div>
+        </div>
+      </div>
+      <div class="table-card occupied">
+        <div class="table-top">
+          <span class="table-name">Mesa 4</span>
+          <div class="status-dot occupied"></div>
+        </div>
+        <div class="table-mid"><span>👤</span><span>6 pax</span></div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 22 min</div>
+          <div class="table-total">31,20 €</div>
+        </div>
+      </div>
+      <div class="table-card free">
+        <div class="table-top">
+          <span class="table-name">Mesa 5</span>
+          <div class="status-dot free"></div>
+        </div>
+        <div class="table-mid"><span>👤</span><span>4 pax</span></div>
+        <div class="table-bottom">
+          <div class="table-status-label free">Libre</div>
+        </div>
+      </div>
+      <div class="table-card reserved">
+        <div class="table-top">
+          <span class="table-name">Mesa 6</span>
+          <div class="status-dot reserved"></div>
+        </div>
+        <div class="table-mid"><span>👤</span><span>5 pax</span></div>
+        <div class="table-bottom">
+          <div class="table-status-label reserved">Reservada</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZONA TERRAZA -->
+  <div class="zone">
+    <div class="zone-header">
+      <div class="zone-dot" style="background:#06b6d4"></div>
+      <span class="zone-name">Terraza</span>
+      <span class="zone-count">4 mesas</span>
+      <div class="zone-divider"></div>
+    </div>
+    <div class="tables-grid">
+      <div class="table-card occupied">
+        <div class="table-top">
+          <span class="table-name">T-1</span>
+          <div class="status-dot occupied"></div>
+        </div>
+        <div class="table-mid"><span>👤</span><span>2 pax</span></div>
+        <div class="table-bottom">
+          <div class="table-time">⏱ 8 min</div>
+          <div class="table-total">12,00 €</div>
+        </div>
+      </div>
+      <div class="table-card free">
+        <div class="table-top"><span class="table-name">T-2</span><div class="status-dot free"></div></div>
+        <div class="table-mid"><span>👤</span><span>2 pax</span></div>
+        <div class="table-bottom"><div class="table-status-label free">Libre</div></div>
+      </div>
+      <div class="table-card free">
+        <div class="table-top"><span class="table-name">T-3</span><div class="status-dot free"></div></div>
+        <div class="table-mid"><span>👤</span><span>4 pax</span></div>
+        <div class="table-bottom"><div class="table-status-label free">Libre</div></div>
+      </div>
+      <div class="table-card free">
+        <div class="table-top"><span class="table-name">T-4</span><div class="status-dot free"></div></div>
+        <div class="table-mid"><span>👤</span><span>4 pax</span></div>
+        <div class="table-bottom"><div class="table-status-label free">Libre</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" title="Actualizar">↺</button>
+
+</body>
+</html>

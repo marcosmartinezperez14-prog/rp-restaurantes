@@ -22,7 +22,7 @@ export default function TableCard({
   disabled,
 }: {
   table: TableWithOrder
-  onClick: () => void
+  onClick: (e: React.MouseEvent) => void
   disabled?: boolean
 }) {
   const cfg = STATUS_CONFIG[table.status]

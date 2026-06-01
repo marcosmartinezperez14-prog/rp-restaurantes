@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 export type ZoneInput = {
   id?: string
   name: string
-  tables: { id?: string; number: number }[]
+  tables: { id?: string; name: string }[]
 }
 
 export type CategoryInput = {
@@ -68,8 +68,8 @@ export async function getOnboardingData(): Promise<OnboardingData> {
   const zoneIds = (zonesData ?? []).map(z => z.id)
 
   const { data: tablesData } = zoneIds.length > 0
-    ? await supabase.from('tables').select('id, zone_id, number').in('zone_id', zoneIds)
-    : { data: [] as { id: string; zone_id: string; number: number }[] }
+    ? await supabase.from('tables').select('id, zone_id, name').in('zone_id', zoneIds)
+    : { data: [] as { id: string; zone_id: string; name: string }[] }
 
   const { data: categoriesData } = await supabase
     .from('categories')
@@ -87,7 +87,7 @@ export async function getOnboardingData(): Promise<OnboardingData> {
     name: z.name,
     tables: (tablesData ?? [])
       .filter(t => t.zone_id === z.id)
-      .map(t => ({ id: t.id, number: t.number })),
+      .map(t => ({ id: t.id, name: t.name })),
   }))
 
   const categories: CategoryInput[] = (categoriesData ?? []).map(c => ({
@@ -191,18 +191,16 @@ export async function saveZonesAndTables(zones: ZoneInput[]): Promise<ActionResu
     }
 
     for (const [tablePos, table] of zone.tables.entries()) {
-      const tableName = `Mesa ${table.number}`
       if (table.id) {
         await supabase
           .from('tables')
-          .update({ number: table.number, name: tableName, position: tablePos })
+          .update({ name: table.name, position: tablePos })
           .eq('id', table.id)
       } else {
         await supabase.from('tables').insert({
           zone_id: zoneId,
           restaurant_id: restaurantId,
-          number: table.number,
-          name: tableName,
+          name: table.name,
           capacity: 4,
           status: 'free',
           is_active: true,
@@ -320,6 +318,58 @@ export async function completeOnboarding(): Promise<never> {
   redirect('/dashboard')
 }
 
+export async function getDiagnostics(): Promise<{ raw: unknown; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) return { raw: null, error: 'Sin restaurante' }
+
+  // Raw zones with ALL columns
+  const { data: zones, error: zErr } = await supabase
+    .from('zones')
+    .select('*')
+    .eq('restaurant_id', restaurantId)
+
+  // Raw tables joined through those zones (no restaurant_id filter)
+  const zoneIds = (zones ?? []).map((z: Record<string, unknown>) => z.id as string)
+  const { data: tables, error: tErr } = zoneIds.length > 0
+    ? await supabase.from('tables').select('*').in('zone_id', zoneIds)
+    : { data: [], error: null }
+
+  // Raw products from categories
+  const { data: cats } = await supabase.from('categories').select('id').eq('restaurant_id', restaurantId)
+  const catIds = (cats ?? []).map((c: Record<string, unknown>) => c.id as string)
+  const { data: products } = catIds.length > 0
+    ? await supabase.from('products').select('*').in('category_id', catIds).limit(3)
+    : { data: [] }
+
+  // Probe all table schemas by attempting minimal selects
+  const probes: Record<string, unknown> = {}
+  for (const tbl of ['orders', 'order_items', 'tickets', 'payments'] as const) {
+    const { data, error } = await supabase.from(tbl).select('*').limit(1)
+    if (error) {
+      probes[tbl] = { error: error.message }
+    } else if (data && data.length > 0) {
+      probes[tbl] = { columns: Object.keys(data[0]), sample: data[0] }
+    } else {
+      // Try insert with empty object to get column info from error
+      probes[tbl] = { exists: true, empty: true }
+    }
+  }
+
+  return {
+    raw: {
+      restaurantId,
+      tableCount: (tables ?? []).length,
+      tableError: tErr?.message,
+      sampleTable: (tables ?? [])[0] ?? null,
+      ...probes,
+    }
+  }
+}
+
 // Repairs existing data created by the old onboarding (missing restaurant_id, is_active, etc.)
 export async function repairExistingData(): Promise<{ fixed: number; error?: string }> {
   const supabase = await createClient()
@@ -345,7 +395,7 @@ export async function repairExistingData(): Promise<{ fixed: number; error?: str
     fixed++
   }
 
-  // 2. Fix tables: set restaurant_id, name, status, is_active, capacity
+  // 2. Fix tables: patch existing ones, create missing ones
   const zoneIds = (zones ?? []).map(z => z.id)
   if (zoneIds.length > 0) {
     const { data: tables } = await supabase
@@ -353,6 +403,7 @@ export async function repairExistingData(): Promise<{ fixed: number; error?: str
       .select('id, zone_id, number, name, status, is_active, capacity, restaurant_id')
       .in('zone_id', zoneIds)
 
+    // Patch existing tables that are missing fields
     for (const [i, table] of (tables ?? []).entries()) {
       const patch: Record<string, unknown> = { position: i }
       if (!table.restaurant_id) patch.restaurant_id = restaurantId
@@ -362,6 +413,25 @@ export async function repairExistingData(): Promise<{ fixed: number; error?: str
       if (!table.capacity) patch.capacity = 4
       await supabase.from('tables').update(patch).eq('id', table.id)
       fixed++
+    }
+
+    // Create default tables for zones that have none
+    const zoneIdsWithTables = new Set((tables ?? []).map((t: Record<string, unknown>) => t.zone_id as string))
+    const emptyZones = (zones ?? []).filter(z => !zoneIdsWithTables.has(z.id))
+    for (const zone of emptyZones) {
+      for (let n = 1; n <= 4; n++) {
+        const { error: insertErr } = await supabase.from('tables').insert({
+          zone_id: zone.id,
+          restaurant_id: restaurantId,
+          name: `Mesa ${n}`,
+          capacity: 4,
+          status: 'free',
+          is_active: true,
+          position: n - 1,
+        })
+        if (insertErr) return { fixed, error: `Error al crear mesa: ${insertErr.message} (code: ${insertErr.code})` }
+        fixed++
+      }
     }
   }
 

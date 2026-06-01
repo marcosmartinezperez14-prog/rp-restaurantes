@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPV — Modificadores + Cobro</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f1f5f9; color: #1e293b; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  h2 { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 24px; }
+
+  /* MODAL */
+  .modal-wrap { background: #fff; border-radius: 16px; box-shadow: 0 8px 32px #0002; overflow: hidden; }
+  .modal-header { padding: 20px; border-bottom: 1px solid #f1f5f9; }
+  .modal-title { font-size: 18px; font-weight: 800; color: #0f172a; }
+  .modal-subtitle { font-size: 13px; color: #64748b; margin-top: 2px; }
+  .modal-body { padding: 16px 20px; max-height: 420px; overflow-y: auto; }
+
+  .mod-group { margin-bottom: 20px; }
+  .mod-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .mod-group-name { font-size: 14px; font-weight: 700; color: #0f172a; }
+  .mod-group-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .mod-group-badge.required { background: #fee2e2; color: #dc2626; }
+  .mod-group-badge.optional { background: #f0fdf4; color: #16a34a; }
+  .mod-group-hint { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+
+  .mod-option { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.1s, background 0.1s; }
+  .mod-option:hover { border-color: #93c5fd; background: #eff6ff; }
+  .mod-option.selected { border-color: #3b82f6; background: #eff6ff; }
+  .mod-option-left { display: flex; align-items: center; gap: 10px; }
+  .mod-radio { width: 18px; height: 18px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .mod-radio.checked { border-color: #3b82f6; background: #3b82f6; }
+  .mod-radio.checked::after { content: ''; width: 7px; height: 7px; background: #fff; border-radius: 50%; }
+  .mod-checkbox { width: 18px; height: 18px; border: 2px solid #cbd5e1; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .mod-checkbox.checked { border-color: #3b82f6; background: #3b82f6; color: #fff; font-size: 11px; font-weight: 700; }
+  .mod-option-name { font-size: 14px; color: #1e293b; }
+  .mod-price { font-size: 13px; font-weight: 600; color: #3b82f6; }
+  .mod-price.free { color: #16a34a; }
+
+  .modal-footer { padding: 16px 20px; border-top: 1px solid #f1f5f9; background: #fff; }
+  .modal-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .modal-total-label { font-size: 14px; color: #64748b; }
+  .modal-total-price { font-size: 22px; font-weight: 800; color: #0f172a; }
+  .btn-add { width: 100%; background: #3b82f6; color: #fff; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; }
+
+  /* COBRO */
+  .cobro-wrap { background: #fff; border-radius: 16px; box-shadow: 0 8px 32px #0002; overflow: hidden; }
+  .cobro-header { padding: 18px 20px; border-bottom: 1px solid #f1f5f9; }
+  .cobro-title { font-size: 18px; font-weight: 800; }
+  .cobro-total-big { font-size: 36px; font-weight: 900; color: #3b82f6; margin-top: 4px; }
+
+  .cobro-summary { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; }
+  .summary-line { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; padding: 3px 0; }
+  .summary-line.bold { font-weight: 700; color: #0f172a; font-size: 14px; }
+
+  .cobro-body { padding: 16px 20px; }
+  .method-label { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+  .method-btn { padding: 12px 8px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; text-align: center; font-size: 13px; font-weight: 600; color: #475569; background: #fff; transition: all 0.1s; }
+  .method-btn.active { border-color: #3b82f6; background: #eff6ff; color: #2563eb; }
+  .method-btn .icon { font-size: 20px; display: block; margin-bottom: 3px; }
+
+  .cash-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .cash-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cash-row:last-child { margin-bottom: 0; }
+  .cash-label { font-size: 13px; color: #64748b; }
+  .cash-input { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 15px; font-weight: 700; width: 110px; text-align: right; color: #0f172a; background: #fff; outline: none; }
+  .cash-change { font-size: 20px; font-weight: 800; color: #16a34a; }
+
+  .btn-confirm { width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div style="padding: 24px 24px 8px;">
+  <h2>Modal de modificadores + Pantalla de cobro</h2>
+  <p class="subtitle">A la izquierda: modal cuando un producto tiene opciones. A la derecha: pantalla de cobro con método efectivo.</p>
+</div>
+
+<div class="two-col">
+
+  <!-- MODAL MODIFICADORES -->
+  <div class="modal-wrap">
+    <div class="modal-header">
+      <div class="modal-title">Solomillo a la plancha</div>
+      <div class="modal-subtitle">Personaliza tu pedido</div>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Grupo requerido: Punto de cocción -->
+      <div class="mod-group">
+        <div class="mod-group-header">
+          <span class="mod-group-name">Punto de cocción</span>
+          <span class="mod-group-badge required">Obligatorio</span>
+        </div>
+        <div class="mod-group-hint">Elige 1 opción</div>
+
+        <div class="mod-option">
+          <div class="mod-option-left">
+            <div class="mod-radio"></div>
+            <span class="mod-option-name">Muy poco hecho</span>
+          </div>
+          <span class="mod-price free">Gratis</span>
+        </div>
+        <div class="mod-option selected">
+          <div class="mod-option-left">
+            <div class="mod-radio checked"></div>
+            <span class="mod-option-name">Poco hecho</span>
+          </div>
+          <span class="mod-price free">Gratis</span>
+        </div>
+        <div class="mod-option">
+          <div class="mod-option-left">
+            <div class="mod-radio"></div>
+            <span class="mod-option-name">Al punto</span>
+          </div>
+          <span class="mod-price free">Gratis</span>
+        </div>
+        <div class="mod-option">
+          <div class="mod-option-left">
+            <div class="mod-radio"></div>
+            <span class="mod-option-name">Muy hecho</span>
+          </div>
+          <span class="mod-price free">Gratis</span>
+        </div>
+      </div>
+
+      <!-- Grupo opcional: Guarnición -->
+      <div class="mod-group">
+        <div class="mod-group-header">
+          <span class="mod-group-name">Guarnición</span>
+          <span class="mod-group-badge optional">Opcional</span>
+        </div>
+        <div class="mod-group-hint">Elige hasta 2 opciones</div>
+
+        <div class="mod-option selected">
+          <div class="mod-option-left">
+            <div class="mod-checkbox checked">✓</div>
+            <span class="mod-option-name">Patatas fritas</span>
+          </div>
+          <span class="mod-price free">Gratis</span>
+        </div>
+        <div class="mod-option">
+          <div class="mod-option-left">
+            <div class="mod-checkbox"></div>
+            <span class="mod-option-name">Ensalada mixta</span>
+          </div>
+          <span class="mod-price free">Gratis</span>
+        </div>
+        <div class="mod-option">
+          <div class="mod-option-left">
+            <div class="mod-checkbox"></div>
+            <span class="mod-option-name">Pimientos asados</span>
+          </div>
+          <span class="mod-price">+1,50 €</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <div class="modal-total">
+        <span class="modal-total-label">Total:</span>
+        <span class="modal-total-price">18,00 €</span>
+      </div>
+      <button class="btn-add">Añadir a la comanda</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA COBRO -->
+  <div class="cobro-wrap">
+    <div class="cobro-header">
+      <div class="cobro-title">Cobro — Mesa 1</div>
+      <div class="cobro-total-big">47,50 €</div>
+    </div>
+
+    <div class="cobro-summary">
+      <div class="summary-line"><span>Paella Valenciana ×2</span><span>29,00 €</span></div>
+      <div class="summary-line"><span>Solomillo a la plancha ×1</span><span>18,00 €</span></div>
+      <div class="summary-line"><span>Agua mineral ×1</span><span>1,50 €</span></div>
+      <div class="summary-line bold" style="margin-top:6px; padding-top:6px; border-top:1px solid #f1f5f9">
+        <span>Total</span><span>47,50 €</span>
+      </div>
+    </div>
+
+    <div class="cobro-body">
+      <div class="method-label">Método de pago</div>
+      <div class="method-grid">
+        <div class="method-btn active"><span class="icon">💵</span>Efectivo</div>
+        <div class="method-btn"><span class="icon">💳</span>Tarjeta</div>
+        <div class="method-btn"><span class="icon">📱</span>Bizum</div>
+        <div class="method-btn"><span class="icon">🔀</span>Mixto</div>
+      </div>
+
+      <div class="cash-section">
+        <div class="cash-row">
+          <span class="cash-label">Total a cobrar</span>
+          <span style="font-weight:800;font-size:15px">47,50 €</span>
+        </div>
+        <div class="cash-row">
+          <span class="cash-label">Entrega cliente</span>
+          <input class="cash-input" value="50,00">
+        </div>
+        <div class="cash-row">
+          <span class="cash-label">Cambio</span>
+          <span class="cash-change">2,50 €</span>
+        </div>
+      </div>
+
+      <button class="btn-confirm">✓ Confirmar cobro</button>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

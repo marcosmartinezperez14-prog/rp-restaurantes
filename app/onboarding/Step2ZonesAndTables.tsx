@@ -15,7 +15,7 @@ export default function Step2ZonesAndTables({ zones: initialZones, onNext }: Pro
   const [isPending, startTransition] = useTransition()
 
   const addZone = () => {
-    setZones(z => [...z, { name: 'Nueva zona', tables: [{ number: 1 }] }])
+    setZones(z => [...z, { name: 'Nueva zona', tables: [{ name: 'Mesa 1' }] }])
   }
 
   const removeZone = (idx: number) => {
@@ -31,8 +31,8 @@ export default function Step2ZonesAndTables({ zones: initialZones, onNext }: Pro
     setZones(z =>
       z.map((zone, i) => {
         if (i !== zoneIdx) return zone
-        const nextNum = Math.max(0, ...zone.tables.map(t => t.number)) + 1
-        return { ...zone, tables: [...zone.tables, { number: nextNum }] }
+        const nextNum = zone.tables.length + 1
+        return { ...zone, tables: [...zone.tables, { name: `Mesa ${nextNum}` }] }
       })
     )
   }
@@ -43,6 +43,18 @@ export default function Step2ZonesAndTables({ zones: initialZones, onNext }: Pro
         if (i !== zoneIdx) return zone
         if (zone.tables.length <= 1) return zone
         return { ...zone, tables: zone.tables.filter((_, ti) => ti !== tableIdx) }
+      })
+    )
+  }
+
+  const updateTableName = (zoneIdx: number, tableIdx: number, name: string) => {
+    setZones(z =>
+      z.map((zone, i) => {
+        if (i !== zoneIdx) return zone
+        return {
+          ...zone,
+          tables: zone.tables.map((t, ti) => (ti === tableIdx ? { ...t, name } : t)),
+        }
       })
     )
   }
@@ -106,7 +118,11 @@ export default function Step2ZonesAndTables({ zones: initialZones, onNext }: Pro
                 key={tableIdx}
                 className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 text-sm text-gray-800"
               >
-                Mesa {table.number}
+                <input
+                  value={table.name}
+                  onChange={e => updateTableName(zoneIdx, tableIdx, e.target.value)}
+                  className="bg-transparent outline-none w-20 text-sm"
+                />
                 {zone.tables.length > 1 && (
                   <button
                     type="button"
