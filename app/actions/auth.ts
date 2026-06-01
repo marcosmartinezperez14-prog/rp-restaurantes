@@ -1,4 +1,3 @@
-// app/actions/auth.ts
 'use server'
 
 import { redirect } from 'next/navigation'
@@ -65,11 +64,12 @@ export async function registerAction(
   })
 
   if (error) {
+    console.error('ERROR SUPABASE SIGNUP:', error.message, error.status)
     const msg = error.message.toLowerCase()
     if (msg.includes('already registered') || msg.includes('already exists')) {
       return { error: 'Este email ya está registrado. Prueba a iniciar sesión.' }
     }
-    return { error: 'Ha ocurrido un error inesperado. Inténtalo de nuevo.' }
+    return { error: error.message }
   }
 
   return { success: true }

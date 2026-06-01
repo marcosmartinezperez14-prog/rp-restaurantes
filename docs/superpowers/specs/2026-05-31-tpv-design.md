@@ -188,9 +188,9 @@ Sistema TPV completo para gestión de mesas, comandas y cobros. Optimizado para 
 │ Resumen: item × qty ......... X,XX  │
 │ ─────────────────────────────────── │
 │ MÉTODO DE PAGO                      │
-│ [EFECTIVO] [TARJETA] [BIZUM] [MIXTO]│
+│ [Efectivo] [Tarjeta] [Bizum] [Mixto] │
 │                                     │
-│ — Si EFECTIVO:                      │
+│ — Si Efectivo:                      │
 │   Total ............ 47,50 €        │
 │   Entrega cliente  [  50,00]        │
 │   Cambio .......... 2,50 €  (verde) │
