@@ -69,7 +69,7 @@ export async function registerAction(
     if (msg.includes('already registered') || msg.includes('already exists')) {
       return { error: 'Este email ya está registrado. Prueba a iniciar sesión.' }
     }
-    return { error: error.message }
+    return { error: 'Ha ocurrido un error inesperado. Inténtalo de nuevo.' }
   }
 
   return { success: true }

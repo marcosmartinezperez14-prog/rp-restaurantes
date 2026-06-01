@@ -31,7 +31,6 @@ export default function ProductsPanel({ categories, products, onAddProduct, disa
   function handleProductClick(product: ProductWithModifiers) {
     if (!product.is_available) {
       showToast(`${product.name} no está disponible`)
-      return
     }
     if (product.modifierGroups.length > 0) {
       setModalProduct(product)

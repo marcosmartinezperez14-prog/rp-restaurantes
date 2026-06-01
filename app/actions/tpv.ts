@@ -168,10 +168,14 @@ export async function getOpenOrder(tableId: string): Promise<{ orderId: string }
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
   const { data } = await supabase
     .from('orders')
     .select('id')
     .eq('table_id', tableId)
+    .eq('restaurant_id', restaurantId)
     .eq('status', 'open')
     .is('deleted_at', null)
     .maybeSingle()
@@ -186,6 +190,15 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+
+  const { data: tableCheck } = await supabase
+    .from('tables')
+    .select('id')
+    .eq('id', tableId)
+    .eq('restaurant_id', restaurantId)
+    .maybeSingle()
+
+  if (!tableCheck) return { error: 'Mesa no encontrada' }
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -349,6 +362,16 @@ export async function addOrderItem(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
+  const { data: orderCheck } = await supabase
+    .from('orders')
+    .select('id')
+    .eq('id', orderId)
+    .eq('restaurant_id', restaurantId)
+    .eq('status', 'open')
+    .maybeSingle()
+
+  if (!orderCheck) return { error: 'Comanda no encontrada' }
+
   const { data: product } = await supabase
     .from('products')
     .select('name, price, tax_rate')
@@ -487,6 +510,7 @@ export async function processPayment(
     .from('orders')
     .select('id, table_id, subtotal, tax_amount, total')
     .eq('id', orderId)
+    .eq('restaurant_id', restaurantId)
     .eq('status', 'open')
     .maybeSingle()
 
@@ -578,4 +602,25 @@ export async function processPayment(
   await supabase.from('tables').update({ status: 'free' }).eq('id', order.table_id)
 
   return { ticketId: ticket.id }
+}
+
+export async function updateOrderItemNote(
+  itemId: string,
+  notes: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { error } = await supabase
+    .from('order_items')
+    .update({ notes: notes || null })
+    .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return { error: 'No se pudo actualizar la nota' }
+  return {}
 }

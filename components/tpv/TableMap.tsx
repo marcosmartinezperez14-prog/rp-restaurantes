@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { ZoneWithTables, TableWithOrder, TableStatus } from '@/app/actions/tpv'
 import { getZonesWithTables, createOrder, getOpenOrder } from '@/app/actions/tpv'
@@ -79,16 +80,26 @@ export default function TableMap({
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-end mb-4">
-        <button
-          onClick={handleRefresh}
-          disabled={isPending}
-          className="px-4 py-2 text-sm bg-white border border-[#e2e8f0] rounded-lg text-[#0f172a] hover:bg-gray-50 disabled:opacity-50 transition-colors"
-        >
-          {isPending ? 'Actualizando...' : 'Actualizar'}
-        </button>
-      </div>
+    <div className="min-h-screen bg-[#f4f6f9]">
+      <nav className="bg-white border-b border-[#e2e8f0] px-6 h-[52px] flex items-center justify-between flex-shrink-0 shadow-sm">
+        <span className="font-semibold text-[#0f172a]">RP Restaurantes · TPV</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isPending}
+            className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50 transition-colors"
+          >
+            {isPending ? 'Actualizando...' : 'Actualizar'}
+          </button>
+          <Link
+            href="/dashboard"
+            className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 transition-colors"
+          >
+            Dashboard
+          </Link>
+        </div>
+      </nav>
+      <div className="p-6">
 
       <div className="flex flex-wrap gap-2 mb-6">
         {counts.occupied > 0 && (
@@ -141,6 +152,7 @@ export default function TableMap({
         {zones.length === 0 && (
           <p className="text-center text-[#94a3b8] py-12">No hay zonas configuradas</p>
         )}
+      </div>
       </div>
     </div>
   )

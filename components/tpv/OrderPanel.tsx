@@ -3,7 +3,7 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { OrderItem, OrderWithItems } from '@/app/actions/tpv'
-import { updateOrderItemQuantity, removeOrderItem, cancelOrder } from '@/app/actions/tpv'
+import { updateOrderItemQuantity, removeOrderItem, cancelOrder, updateOrderItemNote } from '@/app/actions/tpv'
 
 interface Props {
   order: OrderWithItems
@@ -34,6 +34,12 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
   const totalAmount = items.reduce((s, i) => s + i.total_price, 0)
 
   const canCancel = items.every(i => i.status !== 'served' && i.status !== 'ready')
+
+  function handleNoteBlur(item: OrderItem, note: string) {
+    if (note === (item.notes ?? '')) return
+    onItemsChange(items.map(i => i.id === item.id ? { ...i, notes: note || null } : i))
+    startTransition(async () => { await updateOrderItemNote(item.id, note) })
+  }
 
   function handleQuantityChange(item: OrderItem, delta: number) {
     const newQty = item.quantity + delta
@@ -111,6 +117,13 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
                 +
               </button>
             </div>
+            <input
+              type="text"
+              defaultValue={item.notes ?? ''}
+              placeholder="Nota para cocina..."
+              onBlur={e => handleNoteBlur(item, e.target.value)}
+              className="mt-2 w-full px-2 py-1 text-xs border border-[#e2e8f0] rounded-lg outline-none focus:border-[#2563eb] text-[#64748b] placeholder-[#94a3b8]"
+            />
           </div>
         ))}
       </div>
