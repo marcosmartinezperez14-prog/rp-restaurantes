@@ -29,20 +29,21 @@ export default function AppShell({
         </div>
         <nav className="flex-1 py-3 flex flex-col gap-0.5 px-2">
           {NAV_ITEMS.map(item => {
-            const active = pathname.startsWith(item.href) && item.href !== '/dashboard'
-              ? true
-              : pathname === item.href
+            const active = item.href === '/dashboard'
+              ? pathname === item.href
+              : pathname.startsWith(item.href)
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                   active
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-[#64748b] hover:bg-slate-100 hover:text-[#0f172a]'
                 }`}
               >
-                <span>{item.icon}</span>
+                <span aria-hidden="true">{item.icon}</span>
                 {item.label}
               </Link>
             )
