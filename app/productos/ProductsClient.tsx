@@ -1,14 +1,21 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { ProductoConCategoria } from '@/app/actions/productos'
+import type { ProductoConCategoria, Categoria } from '@/app/actions/productos'
 import { getProductos } from '@/app/actions/productos'
 import ProductRow from '@/components/productos/ProductRow'
+import AddProductPanel from '@/components/productos/AddProductPanel'
 
-export default function ProductsClient({ initialProducts }: { initialProducts: ProductoConCategoria[] }) {
+interface Props {
+  initialProducts: ProductoConCategoria[]
+  categories: Categoria[]
+}
+
+export default function ProductsClient({ initialProducts, categories }: Props) {
   const [products, setProducts] = useState(initialProducts)
   const [search, setSearch] = useState('')
   const [filterLow, setFilterLow] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   function handleRefresh() {
@@ -31,6 +38,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
   return (
     <div>
+      {/* Barra de filtros */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <input
           value={search}
@@ -53,12 +61,19 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <button
           onClick={handleRefresh}
           disabled={isPending}
-          className="px-3 py-2 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50 ml-auto"
+          className="px-3 py-2 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50"
         >
           {isPending ? 'Actualizando...' : 'Actualizar'}
         </button>
+        <button
+          onClick={() => setShowAdd(true)}
+          className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
+        >
+          <span className="text-base leading-none">+</span> Añadir producto
+        </button>
       </div>
 
+      {/* Tabla */}
       <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
         <table className="w-full">
           <thead>
@@ -87,6 +102,15 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
           </tbody>
         </table>
       </div>
+
+      {/* Panel lateral */}
+      {showAdd && (
+        <AddProductPanel
+          categories={categories}
+          onClose={() => setShowAdd(false)}
+          onSaved={handleRefresh}
+        />
+      )}
     </div>
   )
 }
