@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { Reservation, ReservationStatus, TableOption } from '@/app/actions/reservas'
+import type { Reservation, ReservationStatus, ZoneOption } from '@/app/actions/reservas'
 import { getReservationsByDate, updateReservationStatus, deleteReservation } from '@/app/actions/reservas'
 import NewReservationModal from './NewReservationModal'
 
@@ -31,11 +31,11 @@ const STATUS_LABELS: Record<ReservationStatus, string> = {
 
 interface Props {
   initialReservations: Reservation[]
-  tables: TableOption[]
+  zones: ZoneOption[]
   initialDate: string
 }
 
-export default function ReservationsList({ initialReservations, tables, initialDate }: Props) {
+export default function ReservationsList({ initialReservations, zones, initialDate }: Props) {
   const [reservations, setReservations] = useState(initialReservations)
   const [date, setDate] = useState(initialDate)
   const [showNew, setShowNew] = useState(false)
@@ -162,7 +162,7 @@ export default function ReservationsList({ initialReservations, tables, initialD
 
       {showNew && (
         <NewReservationModal
-          tables={tables}
+          zones={zones}
           defaultDate={date}
           onClose={() => setShowNew(false)}
           onSaved={async () => {

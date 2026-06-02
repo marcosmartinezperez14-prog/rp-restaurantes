@@ -29,6 +29,12 @@ export type TableOption = {
   zone_name: string
 }
 
+export type ZoneOption = {
+  id: string
+  name: string
+  color: string
+}
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function getRestaurantId(
@@ -84,7 +90,7 @@ export async function createReservation(params: {
   partySize: number
   date: string
   time: string
-  tableId?: string
+  zoneId?: string
   notes?: string
 }): Promise<{ id: string } | { error: string }> {
   const supabase = await createClient()
@@ -98,6 +104,25 @@ export async function createReservation(params: {
   if (!params.customerPhone.trim()) return { error: 'El teléfono es obligatorio' }
   if (params.partySize < 1) return { error: 'El número de comensales debe ser al menos 1' }
 
+  // Auto-assign best table in zone: smallest capacity >= partySize
+  let tableId: string | null = null
+  if (params.zoneId) {
+    const { data: candidates } = await supabase
+      .from('tables')
+      .select('id, capacity')
+      .eq('restaurant_id', restaurantId)
+      .eq('zone_id', params.zoneId)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .gte('capacity', params.partySize)
+      .order('capacity')
+      .limit(1)
+
+    if (candidates && candidates.length > 0) {
+      tableId = candidates[0].id
+    }
+  }
+
   const { data, error } = await supabase
     .from('reservations')
     .insert({
@@ -109,7 +134,7 @@ export async function createReservation(params: {
       reservation_date: params.date,
       reservation_time: params.time,
       status: 'confirmed',
-      table_id: params.tableId || null,
+      table_id: tableId,
       notes: params.notes?.trim() || null,
       created_by: user.id,
     })
@@ -180,5 +205,27 @@ export async function getTableOptions(): Promise<TableOption[]> {
     name: t.name,
     capacity: t.capacity,
     zone_name: (t.zones as unknown as { name: string } | null)?.name ?? '',
+  }))
+}
+
+export async function getZones(): Promise<ZoneOption[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data } = await supabase
+    .from('zones')
+    .select('id, name, color')
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('position')
+
+  return (data ?? []).map(z => ({
+    id: z.id,
+    name: z.name,
+    color: z.color ?? '#64748b',
   }))
 }

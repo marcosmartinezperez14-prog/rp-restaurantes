@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getReservationsByDate, getTableOptions } from '@/app/actions/reservas'
+import { getReservationsByDate, getZones } from '@/app/actions/reservas'
 import AppShell from '@/components/AppShell'
 import ReservationsList from '@/components/reservas/ReservationsList'
 
@@ -10,16 +10,16 @@ export default async function ReservasPage() {
   if (!user) redirect('/login')
 
   const today = new Date().toISOString().split('T')[0]
-  const [reservations, tables] = await Promise.all([
+  const [reservations, zones] = await Promise.all([
     getReservationsByDate(today),
-    getTableOptions(),
+    getZones(),
   ])
 
   return (
     <AppShell title="Reservas">
       <ReservationsList
         initialReservations={reservations}
-        tables={tables}
+        zones={zones}
         initialDate={today}
       />
     </AppShell>

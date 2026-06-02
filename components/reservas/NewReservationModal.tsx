@@ -1,24 +1,24 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { TableOption } from '@/app/actions/reservas'
+import type { ZoneOption } from '@/app/actions/reservas'
 import { createReservation } from '@/app/actions/reservas'
 
 interface Props {
-  tables: TableOption[]
+  zones: ZoneOption[]
   defaultDate: string
   onClose: () => void
   onSaved: () => void
 }
 
-export default function NewReservationModal({ tables, defaultDate, onClose, onSaved }: Props) {
+export default function NewReservationModal({ zones, defaultDate, onClose, onSaved }: Props) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [partySize, setPartySize] = useState('2')
   const [date, setDate] = useState(defaultDate)
   const [time, setTime] = useState('13:00')
-  const [tableId, setTableId] = useState('')
+  const [zoneId, setZoneId] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -38,7 +38,7 @@ export default function NewReservationModal({ tables, defaultDate, onClose, onSa
         partySize: size,
         date,
         time,
-        tableId: tableId || undefined,
+        zoneId: zoneId || undefined,
         notes: notes || undefined,
       })
       if ('error' in res) { setError(res.error); return }
@@ -76,14 +76,12 @@ export default function NewReservationModal({ tables, defaultDate, onClose, onSa
                 className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-[#64748b]">Mesa</span>
-              <select value={tableId} onChange={e => setTableId(e.target.value)}
+              <span className="text-xs font-medium text-[#64748b]">Zona</span>
+              <select value={zoneId} onChange={e => setZoneId(e.target.value)}
                 className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400 bg-white">
-                <option value="">Sin asignar</option>
-                {tables.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.zone_name}, {t.capacity} pers.)
-                  </option>
+                <option value="">Sin preferencia</option>
+                {zones.map(z => (
+                  <option key={z.id} value={z.id}>{z.name}</option>
                 ))}
               </select>
             </label>
@@ -104,6 +102,11 @@ export default function NewReservationModal({ tables, defaultDate, onClose, onSa
               placeholder="Alergias, preferencias de mesa..."
               className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400 resize-none" />
           </label>
+          {zoneId && (
+            <p className="text-xs text-[#64748b]">
+              Se asignará automáticamente la mesa más adecuada para {partySize || '?'} comensales en esa zona.
+            </p>
+          )}
           {error && <p className="text-red-600 text-xs">{error}</p>}
         </div>
         <div className="px-5 py-3 border-t border-[#e2e8f0] flex gap-2 justify-end flex-shrink-0">
