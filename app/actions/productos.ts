@@ -33,6 +33,12 @@ export type StockMovement = {
   created_at: string
 }
 
+export type Categoria = {
+  id: string
+  name: string
+  position: number
+}
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function getRestaurantId(
@@ -242,4 +248,110 @@ export async function getStockMovements(productId: string): Promise<StockMovemen
     notes: m.notes ?? null,
     created_at: m.created_at,
   }))
+}
+
+export async function getCategorias(): Promise<Categoria[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data } = await supabase
+    .from('categories')
+    .select('id, name, position')
+    .eq('restaurant_id', restaurantId)
+    .order('position', { ascending: true })
+    .order('name', { ascending: true })
+
+  return (data ?? []).map(c => ({
+    id: c.id,
+    name: c.name,
+    position: c.position ?? 0,
+  }))
+}
+
+export async function createProduct(params: {
+  name: string
+  categoryId: string
+  description?: string
+  price: number
+  costPrice?: number
+  taxRate: number
+  stock: number
+  stockMin: number
+  trackStock: boolean
+  supplier?: string
+  sku?: string
+  isAvailable: boolean
+  isVisible: boolean
+}): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
+  if (!params.categoryId) return { error: 'Selecciona una categoría' }
+  if (params.price <= 0) return { error: 'El precio de venta debe ser mayor que 0' }
+  if (params.costPrice !== undefined && params.costPrice <= 0) {
+    return { error: 'El precio de compra debe ser mayor que 0' }
+  }
+
+  const { data: maxPosRow } = await supabase
+    .from('products')
+    .select('position')
+    .eq('restaurant_id', restaurantId)
+    .eq('category_id', params.categoryId)
+    .is('deleted_at', null)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const position = (maxPosRow?.position ?? -1) + 1
+
+  const { data: product, error: insertErr } = await supabase
+    .from('products')
+    .insert({
+      restaurant_id: restaurantId,
+      category_id: params.categoryId,
+      name: params.name.trim(),
+      description: params.description?.trim() || null,
+      price: params.price,
+      cost_price: params.costPrice ?? null,
+      tax_rate: params.taxRate,
+      stock: params.stock,
+      stock_min: params.stockMin,
+      track_stock: params.trackStock,
+      supplier: params.supplier?.trim() || null,
+      sku: params.sku?.trim() || null,
+      is_available: params.isAvailable,
+      is_visible: params.isVisible,
+      position,
+    })
+    .select('id')
+    .single()
+
+  if (insertErr || !product) {
+    return { error: insertErr?.message ?? 'No se pudo crear el producto' }
+  }
+
+  if (params.trackStock && params.stock > 0) {
+    const { error: movErr } = await supabase.from('stock_movements').insert({
+      restaurant_id: restaurantId,
+      product_id: product.id,
+      type: 'ajuste',
+      quantity: params.stock,
+      cost_price: null,
+      purchase_date: null,
+      notes: 'Stock inicial',
+      created_by: user.id,
+    })
+    if (movErr) return { error: `Producto creado pero error al registrar stock: ${movErr.message}` }
+  }
+
+  return { success: true }
 }
