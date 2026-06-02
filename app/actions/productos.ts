@@ -18,8 +18,7 @@ export type ProductoConCategoria = {
   stock_min: number | null
   supplier: string | null
   last_purchase_date: string | null
-  category_id: string
-  category_name: string
+  categories: { id: string; name: string }[]
 }
 
 export type StockMovement = {
@@ -65,10 +64,16 @@ export async function getProductos(): Promise<ProductoConCategoria[]> {
 
   const { data } = await supabase
     .from('products')
-    .select('id, name, price, cost_price, tax_rate, is_available, is_visible, track_stock, stock, stock_min, supplier, last_purchase_date, category_id, categories(name)')
+    .select(`
+      id, name, price, cost_price, tax_rate, is_available, is_visible,
+      track_stock, stock, stock_min, supplier, last_purchase_date,
+      product_categories(category_id, categories(id, name))
+    `)
     .eq('restaurant_id', restaurantId)
     .is('deleted_at', null)
     .order('name')
+
+  type PCRow = { category_id: string; categories: { id: string; name: string } | null }
 
   return (data ?? []).map(p => ({
     id: p.id,
@@ -83,12 +88,10 @@ export async function getProductos(): Promise<ProductoConCategoria[]> {
     stock_min: p.stock_min !== null ? Number(p.stock_min) : null,
     supplier: p.supplier ?? null,
     last_purchase_date: p.last_purchase_date ?? null,
-    category_id: p.category_id,
-    category_name: (p.categories as unknown as { name: string } | { name: string }[] | null) != null
-      ? Array.isArray(p.categories)
-        ? (p.categories as { name: string }[])[0]?.name ?? '—'
-        : (p.categories as unknown as { name: string }).name ?? '—'
-      : '—',
+    categories: ((p.product_categories ?? []) as unknown as PCRow[]).map(pc => ({
+      id: pc.category_id,
+      name: pc.categories?.name ?? '—',
+    })),
   }))
 }
 
@@ -102,6 +105,7 @@ export async function updateProducto(
     track_stock?: boolean
     is_available?: boolean
     is_visible?: boolean
+    categoryIds?: string[]
   }
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
@@ -111,13 +115,37 @@ export async function updateProducto(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
-  const { error } = await supabase
-    .from('products')
-    .update({ ...data, updated_at: new Date().toISOString() })
-    .eq('id', productId)
-    .eq('restaurant_id', restaurantId)
+  const { categoryIds, ...productData } = data
 
-  if (error) return { error: error.message }
+  if (Object.keys(productData).length > 0) {
+    const { error } = await supabase
+      .from('products')
+      .update({ ...productData, updated_at: new Date().toISOString() })
+      .eq('id', productId)
+      .eq('restaurant_id', restaurantId)
+    if (error) return { error: error.message }
+  }
+
+  if (categoryIds !== undefined) {
+    const { error: delErr } = await supabase
+      .from('product_categories')
+      .delete()
+      .eq('product_id', productId)
+      .eq('restaurant_id', restaurantId)
+    if (delErr) return { error: delErr.message }
+
+    if (categoryIds.length > 0) {
+      const { error: insErr } = await supabase
+        .from('product_categories')
+        .insert(categoryIds.map(cid => ({
+          product_id: productId,
+          category_id: cid,
+          restaurant_id: restaurantId,
+        })))
+      if (insErr) return { error: insErr.message }
+    }
+  }
+
   return {}
 }
 
@@ -275,7 +303,7 @@ export async function getCategorias(): Promise<Categoria[]> {
 
 export async function createProduct(params: {
   name: string
-  categoryId: string
+  categoryIds: string[]
   description?: string
   price: number
   costPrice?: number
@@ -296,29 +324,15 @@ export async function createProduct(params: {
   if (!restaurantId) redirect('/login')
 
   if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
-  if (!params.categoryId) return { error: 'Selecciona una categoría' }
   if (params.price <= 0) return { error: 'El precio de venta debe ser mayor que 0' }
   if (params.costPrice !== undefined && params.costPrice < 0) {
     return { error: 'El precio de compra no puede ser negativo' }
   }
 
-  const { data: maxPosRow } = await supabase
-    .from('products')
-    .select('position')
-    .eq('restaurant_id', restaurantId)
-    .eq('category_id', params.categoryId)
-    .is('deleted_at', null)
-    .order('position', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const position = (maxPosRow?.position ?? -1) + 1
-
   const { data: product, error: insertErr } = await supabase
     .from('products')
     .insert({
       restaurant_id: restaurantId,
-      category_id: params.categoryId,
       name: params.name.trim(),
       description: params.description?.trim() || null,
       price: params.price,
@@ -331,13 +345,23 @@ export async function createProduct(params: {
       sku: params.sku?.trim() || null,
       is_available: params.isAvailable,
       is_visible: params.isVisible,
-      position,
     })
     .select('id')
     .single()
 
   if (insertErr || !product) {
     return { error: insertErr?.message ?? 'No se pudo crear el producto' }
+  }
+
+  if (params.categoryIds.length > 0) {
+    const { error: catErr } = await supabase
+      .from('product_categories')
+      .insert(params.categoryIds.map(cid => ({
+        product_id: product.id,
+        category_id: cid,
+        restaurant_id: restaurantId,
+      })))
+    if (catErr) return { error: catErr.message }
   }
 
   if (params.trackStock && params.stock > 0) {
@@ -422,11 +446,10 @@ export async function deleteCategoria(
   if (!restaurantId) redirect('/login')
 
   const { count } = await supabase
-    .from('products')
+    .from('product_categories')
     .select('*', { count: 'exact', head: true })
     .eq('category_id', id)
     .eq('restaurant_id', restaurantId)
-    .is('deleted_at', null)
 
   if (count && count > 0) {
     return {
