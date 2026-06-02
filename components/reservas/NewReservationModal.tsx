@@ -58,27 +58,27 @@ export default function NewReservationModal({ tables, defaultDate, onClose, onSa
             <label className="flex flex-col gap-1 col-span-2">
               <span className="text-xs font-medium text-[#64748b]">Nombre *</span>
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del cliente"
-                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-[#64748b]">Teléfono *</span>
               <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="600 000 000" type="tel"
-                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-[#64748b]">Email</span>
               <input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@ejemplo.com" type="email"
-                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-[#64748b]">Comensales *</span>
               <input value={partySize} onChange={e => setPartySize(e.target.value)} type="number" min="1"
-                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-[#64748b]">Mesa</span>
               <select value={tableId} onChange={e => setTableId(e.target.value)}
-                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 bg-white">
+                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400 bg-white">
                 <option value="">Sin asignar</option>
                 {tables.map(t => (
                   <option key={t.id} value={t.id}>
@@ -90,19 +90,19 @@ export default function NewReservationModal({ tables, defaultDate, onClose, onSa
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-[#64748b]">Fecha *</span>
               <input value={date} onChange={e => setDate(e.target.value)} type="date"
-                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-[#64748b]">Hora *</span>
               <input value={time} onChange={e => setTime(e.target.value)} type="time"
-                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
             </label>
           </div>
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-[#64748b]">Notas</span>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               placeholder="Alergias, preferencias de mesa..."
-              className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none" />
+              className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400 resize-none" />
           </label>
           {error && <p className="text-red-600 text-xs">{error}</p>}
         </div>
