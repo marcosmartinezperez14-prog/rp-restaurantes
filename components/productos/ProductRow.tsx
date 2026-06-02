@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { ProductoConCategoria } from '@/app/actions/productos'
+import type { ProductoConCategoria, Categoria } from '@/app/actions/productos'
 import EditProductModal from './EditProductModal'
 import PurchaseModal from './PurchaseModal'
 import StockModal from './StockModal'
@@ -9,10 +9,11 @@ import StockHistory from './StockHistory'
 
 interface Props {
   product: ProductoConCategoria
+  allCategories: Categoria[]
   onRefresh: () => void
 }
 
-export default function ProductRow({ product, onRefresh }: Props) {
+export default function ProductRow({ product, allCategories, onRefresh }: Props) {
   const [modal, setModal] = useState<'edit' | 'purchase' | 'ajuste' | 'merma' | 'history' | null>(null)
 
   const margin = product.cost_price !== null
@@ -27,6 +28,10 @@ export default function ProductRow({ product, onRefresh }: Props) {
   const stockCritical = product.track_stock && product.stock !== null
     && product.stock_min !== null && product.stock <= product.stock_min * 0.5
 
+  const categoryLabel = product.categories.length > 0
+    ? product.categories.map(c => c.name).join(', ')
+    : '—'
+
   return (
     <>
       <tr className={`border-b border-[#f1f5f9] hover:bg-slate-50 ${!product.is_visible ? 'opacity-50' : ''}`}>
@@ -40,7 +45,7 @@ export default function ProductRow({ product, onRefresh }: Props) {
             )}
           </div>
         </td>
-        <td className="px-4 py-3 text-xs text-[#64748b]">{product.category_name}</td>
+        <td className="px-4 py-3 text-xs text-[#64748b]">{categoryLabel}</td>
         <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">{product.price.toFixed(2)} €</td>
         <td className="px-4 py-3 text-sm text-right text-[#64748b]">
           {product.cost_price !== null ? `${product.cost_price.toFixed(2)} €` : '—'}
@@ -94,7 +99,12 @@ export default function ProductRow({ product, onRefresh }: Props) {
         </tr>
       )}
       {modal === 'edit' && (
-        <EditProductModal product={product} onClose={() => setModal(null)} onSaved={onRefresh} />
+        <EditProductModal
+          product={product}
+          allCategories={allCategories}
+          onClose={() => setModal(null)}
+          onSaved={onRefresh}
+        />
       )}
       {modal === 'purchase' && (
         <PurchaseModal product={product} onClose={() => setModal(null)} onSaved={onRefresh} />
