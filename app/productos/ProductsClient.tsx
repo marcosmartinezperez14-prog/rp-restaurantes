@@ -2,20 +2,23 @@
 
 import { useState, useTransition } from 'react'
 import type { ProductoConCategoria, Categoria } from '@/app/actions/productos'
-import { getProductos } from '@/app/actions/productos'
+import { getProductos, getCategorias } from '@/app/actions/productos'
 import ProductRow from '@/components/productos/ProductRow'
 import AddProductPanel from '@/components/productos/AddProductPanel'
+import CategoriasPanel from '@/components/productos/CategoriasPanel'
 
 interface Props {
   initialProducts: ProductoConCategoria[]
-  categories: Categoria[]
+  initialCategories: Categoria[]
 }
 
-export default function ProductsClient({ initialProducts, categories }: Props) {
+export default function ProductsClient({ initialProducts, initialCategories }: Props) {
   const [products, setProducts] = useState(initialProducts)
+  const [categories, setCategories] = useState(initialCategories)
   const [search, setSearch] = useState('')
   const [filterLow, setFilterLow] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
+  const [showCategorias, setShowCategorias] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   function handleRefresh() {
@@ -23,6 +26,18 @@ export default function ProductsClient({ initialProducts, categories }: Props) {
       const fresh = await getProductos()
       setProducts(fresh)
     })
+  }
+
+  function refreshCategories() {
+    startTransition(async () => {
+      const fresh = await getCategorias()
+      setCategories(fresh)
+    })
+  }
+
+  function handleCategoriaChanged() {
+    refreshCategories()
+    handleRefresh()
   }
 
   const visible = products.filter(p => {
@@ -66,6 +81,12 @@ export default function ProductsClient({ initialProducts, categories }: Props) {
           {isPending ? 'Actualizando...' : 'Actualizar'}
         </button>
         <button
+          onClick={() => setShowCategorias(true)}
+          className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
+        >
+          Categorías
+        </button>
+        <button
           onClick={() => setShowAdd(true)}
           className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
         >
@@ -103,12 +124,21 @@ export default function ProductsClient({ initialProducts, categories }: Props) {
         </table>
       </div>
 
-      {/* Panel lateral */}
+      {/* Panel añadir producto */}
       {showAdd && (
         <AddProductPanel
           categories={categories}
           onClose={() => setShowAdd(false)}
           onSaved={handleRefresh}
+        />
+      )}
+
+      {/* Panel categorías */}
+      {showCategorias && (
+        <CategoriasPanel
+          categories={categories}
+          onClose={() => setShowCategorias(false)}
+          onChanged={handleCategoriaChanged}
         />
       )}
     </div>

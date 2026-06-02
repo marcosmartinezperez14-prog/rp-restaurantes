@@ -16,7 +16,7 @@ export default async function ProductosPage() {
 
   return (
     <AppShell title="Productos e Inventario">
-      <ProductsClient initialProducts={products} categories={categories} />
+      <ProductsClient initialProducts={products} initialCategories={categories} />
     </AppShell>
   )
 }
