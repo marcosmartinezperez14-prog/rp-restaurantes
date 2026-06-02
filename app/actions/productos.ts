@@ -356,3 +356,90 @@ export async function createProduct(params: {
 
   return { success: true }
 }
+
+export async function createCategoria(
+  name: string
+): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  if (!name.trim()) return { error: 'El nombre es obligatorio' }
+
+  const { data: maxPosRow } = await supabase
+    .from('categories')
+    .select('position')
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const position = (maxPosRow?.position ?? -1) + 1
+
+  const { error } = await supabase
+    .from('categories')
+    .insert({ restaurant_id: restaurantId, name: name.trim(), position })
+
+  if (error) return { error: error.message }
+  return { success: true }
+}
+
+export async function updateCategoria(
+  id: string,
+  name: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  if (!name.trim()) return { error: 'El nombre es obligatorio' }
+
+  const { error } = await supabase
+    .from('categories')
+    .update({ name: name.trim() })
+    .eq('id', id)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function deleteCategoria(
+  id: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { count } = await supabase
+    .from('products')
+    .select('*', { count: 'exact', head: true })
+    .eq('category_id', id)
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+
+  if (count && count > 0) {
+    return {
+      error: `Esta categoría tiene ${count} producto${count !== 1 ? 's' : ''} asignado${count !== 1 ? 's' : ''}. Reasígnalos antes de eliminarla.`,
+    }
+  }
+
+  const { error } = await supabase
+    .from('categories')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return { error: error.message }
+  return {}
+}
