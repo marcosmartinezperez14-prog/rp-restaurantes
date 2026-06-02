@@ -299,7 +299,7 @@ export async function createProduct(params: {
   if (!params.categoryId) return { error: 'Selecciona una categoría' }
   if (params.price <= 0) return { error: 'El precio de venta debe ser mayor que 0' }
   if (params.costPrice !== undefined && params.costPrice < 0) {
-    return { error: 'El precio de compra debe ser mayor que 0' }
+    return { error: 'El precio de compra no puede ser negativo' }
   }
 
   const { data: maxPosRow } = await supabase
