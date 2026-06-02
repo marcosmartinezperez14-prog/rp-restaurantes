@@ -686,3 +686,152 @@ export async function cancelReservation(tableId: string): Promise<{ error?: stri
   if (error) return { error: error.message }
   return {}
 }
+
+export async function addTable(params: {
+  name: string
+  capacity: number
+  zoneId: string
+}): Promise<{ table: TableWithOrder } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
+  if (params.capacity < 1) return { error: 'La capacidad debe ser al menos 1' }
+
+  const { data: posData } = await supabase
+    .from('tables')
+    .select('position')
+    .eq('zone_id', params.zoneId)
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('position', { ascending: false })
+    .limit(1)
+
+  const nextPosition = posData && posData.length > 0 ? (posData[0].position ?? 0) + 1 : 1
+
+  const { data, error } = await supabase
+    .from('tables')
+    .insert({
+      restaurant_id: restaurantId,
+      zone_id: params.zoneId,
+      name: params.name.trim(),
+      capacity: params.capacity,
+      status: 'free',
+      is_active: true,
+      position: nextPosition,
+    })
+    .select('id, name, capacity, status')
+    .single()
+
+  if (error || !data) return { error: error?.message ?? 'No se pudo crear la mesa' }
+
+  return {
+    table: {
+      id: data.id,
+      name: data.name,
+      capacity: data.capacity,
+      status: data.status as TableStatus,
+    },
+  }
+}
+
+export async function deleteTable(tableId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: table } = await supabase
+    .from('tables')
+    .select('status')
+    .eq('id', tableId)
+    .eq('restaurant_id', restaurantId)
+    .single()
+
+  if (!table) return { error: 'Mesa no encontrada' }
+  if (table.status !== 'free') return { error: 'Cierra la comanda antes de eliminar la mesa' }
+
+  const { error } = await supabase
+    .from('tables')
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .eq('id', tableId)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function addZone(params: {
+  name: string
+  color: string
+}): Promise<{ zone: ZoneWithTables } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
+
+  const { data: posData } = await supabase
+    .from('zones')
+    .select('position')
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('position', { ascending: false })
+    .limit(1)
+
+  const nextPosition = posData && posData.length > 0 ? (posData[0].position ?? 0) + 1 : 1
+
+  const { data, error } = await supabase
+    .from('zones')
+    .insert({
+      restaurant_id: restaurantId,
+      name: params.name.trim(),
+      color: params.color,
+      is_active: true,
+      position: nextPosition,
+    })
+    .select('id, name, color')
+    .single()
+
+  if (error || !data) return { error: error?.message ?? 'No se pudo crear la zona' }
+
+  return { zone: { id: data.id, name: data.name, color: data.color, tables: [] } }
+}
+
+export async function deleteZone(zoneId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: activeTables } = await supabase
+    .from('tables')
+    .select('id')
+    .eq('zone_id', zoneId)
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+
+  if (activeTables && activeTables.length > 0) {
+    return { error: 'Elimina todas las mesas de la zona antes de borrarla' }
+  }
+
+  const { error } = await supabase
+    .from('zones')
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .eq('id', zoneId)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return { error: error.message }
+  return {}
+}
