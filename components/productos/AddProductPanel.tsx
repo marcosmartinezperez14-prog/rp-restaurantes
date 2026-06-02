@@ -70,7 +70,7 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
     })
   }
 
-  const inputClass = 'border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 w-full'
+  const inputClass = 'border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400 w-full'
   const labelClass = 'flex flex-col gap-1'
   const labelTextClass = 'text-xs font-medium text-[#64748b]'
 
