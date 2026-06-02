@@ -262,6 +262,7 @@ export async function getCategorias(): Promise<Categoria[]> {
     .from('categories')
     .select('id, name, position')
     .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
     .order('position', { ascending: true })
     .order('name', { ascending: true })
 
@@ -297,7 +298,7 @@ export async function createProduct(params: {
   if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
   if (!params.categoryId) return { error: 'Selecciona una categoría' }
   if (params.price <= 0) return { error: 'El precio de venta debe ser mayor que 0' }
-  if (params.costPrice !== undefined && params.costPrice <= 0) {
+  if (params.costPrice !== undefined && params.costPrice < 0) {
     return { error: 'El precio de compra debe ser mayor que 0' }
   }
 
@@ -345,7 +346,7 @@ export async function createProduct(params: {
       product_id: product.id,
       type: 'ajuste',
       quantity: params.stock,
-      cost_price: null,
+      cost_price: params.costPrice ?? null,
       purchase_date: null,
       notes: 'Stock inicial',
       created_by: user.id,
