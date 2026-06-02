@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getOrderWithItems } from '@/app/actions/tpv'
 import PaymentForm from '@/components/tpv/PaymentForm'
+import NavDrawer from '@/components/NavDrawer'
 
 export default async function CobroPage({
   params,
@@ -17,7 +18,8 @@ export default async function CobroPage({
 
   return (
     <div className="min-h-screen bg-[#f4f6f9]">
-      <nav className="bg-white border-b border-[#e2e8f0] px-6 py-3 flex items-center gap-2">
+      <nav className="bg-white border-b border-[#e2e8f0] px-4 h-[52px] flex items-center gap-3">
+        <NavDrawer />
         <Link
           href={`/tpv/comanda/${orderId}`}
           className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors"

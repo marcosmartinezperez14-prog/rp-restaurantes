@@ -2,11 +2,11 @@
 
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import type { ZoneWithTables, TableWithOrder, TableStatus } from '@/app/actions/tpv'
 import { getZonesWithTables, createOrder, getOpenOrder, reserveTable, cancelReservation } from '@/app/actions/tpv'
 import TableCard from './TableCard'
+import NavDrawer from '@/components/NavDrawer'
 
 type ActionMenu = { table: TableWithOrder; x: number; y: number }
 
@@ -117,23 +117,16 @@ export default function TableMap({
 
   return (
     <div className="min-h-screen bg-[#f4f6f9]" onClick={menu ? closeMenu : undefined}>
-      <nav className="bg-white border-b border-[#e2e8f0] px-6 h-[52px] flex items-center justify-between flex-shrink-0 shadow-sm">
-        <span className="font-semibold text-[#0f172a]">RP Restaurantes · TPV</span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRefresh}
-            disabled={isPending}
-            className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50 transition-colors"
-          >
-            {isPending ? 'Actualizando...' : 'Actualizar'}
-          </button>
-          <Link
-            href="/dashboard"
-            className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 transition-colors"
-          >
-            Dashboard
-          </Link>
-        </div>
+      <nav className="bg-white border-b border-[#e2e8f0] px-4 h-[52px] flex items-center gap-3 flex-shrink-0 shadow-sm">
+        <NavDrawer />
+        <span className="font-semibold text-[#0f172a] flex-1">TPV</span>
+        <button
+          onClick={handleRefresh}
+          disabled={isPending}
+          className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50 transition-colors"
+        >
+          {isPending ? 'Actualizando...' : 'Actualizar'}
+        </button>
       </nav>
 
       <div className="p-6">
