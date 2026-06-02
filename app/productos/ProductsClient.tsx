@@ -42,7 +42,7 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
 
   const visible = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase())
-      || p.category_name.toLowerCase().includes(search.toLowerCase())
+      || p.categories.some(c => c.name.toLowerCase().includes(search.toLowerCase()))
     const matchLow = !filterLow || (p.track_stock && p.stock !== null && p.stock_min !== null && p.stock <= p.stock_min)
     return matchSearch && matchLow
   })
@@ -111,7 +111,12 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
           </thead>
           <tbody>
             {visible.map(product => (
-              <ProductRow key={product.id} product={product} onRefresh={handleRefresh} />
+              <ProductRow
+                key={product.id}
+                product={product}
+                allCategories={categories}
+                onRefresh={handleRefresh}
+              />
             ))}
             {visible.length === 0 && (
               <tr>
