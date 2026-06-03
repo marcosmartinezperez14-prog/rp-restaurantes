@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import type { ProductoConCategoria, Categoria } from '@/app/actions/productos'
 import { getProductos, getCategorias } from '@/app/actions/productos'
 import ProductRow from '@/components/productos/ProductRow'
@@ -80,6 +81,12 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
         >
           {isPending ? 'Actualizando...' : 'Actualizar'}
         </button>
+        <Link
+          href="/productos/movimientos"
+          className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
+        >
+          Movimientos
+        </Link>
         <button
           onClick={() => setShowCategorias(true)}
           className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
