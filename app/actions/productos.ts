@@ -32,6 +32,25 @@ export type StockMovement = {
   created_at: string
 }
 
+export type MovimientoGlobal = {
+  id: string
+  product_id: string
+  product_name: string
+  type: 'compra' | 'venta' | 'ajuste' | 'merma'
+  quantity: number
+  cost_price: number | null
+  purchase_date: string | null
+  notes: string | null
+  created_at: string
+}
+
+export type StockStats = {
+  compras: { total: number; count: number }
+  ventas:  { total: number; count: number }
+  ajustes: { total: number; count: number }
+  mermas:  { total: number; count: number }
+}
+
 export type Categoria = {
   id: string
   name: string
@@ -511,4 +530,84 @@ export async function deleteCategoria(
 
   if (error) return { error: error.message }
   return {}
+}
+
+export async function getMovimientosGlobal(params: {
+  tipo?: 'compra' | 'venta' | 'ajuste' | 'merma'
+  productoId?: string
+  fechaDesde?: string   // 'YYYY-MM-DD'
+  fechaHasta?: string   // 'YYYY-MM-DD'
+  page: number
+  pageSize?: number
+}): Promise<{ movements: MovimientoGlobal[]; total: number; stats: StockStats }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const pageSize = params.pageSize ?? 50
+  const from = (params.page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  // Lightweight query for stats + total count (no product join, no range limit)
+  let statsQ = supabase
+    .from('stock_movements')
+    .select('type, quantity')
+    .eq('restaurant_id', restaurantId)
+    .limit(10000)
+
+  if (params.tipo)       statsQ = statsQ.eq('type', params.tipo)
+  if (params.productoId) statsQ = statsQ.eq('product_id', params.productoId)
+  if (params.fechaDesde) statsQ = statsQ.gte('created_at', params.fechaDesde)
+  if (params.fechaHasta) statsQ = statsQ.lte('created_at', `${params.fechaHasta}T23:59:59`)
+
+  const { data: statsData } = await statsQ
+
+  const stats: StockStats = {
+    compras: { total: 0, count: 0 },
+    ventas:  { total: 0, count: 0 },
+    ajustes: { total: 0, count: 0 },
+    mermas:  { total: 0, count: 0 },
+  }
+  const keyMap: Record<string, keyof StockStats> = {
+    compra: 'compras', venta: 'ventas', ajuste: 'ajustes', merma: 'mermas',
+  }
+  for (const row of (statsData ?? [])) {
+    const key = keyMap[row.type]
+    if (key) {
+      stats[key].total += Number(row.quantity)
+      stats[key].count += 1
+    }
+  }
+
+  // Paginated query with product name join
+  let dataQ = supabase
+    .from('stock_movements')
+    .select('id, product_id, type, quantity, cost_price, purchase_date, notes, created_at, products(name)')
+    .eq('restaurant_id', restaurantId)
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  if (params.tipo)       dataQ = dataQ.eq('type', params.tipo)
+  if (params.productoId) dataQ = dataQ.eq('product_id', params.productoId)
+  if (params.fechaDesde) dataQ = dataQ.gte('created_at', params.fechaDesde)
+  if (params.fechaHasta) dataQ = dataQ.lte('created_at', `${params.fechaHasta}T23:59:59`)
+
+  const { data } = await dataQ
+
+  const movements: MovimientoGlobal[] = (data ?? []).map(m => ({
+    id: m.id,
+    product_id: m.product_id,
+    product_name: (m.products as unknown as { name: string } | null)?.name ?? '—',
+    type: m.type as MovimientoGlobal['type'],
+    quantity: Number(m.quantity),
+    cost_price: m.cost_price !== null ? Number(m.cost_price) : null,
+    purchase_date: m.purchase_date ?? null,
+    notes: m.notes ?? null,
+    created_at: m.created_at,
+  }))
+
+  return { movements, total: (statsData ?? []).length, stats }
 }
