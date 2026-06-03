@@ -382,7 +382,7 @@ export async function addOrderItem(
 
   const { data: product } = await supabase
     .from('products')
-    .select('name, price, tax_rate')
+    .select('name, price, tax_rate, track_stock, stock')
     .eq('id', productId)
     .single()
 
@@ -412,6 +412,26 @@ export async function addOrderItem(
     .single()
 
   if (error || !item) return { error: 'No se pudo añadir el producto' }
+
+  if (product.track_stock) {
+    const newStock = (Number(product.stock) || 0) - quantity
+    await supabase.from('products')
+      .update({ stock: newStock })
+      .eq('id', productId)
+      .eq('restaurant_id', restaurantId)
+
+    await supabase.from('stock_movements').insert({
+      restaurant_id: restaurantId,
+      product_id: productId,
+      type: 'venta',
+      quantity,
+      cost_price: null,
+      purchase_date: null,
+      notes: null,
+      created_by: user.id,
+    })
+  }
+
   return { itemId: item.id }
 }
 
@@ -430,7 +450,7 @@ export async function updateOrderItemQuantity(
 
   const { data: item } = await supabase
     .from('order_items')
-    .select('unit_price')
+    .select('unit_price, quantity, product_id')
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
     .single()
@@ -444,6 +464,34 @@ export async function updateOrderItemQuantity(
     .eq('restaurant_id', restaurantId)
 
   if (error) return { error: 'No se pudo actualizar la cantidad' }
+
+  const delta = quantity - item.quantity
+  if (delta !== 0) {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('track_stock, stock')
+      .eq('id', item.product_id)
+      .single()
+
+    if (prod?.track_stock) {
+      await supabase.from('products')
+        .update({ stock: (Number(prod.stock) || 0) - delta })
+        .eq('id', item.product_id)
+        .eq('restaurant_id', restaurantId)
+
+      await supabase.from('stock_movements').insert({
+        restaurant_id: restaurantId,
+        product_id: item.product_id,
+        type: delta > 0 ? 'venta' : 'ajuste',
+        quantity: Math.abs(delta),
+        cost_price: null,
+        purchase_date: null,
+        notes: delta < 0 ? 'Reducción de cantidad en comanda' : null,
+        created_by: user.id,
+      })
+    }
+  }
+
   return {}
 }
 
@@ -454,6 +502,13 @@ export async function removeOrderItem(itemId: string): Promise<{ error?: string 
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+
+  const { data: item } = await supabase
+    .from('order_items')
+    .select('product_id, quantity')
+    .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
+    .single()
 
   const { error } = await supabase
     .from('order_items')
@@ -466,6 +521,33 @@ export async function removeOrderItem(itemId: string): Promise<{ error?: string 
     .eq('restaurant_id', restaurantId)
 
   if (error) return { error: 'No se pudo eliminar la línea' }
+
+  if (item) {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('track_stock, stock')
+      .eq('id', item.product_id)
+      .single()
+
+    if (prod?.track_stock) {
+      await supabase.from('products')
+        .update({ stock: (Number(prod.stock) || 0) + item.quantity })
+        .eq('id', item.product_id)
+        .eq('restaurant_id', restaurantId)
+
+      await supabase.from('stock_movements').insert({
+        restaurant_id: restaurantId,
+        product_id: item.product_id,
+        type: 'ajuste',
+        quantity: item.quantity,
+        cost_price: null,
+        purchase_date: null,
+        notes: 'Anulación de línea',
+        created_by: user.id,
+      })
+    }
+  }
+
   return {}
 }
 
@@ -486,6 +568,13 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
 
   if (!order) return { error: 'Comanda no encontrada' }
 
+  const { data: activeItems } = await supabase
+    .from('order_items')
+    .select('product_id, quantity')
+    .eq('order_id', orderId)
+    .eq('restaurant_id', restaurantId)
+    .neq('status', 'cancelled')
+
   await supabase
     .from('order_items')
     .update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: user.id })
@@ -498,6 +587,32 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
     .eq('id', orderId)
 
   if (error) return { error: 'No se pudo cancelar la comanda' }
+
+  for (const item of activeItems ?? []) {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('track_stock, stock')
+      .eq('id', item.product_id)
+      .single()
+
+    if (prod?.track_stock) {
+      await supabase.from('products')
+        .update({ stock: (Number(prod.stock) || 0) + item.quantity })
+        .eq('id', item.product_id)
+        .eq('restaurant_id', restaurantId)
+
+      await supabase.from('stock_movements').insert({
+        restaurant_id: restaurantId,
+        product_id: item.product_id,
+        type: 'ajuste',
+        quantity: item.quantity,
+        cost_price: null,
+        purchase_date: null,
+        notes: 'Cancelación de comanda',
+        created_by: user.id,
+      })
+    }
+  }
 
   await supabase.from('tables').update({ status: 'free' }).eq('id', order.table_id)
   return {}

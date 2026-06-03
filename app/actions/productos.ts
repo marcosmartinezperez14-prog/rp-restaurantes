@@ -435,6 +435,52 @@ export async function updateCategoria(
   return {}
 }
 
+export async function editarStock(
+  productId: string,
+  newStock: number
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data: current } = await supabase
+    .from('products')
+    .select('stock')
+    .eq('id', productId)
+    .eq('restaurant_id', restaurantId)
+    .single()
+
+  if (!current) return { error: 'Producto no encontrado' }
+
+  const delta = newStock - (Number(current.stock) || 0)
+
+  const { error: updErr } = await supabase
+    .from('products')
+    .update({ stock: newStock, updated_at: new Date().toISOString() })
+    .eq('id', productId)
+    .eq('restaurant_id', restaurantId)
+
+  if (updErr) return { error: updErr.message }
+
+  if (delta !== 0) {
+    await supabase.from('stock_movements').insert({
+      restaurant_id: restaurantId,
+      product_id: productId,
+      type: 'ajuste',
+      quantity: Math.abs(delta),
+      cost_price: null,
+      purchase_date: null,
+      notes: delta > 0 ? 'Ajuste manual (+)' : 'Ajuste manual (-)',
+      created_by: user.id,
+    })
+  }
+
+  return {}
+}
+
 export async function deleteCategoria(
   id: string
 ): Promise<{ error?: string }> {

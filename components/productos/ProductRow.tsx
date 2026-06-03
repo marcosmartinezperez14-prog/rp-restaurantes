@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ProductoConCategoria, Categoria } from '@/app/actions/productos'
+import { editarStock } from '@/app/actions/productos'
 import EditProductModal from './EditProductModal'
 import PurchaseModal from './PurchaseModal'
 import StockModal from './StockModal'
@@ -15,6 +16,10 @@ interface Props {
 
 export default function ProductRow({ product, allCategories, onRefresh }: Props) {
   const [modal, setModal] = useState<'edit' | 'purchase' | 'ajuste' | 'merma' | 'history' | null>(null)
+  const [editingStock, setEditingStock] = useState(false)
+  const [stockDraft, setStockDraft] = useState('')
+  const [stockPending, setStockPending] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const margin = product.cost_price !== null
     ? product.price - product.cost_price
@@ -31,6 +36,25 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
   const categoryLabel = product.categories.length > 0
     ? product.categories.map(c => c.name).join(', ')
     : '—'
+
+  function startEditStock() {
+    setStockDraft(String(product.stock ?? 0))
+    setEditingStock(true)
+  }
+
+  async function saveStock() {
+    const val = parseInt(stockDraft, 10)
+    if (isNaN(val)) { setEditingStock(false); return }
+    setStockPending(true)
+    await editarStock(product.id, val)
+    setStockPending(false)
+    setEditingStock(false)
+    onRefresh()
+  }
+
+  useEffect(() => {
+    if (editingStock) inputRef.current?.focus()
+  }, [editingStock])
 
   return (
     <>
@@ -58,12 +82,39 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
           ) : '—'}
         </td>
         <td className="px-4 py-3 text-sm text-right">
-          {product.track_stock ? (
-            <span className={stockCritical ? 'text-red-600 font-bold' : stockLow ? 'text-amber-600 font-semibold' : 'text-[#0f172a]'}>
+          {editingStock ? (
+            <div className="flex items-center justify-end gap-1">
+              <input
+                ref={inputRef}
+                type="number"
+                value={stockDraft}
+                disabled={stockPending}
+                onChange={e => setStockDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') saveStock()
+                  if (e.key === 'Escape') setEditingStock(false)
+                }}
+                onBlur={() => setEditingStock(false)}
+                className="w-20 text-right border border-blue-400 rounded px-1 py-0.5 text-sm text-black focus:outline-none"
+              />
+              {stockPending && <span className="text-[#94a3b8] text-xs animate-pulse">...</span>}
+            </div>
+          ) : (
+            <span
+              onClick={startEditStock}
+              title="Clic para editar stock"
+              className={`cursor-pointer ${
+                product.track_stock
+                  ? stockCritical ? 'text-red-600 font-bold' : stockLow ? 'text-amber-600 font-semibold' : 'text-[#0f172a]'
+                  : 'text-[#94a3b8]'
+              }`}
+            >
               {product.stock ?? 0}
-              {product.stock_min !== null && <span className="text-[#94a3b8] text-xs"> / mín {product.stock_min}</span>}
+              {product.track_stock && product.stock_min !== null && (
+                <span className="text-[#94a3b8] text-xs"> / mín {product.stock_min}</span>
+              )}
             </span>
-          ) : <span className="text-[#94a3b8] text-xs">Sin control</span>}
+          )}
         </td>
         <td className="px-4 py-3 text-xs text-[#64748b]">{product.supplier ?? '—'}</td>
         <td className="px-4 py-3">
