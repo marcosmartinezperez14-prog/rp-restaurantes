@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import type { MovimientoGlobal, StockStats, ProductoConCategoria } from '@/app/actions/productos'
 import { getMovimientosGlobal } from '@/app/actions/productos'
@@ -29,20 +29,26 @@ export default function MovimientosClient({ initialData, products }: Props) {
   const [fechaHasta, setFechaHasta] = useState('')
   const [page, setPage] = useState(1)
   const [isPending, startTransition] = useTransition()
+  const reqRef = useRef(0)
 
   function fetchData(p: {
     tipo: string; productoId: string; fechaDesde: string; fechaHasta: string; page: number
   }) {
+    const seq = ++reqRef.current
     setPage(p.page)
     startTransition(async () => {
-      const fresh = await getMovimientosGlobal({
-        tipo: (p.tipo as MovimientoGlobal['type']) || undefined,
-        productoId: p.productoId || undefined,
-        fechaDesde: p.fechaDesde || undefined,
-        fechaHasta: p.fechaHasta || undefined,
-        page: p.page,
-      })
-      setData(fresh)
+      try {
+        const fresh = await getMovimientosGlobal({
+          tipo: (p.tipo as MovimientoGlobal['type']) || undefined,
+          productoId: p.productoId || undefined,
+          fechaDesde: p.fechaDesde || undefined,
+          fechaHasta: p.fechaHasta || undefined,
+          page: p.page,
+        })
+        if (seq === reqRef.current) setData(fresh)
+      } catch {
+        // Keep current data on error
+      }
     })
   }
 
@@ -137,6 +143,7 @@ export default function MovimientosClient({ initialData, products }: Props) {
           type="date"
           value={fechaDesde}
           onChange={e => handleFechaDesde(e.target.value)}
+          aria-label="Fecha desde"
           className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
         />
         <span className="text-[#94a3b8] text-sm">—</span>
@@ -144,6 +151,7 @@ export default function MovimientosClient({ initialData, products }: Props) {
           type="date"
           value={fechaHasta}
           onChange={e => handleFechaHasta(e.target.value)}
+          aria-label="Fecha hasta"
           className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
         />
         {hasFilters && (
@@ -171,7 +179,9 @@ export default function MovimientosClient({ initialData, products }: Props) {
           </thead>
           <tbody>
             {data.movements.map(m => {
-              const cfg = TYPE_CONFIG[m.type]
+              const cfg = TYPE_CONFIG[m.type] ?? {
+                label: m.type, badge: 'bg-gray-100 text-gray-600', sign: '', amountColor: 'text-[#64748b]',
+              }
               return (
                 <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-slate-50">
                   <td className="px-4 py-3 text-xs text-[#64748b] whitespace-nowrap">
@@ -192,8 +202,8 @@ export default function MovimientosClient({ initialData, products }: Props) {
                   <td className="px-4 py-3 text-sm text-right text-[#64748b]">
                     {m.cost_price !== null ? `${m.cost_price.toFixed(2)} €/u` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-[#94a3b8] max-w-[200px] truncate">
-                    {m.notes ?? '—'}
+                  <td className="px-4 py-3 text-xs text-[#94a3b8]">
+                    <div className="max-w-[200px] truncate">{m.notes ?? '—'}</div>
                   </td>
                 </tr>
               )
