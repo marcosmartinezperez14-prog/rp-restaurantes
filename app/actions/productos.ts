@@ -548,10 +548,11 @@ export async function getMovimientosGlobal(params: {
   if (!restaurantId) redirect('/login')
 
   const pageSize = params.pageSize ?? 50
-  const from = (params.page - 1) * pageSize
+  const safePage = Math.max(1, params.page)
+  const from = (safePage - 1) * pageSize
   const to = from + pageSize - 1
 
-  // Lightweight query for stats + total count (no product join, no range limit)
+  // Lightweight query for stats (no product join, no range limit)
   let statsQ = supabase
     .from('stock_movements')
     .select('type, quantity')
@@ -561,9 +562,33 @@ export async function getMovimientosGlobal(params: {
   if (params.tipo)       statsQ = statsQ.eq('type', params.tipo)
   if (params.productoId) statsQ = statsQ.eq('product_id', params.productoId)
   if (params.fechaDesde) statsQ = statsQ.gte('created_at', params.fechaDesde)
-  if (params.fechaHasta) statsQ = statsQ.lte('created_at', `${params.fechaHasta}T23:59:59`)
+  if (params.fechaHasta) statsQ = statsQ.lte('created_at', `${params.fechaHasta}T23:59:59.999`)
 
-  const { data: statsData } = await statsQ
+  // Count-only query for accurate total (not capped by limit)
+  let countQ = supabase
+    .from('stock_movements')
+    .select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', restaurantId)
+
+  if (params.tipo)       countQ = countQ.eq('type', params.tipo)
+  if (params.productoId) countQ = countQ.eq('product_id', params.productoId)
+  if (params.fechaDesde) countQ = countQ.gte('created_at', params.fechaDesde)
+  if (params.fechaHasta) countQ = countQ.lte('created_at', `${params.fechaHasta}T23:59:59.999`)
+
+  // Paginated query with product name join
+  let dataQ = supabase
+    .from('stock_movements')
+    .select('id, product_id, type, quantity, cost_price, purchase_date, notes, created_at, products(name)')
+    .eq('restaurant_id', restaurantId)
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  if (params.tipo)       dataQ = dataQ.eq('type', params.tipo)
+  if (params.productoId) dataQ = dataQ.eq('product_id', params.productoId)
+  if (params.fechaDesde) dataQ = dataQ.gte('created_at', params.fechaDesde)
+  if (params.fechaHasta) dataQ = dataQ.lte('created_at', `${params.fechaHasta}T23:59:59.999`)
+
+  const [{ data: statsData }, { count }, { data }] = await Promise.all([statsQ, countQ, dataQ])
 
   const stats: StockStats = {
     compras: { total: 0, count: 0 },
@@ -582,32 +607,22 @@ export async function getMovimientosGlobal(params: {
     }
   }
 
-  // Paginated query with product name join
-  let dataQ = supabase
-    .from('stock_movements')
-    .select('id, product_id, type, quantity, cost_price, purchase_date, notes, created_at, products(name)')
-    .eq('restaurant_id', restaurantId)
-    .order('created_at', { ascending: false })
-    .range(from, to)
+  const movements: MovimientoGlobal[] = (data ?? []).map(m => {
+    const prod = m.products
+    return {
+      id: m.id,
+      product_id: m.product_id,
+      product_name: (Array.isArray(prod)
+        ? (prod[0] as { name: string } | undefined)?.name
+        : (prod as { name: string } | null)?.name) ?? '—',
+      type: m.type as MovimientoGlobal['type'],
+      quantity: Number(m.quantity),
+      cost_price: m.cost_price !== null ? Number(m.cost_price) : null,
+      purchase_date: m.purchase_date ?? null,
+      notes: m.notes ?? null,
+      created_at: m.created_at,
+    }
+  })
 
-  if (params.tipo)       dataQ = dataQ.eq('type', params.tipo)
-  if (params.productoId) dataQ = dataQ.eq('product_id', params.productoId)
-  if (params.fechaDesde) dataQ = dataQ.gte('created_at', params.fechaDesde)
-  if (params.fechaHasta) dataQ = dataQ.lte('created_at', `${params.fechaHasta}T23:59:59`)
-
-  const { data } = await dataQ
-
-  const movements: MovimientoGlobal[] = (data ?? []).map(m => ({
-    id: m.id,
-    product_id: m.product_id,
-    product_name: (m.products as unknown as { name: string } | null)?.name ?? '—',
-    type: m.type as MovimientoGlobal['type'],
-    quantity: Number(m.quantity),
-    cost_price: m.cost_price !== null ? Number(m.cost_price) : null,
-    purchase_date: m.purchase_date ?? null,
-    notes: m.notes ?? null,
-    created_at: m.created_at,
-  }))
-
-  return { movements, total: (statsData ?? []).length, stats }
+  return { movements, total: count ?? 0, stats }
 }
