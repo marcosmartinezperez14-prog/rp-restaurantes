@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+export type ProductUnit = 'kg' | 'g' | 'l' | 'ml' | 'unit' | 'dozen'
+
 export type ProductoConCategoria = {
   id: string
   name: string
@@ -16,6 +18,7 @@ export type ProductoConCategoria = {
   track_stock: boolean
   stock: number | null
   stock_min: number | null
+  unit: ProductUnit
   supplier: string | null
   last_purchase_date: string | null
   categories: { id: string; name: string }[]
@@ -57,6 +60,37 @@ export type Categoria = {
   position: number
 }
 
+export type MenuItemIngredient = {
+  id: string
+  menu_item_id: string
+  product_id: string
+  restaurant_id: string
+  quantity: number
+  unit: string
+  product?: {
+    id: string
+    name: string
+    cost_price: number | null
+    unit: ProductUnit
+  }
+}
+
+export type MenuItem = {
+  id: string
+  restaurant_id: string
+  category_id: string | null
+  name: string
+  description: string | null
+  price: number
+  image_url: string | null
+  is_active: boolean
+  deleted_at: string | null
+  created_at: string
+  updated_at: string
+  category?: { name: string }
+  ingredients: MenuItemIngredient[]
+}
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function getRestaurantId(
@@ -85,7 +119,7 @@ export async function getProductos(): Promise<ProductoConCategoria[]> {
     .from('products')
     .select(`
       id, name, price, cost_price, tax_rate, is_available, is_visible,
-      track_stock, stock, stock_min, supplier, last_purchase_date,
+      track_stock, stock, stock_min, unit, supplier, last_purchase_date,
       product_categories(category_id, categories(id, name))
     `)
     .eq('restaurant_id', restaurantId)
@@ -105,6 +139,7 @@ export async function getProductos(): Promise<ProductoConCategoria[]> {
     track_stock: p.track_stock ?? false,
     stock: p.stock !== null ? Number(p.stock) : null,
     stock_min: p.stock_min !== null ? Number(p.stock_min) : null,
+    unit: (p.unit as ProductUnit) ?? 'unit',
     supplier: p.supplier ?? null,
     last_purchase_date: p.last_purchase_date ?? null,
     categories: ((p.product_categories ?? []) as unknown as PCRow[]).map(pc => ({
@@ -124,6 +159,7 @@ export async function updateProducto(
     track_stock?: boolean
     is_available?: boolean
     is_visible?: boolean
+    unit?: ProductUnit
     categoryIds?: string[]
   }
 ): Promise<{ error?: string }> {
@@ -334,6 +370,7 @@ export async function createProduct(params: {
   sku?: string
   isAvailable: boolean
   isVisible: boolean
+  unit?: ProductUnit
 }): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -364,6 +401,7 @@ export async function createProduct(params: {
       sku: params.sku?.trim() || null,
       is_available: params.isAvailable,
       is_visible: params.isVisible,
+      unit: params.unit ?? 'unit',
     })
     .select('id')
     .single()
@@ -625,4 +663,189 @@ export async function getMovimientosGlobal(params: {
   })
 
   return { movements, total: count ?? 0, stats }
+}
+
+export async function getMenuItems(): Promise<MenuItem[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { data } = await supabase
+    .from('menu_items')
+    .select(`
+      id, restaurant_id, category_id, name, description, price,
+      image_url, is_active, deleted_at, created_at, updated_at,
+      categories(name),
+      menu_item_ingredients(
+        id, menu_item_id, product_id, restaurant_id, quantity, unit,
+        products(id, name, cost_price, unit)
+      )
+    `)
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('name')
+
+  return (data ?? []).map(item => ({
+    id: item.id,
+    restaurant_id: item.restaurant_id,
+    category_id: item.category_id ?? null,
+    name: item.name,
+    description: item.description ?? null,
+    price: Number(item.price),
+    image_url: item.image_url ?? null,
+    is_active: item.is_active,
+    deleted_at: item.deleted_at ?? null,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    category: item.categories ? { name: (item.categories as unknown as { name: string }).name } : undefined,
+    ingredients: ((item.menu_item_ingredients ?? []) as unknown as Array<{
+      id: string; menu_item_id: string; product_id: string; restaurant_id: string
+      quantity: number | string; unit: string
+      products: { id: string; name: string; cost_price: number | null; unit: string } | null
+    }>).map(ing => ({
+      id: ing.id,
+      menu_item_id: ing.menu_item_id,
+      product_id: ing.product_id,
+      restaurant_id: ing.restaurant_id,
+      quantity: Number(ing.quantity),
+      unit: ing.unit,
+      product: ing.products ? {
+        id: ing.products.id,
+        name: ing.products.name,
+        cost_price: ing.products.cost_price !== null ? Number(ing.products.cost_price) : null,
+        unit: ing.products.unit as ProductUnit,
+      } : undefined,
+    })),
+  }))
+}
+
+export async function createMenuItem(params: {
+  name: string
+  description?: string
+  categoryId?: string
+  price: number
+  imageUrl?: string
+  isActive: boolean
+  ingredients: { productId: string; quantity: number; unit: string }[]
+}): Promise<{ success: true } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
+  if (params.price < 0) return { error: 'El precio no puede ser negativo' }
+
+  const { data: item, error: insertErr } = await supabase
+    .from('menu_items')
+    .insert({
+      restaurant_id: restaurantId,
+      category_id: params.categoryId || null,
+      name: params.name.trim(),
+      description: params.description?.trim() || null,
+      price: params.price,
+      image_url: params.imageUrl || null,
+      is_active: params.isActive,
+    })
+    .select('id')
+    .single()
+
+  if (insertErr || !item) return { error: insertErr?.message ?? 'No se pudo crear el plato' }
+
+  if (params.ingredients.length > 0) {
+    const { error: ingErr } = await supabase
+      .from('menu_item_ingredients')
+      .insert(params.ingredients.map(ing => ({
+        menu_item_id: item.id,
+        product_id: ing.productId,
+        restaurant_id: restaurantId,
+        quantity: ing.quantity,
+        unit: ing.unit,
+      })))
+    if (ingErr) return { error: `Plato creado pero error en ingredientes: ${ingErr.message}` }
+  }
+
+  return { success: true }
+}
+
+export async function updateMenuItem(
+  itemId: string,
+  params: {
+    name?: string
+    description?: string | null
+    categoryId?: string | null
+    price?: number
+    imageUrl?: string | null
+    isActive?: boolean
+    ingredients?: { productId: string; quantity: number; unit: string }[]
+  }
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (params.name !== undefined) updateData.name = params.name.trim()
+  if (params.description !== undefined) updateData.description = params.description?.trim() || null
+  if (params.categoryId !== undefined) updateData.category_id = params.categoryId || null
+  if (params.price !== undefined) updateData.price = params.price
+  if (params.imageUrl !== undefined) updateData.image_url = params.imageUrl || null
+  if (params.isActive !== undefined) updateData.is_active = params.isActive
+
+  const { error: updateErr } = await supabase
+    .from('menu_items')
+    .update(updateData)
+    .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
+  if (updateErr) return { error: updateErr.message }
+
+  if (params.ingredients !== undefined) {
+    const { error: delErr } = await supabase
+      .from('menu_item_ingredients')
+      .delete()
+      .eq('menu_item_id', itemId)
+      .eq('restaurant_id', restaurantId)
+    if (delErr) return { error: delErr.message }
+
+    if (params.ingredients.length > 0) {
+      const { error: ingErr } = await supabase
+        .from('menu_item_ingredients')
+        .insert(params.ingredients.map(ing => ({
+          menu_item_id: itemId,
+          product_id: ing.productId,
+          restaurant_id: restaurantId,
+          quantity: ing.quantity,
+          unit: ing.unit,
+        })))
+      if (ingErr) return { error: ingErr.message }
+    }
+  }
+
+  return {}
+}
+
+export async function deleteMenuItem(itemId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) redirect('/login')
+
+  const { error } = await supabase
+    .from('menu_items')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return { error: error.message }
+  return {}
 }
