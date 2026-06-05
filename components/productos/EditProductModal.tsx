@@ -1,8 +1,17 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { ProductoConCategoria, Categoria } from '@/app/actions/productos'
+import type { ProductoConCategoria, Categoria, ProductUnit } from '@/app/actions/productos'
 import { updateProducto } from '@/app/actions/productos'
+
+const UNIT_OPTIONS = [
+  { value: 'unit',  label: 'Unidad' },
+  { value: 'kg',    label: 'Kilogramo (kg)' },
+  { value: 'g',     label: 'Gramo (g)' },
+  { value: 'l',     label: 'Litro (l)' },
+  { value: 'ml',    label: 'Mililitro (ml)' },
+  { value: 'dozen', label: 'Docena' },
+] as const satisfies { value: ProductUnit; label: string }[]
 
 interface Props {
   product: ProductoConCategoria
@@ -18,6 +27,7 @@ export default function EditProductModal({ product, allCategories, onClose, onSa
   const [supplier, setSupplier] = useState(product.supplier ?? '')
   const [trackStock, setTrackStock] = useState(product.track_stock)
   const [isAvailable, setIsAvailable] = useState(product.is_available)
+  const [unit, setUnit] = useState<ProductUnit>(product.unit ?? 'unit')
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     product.categories.map(c => c.id)
   )
@@ -45,6 +55,7 @@ export default function EditProductModal({ product, allCategories, onClose, onSa
         supplier: supplier.trim() || null,
         track_stock: trackStock,
         is_available: isAvailable,
+        unit,
         categoryIds: selectedCategoryIds,
       })
       if (res.error) { setError(res.error); return }
@@ -88,6 +99,18 @@ export default function EditProductModal({ product, allCategories, onClose, onSa
               type="number" min="0" placeholder="0"
               className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400" />
           </label>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[#64748b]">Unidad de medida</label>
+            <select
+              value={unit}
+              onChange={e => setUnit(e.target.value as ProductUnit)}
+              className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400"
+            >
+              {UNIT_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
           {/* Categorías */}
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-[#64748b]">Categorías</span>

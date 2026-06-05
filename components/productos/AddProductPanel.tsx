@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { Categoria } from '@/app/actions/productos'
+import type { Categoria, ProductUnit } from '@/app/actions/productos'
 import { createProduct } from '@/app/actions/productos'
 
 const TAX_OPTIONS = [
@@ -9,6 +9,15 @@ const TAX_OPTIONS = [
   { value: 10, label: '10% — Reducido' },
   { value: 21, label: '21% — General' },
 ]
+
+const UNIT_OPTIONS = [
+  { value: 'unit',  label: 'Unidad' },
+  { value: 'kg',    label: 'Kilogramo (kg)' },
+  { value: 'g',     label: 'Gramo (g)' },
+  { value: 'l',     label: 'Litro (l)' },
+  { value: 'ml',    label: 'Mililitro (ml)' },
+  { value: 'dozen', label: 'Docena' },
+] as const satisfies { value: ProductUnit; label: string }[]
 
 interface Props {
   categories: Categoria[]
@@ -28,6 +37,7 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
   const [trackStock, setTrackStock] = useState(false)
   const [supplier, setSupplier] = useState('')
   const [sku, setSku] = useState('')
+  const [unit, setUnit] = useState<ProductUnit>('unit')
   const [isAvailable, setIsAvailable] = useState(true)
   const [isVisible, setIsVisible] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -66,6 +76,7 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
         trackStock,
         supplier: supplier || undefined,
         sku: sku || undefined,
+        unit,
         isAvailable,
         isVisible,
       })
@@ -169,6 +180,20 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
                 type="number" min="0" step="0.001" className={inputClass} />
             </label>
           </div>
+
+          {/* Unidad de medida */}
+          <label className={labelClass}>
+            <span className={labelTextClass}>Unidad de medida</span>
+            <select
+              value={unit}
+              onChange={e => setUnit(e.target.value as ProductUnit)}
+              className={inputClass}
+            >
+              {UNIT_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </label>
 
           {/* Controlar stock */}
           <label className="flex items-center gap-2 cursor-pointer">
