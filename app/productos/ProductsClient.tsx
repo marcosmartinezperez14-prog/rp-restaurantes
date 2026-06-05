@@ -2,18 +2,21 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import type { ProductoConCategoria, Categoria } from '@/app/actions/productos'
+import type { ProductoConCategoria, Categoria, MenuItem } from '@/app/actions/productos'
 import { getProductos, getCategorias } from '@/app/actions/productos'
 import ProductRow from '@/components/productos/ProductRow'
 import AddProductPanel from '@/components/productos/AddProductPanel'
 import CategoriasPanel from '@/components/productos/CategoriasPanel'
+import CartaClient from './CartaClient'
 
 interface Props {
   initialProducts: ProductoConCategoria[]
   initialCategories: Categoria[]
+  initialMenuItems: MenuItem[]
 }
 
-export default function ProductsClient({ initialProducts, initialCategories }: Props) {
+export default function ProductsClient({ initialProducts, initialCategories, initialMenuItems }: Props) {
+  const [activeTab, setActiveTab] = useState<'productos' | 'carta'>('productos')
   const [products, setProducts] = useState(initialProducts)
   const [categories, setCategories] = useState(initialCategories)
   const [search, setSearch] = useState('')
@@ -54,103 +57,140 @@ export default function ProductsClient({ initialProducts, initialCategories }: P
 
   return (
     <div>
-      {/* Barra de filtros */}
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar producto o categoría..."
-          className="bg-white border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 w-64"
-        />
-        {lowStockCount > 0 && (
-          <button
-            onClick={() => setFilterLow(f => !f)}
-            className={`px-3 py-2 text-sm rounded-lg border font-medium transition-colors ${
-              filterLow
-                ? 'bg-red-600 text-white border-red-600'
-                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-            }`}
-          >
-            Stock bajo ({lowStockCount})
-          </button>
-        )}
+      {/* Tabs */}
+      <div className="flex gap-1 mb-5 border-b border-[#e2e8f0]">
         <button
-          onClick={handleRefresh}
-          disabled={isPending}
-          className="px-3 py-2 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50"
+          onClick={() => setActiveTab('productos')}
+          className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+            activeTab === 'productos'
+              ? 'border-blue-600 text-blue-700 bg-blue-50'
+              : 'border-transparent text-[#64748b] hover:text-[#0f172a]'
+          }`}
         >
-          {isPending ? 'Actualizando...' : 'Actualizar'}
-        </button>
-        <Link
-          href="/productos/movimientos"
-          className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
-        >
-          Movimientos
-        </Link>
-        <button
-          onClick={() => setShowCategorias(true)}
-          className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
-        >
-          Categorías
+          📦 Productos
         </button>
         <button
-          onClick={() => setShowAdd(true)}
-          className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
+          onClick={() => setActiveTab('carta')}
+          className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+            activeTab === 'carta'
+              ? 'border-blue-600 text-blue-700 bg-blue-50'
+              : 'border-transparent text-[#64748b] hover:text-[#0f172a]'
+          }`}
         >
-          <span className="text-base leading-none">+</span> Añadir producto
+          🍽️ Carta
         </button>
       </div>
 
-      {/* Tabla */}
-      <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-[#e2e8f0] bg-slate-50">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Producto</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Categoría</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">P. Venta</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">P. Coste</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Margen</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Stock</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Proveedor</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map(product => (
-              <ProductRow
-                key={product.id}
-                product={product}
-                allCategories={categories}
-                onRefresh={handleRefresh}
-              />
-            ))}
-            {visible.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-[#94a3b8]">
-                  {search || filterLow ? 'Sin resultados para el filtro aplicado' : 'Sin productos'}
-                </td>
-              </tr>
+      {activeTab === 'productos' && (
+        <>
+          {/* Barra de filtros */}
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar producto o categoría..."
+              className="bg-white border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 w-64"
+            />
+            {lowStockCount > 0 && (
+              <button
+                onClick={() => setFilterLow(f => !f)}
+                className={`px-3 py-2 text-sm rounded-lg border font-medium transition-colors ${
+                  filterLow
+                    ? 'bg-red-600 text-white border-red-600'
+                    : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                }`}
+              >
+                Stock bajo ({lowStockCount})
+              </button>
             )}
-          </tbody>
-        </table>
-      </div>
+            <button
+              onClick={handleRefresh}
+              disabled={isPending}
+              className="px-3 py-2 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50"
+            >
+              {isPending ? 'Actualizando...' : 'Actualizar'}
+            </button>
+            <Link
+              href="/productos/movimientos"
+              className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
+            >
+              Movimientos
+            </Link>
+            <button
+              onClick={() => setShowCategorias(true)}
+              className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
+            >
+              Categorías
+            </button>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
+            >
+              <span className="text-base leading-none">+</span> Añadir producto
+            </button>
+          </div>
 
-      {/* Panel añadir producto */}
-      {showAdd && (
-        <AddProductPanel
-          categories={categories}
-          onClose={() => setShowAdd(false)}
-          onSaved={handleRefresh}
-        />
+          {/* Tabla */}
+          <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Producto</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Categoría</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">P. Venta</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">P. Coste</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Margen</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Stock</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Proveedor</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(product => (
+                  <ProductRow
+                    key={product.id}
+                    product={product}
+                    allCategories={categories}
+                    onRefresh={handleRefresh}
+                  />
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-sm text-[#94a3b8]">
+                      {search || filterLow ? 'Sin resultados para el filtro aplicado' : 'Sin productos'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Panel añadir producto */}
+          {showAdd && (
+            <AddProductPanel
+              categories={categories}
+              onClose={() => setShowAdd(false)}
+              onSaved={handleRefresh}
+            />
+          )}
+
+          {/* Panel categorías */}
+          {showCategorias && (
+            <CategoriasPanel
+              categories={categories}
+              onClose={() => setShowCategorias(false)}
+              onChanged={handleCategoriaChanged}
+            />
+          )}
+        </>
       )}
 
-      {/* Panel categorías */}
-      {showCategorias && (
-        <CategoriasPanel
+      {activeTab === 'carta' && (
+        <CartaClient
+          initialMenuItems={initialMenuItems}
           categories={categories}
-          onClose={() => setShowCategorias(false)}
-          onChanged={handleCategoriaChanged}
+          allProducts={products}
+          onProductsRefresh={handleRefresh}
         />
       )}
     </div>
