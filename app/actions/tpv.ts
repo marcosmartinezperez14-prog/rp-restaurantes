@@ -817,6 +817,16 @@ export async function addTable(params: {
   if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
   if (params.capacity < 1) return { error: 'La capacidad debe ser al menos 1' }
 
+  const { data: existing } = await supabase
+    .from('tables')
+    .select('id')
+    .eq('restaurant_id', restaurantId)
+    .ilike('name', params.name.trim())
+    .is('deleted_at', null)
+    .limit(1)
+
+  if (existing && existing.length > 0) return { error: `Ya existe una mesa llamada "${params.name.trim()}"` }
+
   const { data: posData } = await supabase
     .from('tables')
     .select('position')
