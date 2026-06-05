@@ -4,11 +4,18 @@ import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { ZoneWithTables, TableWithOrder, TableStatus } from '@/app/actions/tpv'
-import { getZonesWithTables, createOrder, getOpenOrder, reserveTable, cancelReservation } from '@/app/actions/tpv'
+import {
+  getZonesWithTables, createOrder, getOpenOrder,
+  reserveTable, cancelReservation,
+  addTable, deleteTable, addZone, deleteZone,
+} from '@/app/actions/tpv'
 import TableCard from './TableCard'
 import NavDrawer from '@/components/NavDrawer'
+import AddTableModal from './AddTableModal'
+import AddZoneModal from './AddZoneModal'
 
 type ActionMenu = { table: TableWithOrder; x: number; y: number }
+type EditModal = { type: 'addTable'; zoneId: string } | { type: 'addZone' }
 
 export default function TableMap({
   initialData,
@@ -21,6 +28,8 @@ export default function TableMap({
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [menu, setMenu] = useState<ActionMenu | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editModal, setEditModal] = useState<EditModal | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -54,9 +63,9 @@ export default function TableMap({
   }
 
   function handleTableClick(table: TableWithOrder, e: React.MouseEvent) {
+    if (isEditing) return
     setError(null)
     if (table.status === 'occupied' || table.status === 'billing') {
-      // Go straight to comanda
       startTransition(async () => {
         const result = await getOpenOrder(table.id)
         if (!result) { setError('No se encontró la comanda de esta mesa'); return }
@@ -64,7 +73,6 @@ export default function TableMap({
       })
       return
     }
-    // Show action menu for free / reserved
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     setMenu({ table, x: rect.left, y: rect.bottom + 8 })
   }
@@ -107,6 +115,35 @@ export default function TableMap({
     })
   }
 
+  function handleDeleteTable(tableId: string) {
+    startTransition(async () => {
+      const res = await deleteTable(tableId)
+      if (res.error) { setError(res.error); return }
+      setZones(prev => prev.map(z => ({
+        ...z,
+        tables: z.tables.filter(t => t.id !== tableId),
+      })))
+    })
+  }
+
+  function handleDeleteZone(zoneId: string) {
+    startTransition(async () => {
+      const res = await deleteZone(zoneId)
+      if (res.error) { setError(res.error); return }
+      setZones(prev => prev.filter(z => z.id !== zoneId))
+    })
+  }
+
+  function handleTableCreated(zoneId: string, table: TableWithOrder) {
+    setZones(prev => prev.map(z =>
+      z.id === zoneId ? { ...z, tables: [...z.tables, table] } : z
+    ))
+  }
+
+  function handleZoneCreated(zone: ZoneWithTables) {
+    setZones(prev => [...prev, zone])
+  }
+
   const allTables = zones.flatMap(z => z.tables)
   const counts = {
     occupied: allTables.filter(t => t.status === 'occupied').length,
@@ -117,15 +154,31 @@ export default function TableMap({
 
   return (
     <div className="min-h-screen bg-[#f4f6f9]" onClick={menu ? closeMenu : undefined}>
-      <nav className="bg-white border-b border-[#e2e8f0] px-4 h-[52px] flex items-center gap-3 flex-shrink-0 shadow-sm">
+      <nav className={`border-b px-4 h-[52px] flex items-center gap-3 flex-shrink-0 shadow-sm transition-colors ${
+        isEditing ? 'bg-amber-50 border-amber-200' : 'bg-white border-[#e2e8f0]'
+      }`}>
         <NavDrawer />
-        <span className="font-semibold text-[#0f172a] flex-1">TPV</span>
+        <span className={`font-semibold flex-1 ${isEditing ? 'text-amber-700' : 'text-[#0f172a]'}`}>
+          {isEditing ? 'Editando mapa' : 'TPV'}
+        </span>
+        {!isEditing && (
+          <button
+            onClick={handleRefresh}
+            disabled={isPending}
+            className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50 transition-colors"
+          >
+            {isPending ? 'Actualizando...' : 'Actualizar'}
+          </button>
+        )}
         <button
-          onClick={handleRefresh}
-          disabled={isPending}
-          className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50 transition-colors"
+          onClick={() => { setIsEditing(e => !e); setError(null) }}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
+            isEditing
+              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
+              : 'bg-slate-100 border-[#e2e8f0] text-[#64748b] hover:bg-slate-200'
+          }`}
         >
-          {isPending ? 'Actualizando...' : 'Actualizar'}
+          {isEditing ? '✓ Salir de edición' : 'Editar mapa'}
         </button>
       </nav>
 
@@ -137,52 +190,87 @@ export default function TableMap({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          {counts.occupied > 0 && (
-            <div className="bg-[#fca5a5] text-[#b91c1c] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.occupied} Ocupadas</div>
-          )}
-          {counts.free > 0 && (
-            <div className="bg-[#bbf7d0] text-[#15803d] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.free} Libres</div>
-          )}
-          {counts.reserved > 0 && (
-            <div className="bg-[#fde68a] text-[#92400e] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.reserved} Reservadas</div>
-          )}
-          {counts.billing > 0 && (
-            <div className="bg-[#93c5fd] text-[#1d4ed8] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.billing} Cobrando</div>
-          )}
-        </div>
+        {!isEditing && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {counts.occupied > 0 && (
+              <div className="bg-[#fca5a5] text-[#b91c1c] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.occupied} Ocupadas</div>
+            )}
+            {counts.free > 0 && (
+              <div className="bg-[#bbf7d0] text-[#15803d] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.free} Libres</div>
+            )}
+            {counts.reserved > 0 && (
+              <div className="bg-[#fde68a] text-[#92400e] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.reserved} Reservadas</div>
+            )}
+            {counts.billing > 0 && (
+              <div className="bg-[#93c5fd] text-[#1d4ed8] px-3 py-1.5 rounded-lg text-sm font-semibold">{counts.billing} Cobrando</div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col gap-8">
-          {zones.map(zone => (
-            <div key={zone.id}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: zone.color }} />
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-[#64748b]">{zone.name}</h2>
-                <div className="flex-1 h-px bg-[#e2e8f0]" />
+          {zones.map(zone => {
+            const zoneHasTables = zone.tables.length > 0
+            return (
+              <div key={zone.id}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: zone.color }} />
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-[#64748b]">{zone.name}</h2>
+                  <div className="flex-1 h-px bg-[#e2e8f0]" />
+                  {isEditing && (
+                    <button
+                      onClick={() => handleDeleteZone(zone.id)}
+                      disabled={zoneHasTables || isPending}
+                      title={zoneHasTables ? 'Elimina las mesas primero' : 'Eliminar zona'}
+                      className="text-red-400 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed text-sm px-2 py-0.5 rounded transition-colors"
+                    >
+                      🗑
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {zone.tables.map(table => (
+                    <TableCard
+                      key={table.id}
+                      table={table}
+                      onClick={(e) => handleTableClick(table, e)}
+                      disabled={isPending}
+                      isEditing={isEditing}
+                      onDelete={() => handleDeleteTable(table.id)}
+                    />
+                  ))}
+                  {isEditing && (
+                    <button
+                      onClick={() => setEditModal({ type: 'addTable', zoneId: zone.id })}
+                      className="border-2 border-dashed border-[#e2e8f0] rounded-[10px] min-w-[100px] min-h-[90px] flex items-center justify-center text-[#94a3b8] hover:border-blue-300 hover:text-blue-500 transition-colors text-sm font-medium"
+                    >
+                      + Mesa
+                    </button>
+                  )}
+                  {zone.tables.length === 0 && !isEditing && (
+                    <p className="text-sm text-[#94a3b8]">Sin mesas en esta zona</p>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {zone.tables.map(table => (
-                  <TableCard
-                    key={table.id}
-                    table={table}
-                    onClick={(e) => handleTableClick(table, e)}
-                    disabled={isPending}
-                  />
-                ))}
-                {zone.tables.length === 0 && (
-                  <p className="text-sm text-[#94a3b8]">Sin mesas en esta zona</p>
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
+
+          {isEditing && (
+            <button
+              onClick={() => setEditModal({ type: 'addZone' })}
+              className="border-2 border-dashed border-[#e2e8f0] rounded-xl py-4 flex items-center justify-center gap-2 text-[#94a3b8] hover:border-blue-300 hover:text-blue-500 transition-colors text-sm font-medium"
+            >
+              + Nueva zona
+            </button>
+          )}
+
           {zones.length === 0 && (
             <p className="text-center text-[#94a3b8] py-12">No hay zonas configuradas</p>
           )}
         </div>
       </div>
 
-      {/* Action menu */}
-      {menu && (
+      {/* Action menu (normal mode) */}
+      {menu && !isEditing && (
         <div
           className="fixed z-50 bg-white rounded-xl shadow-xl border border-[#e2e8f0] overflow-hidden w-52"
           style={{ top: Math.min(menu.y, window.innerHeight - 160), left: Math.min(menu.x, window.innerWidth - 216) }}
@@ -217,6 +305,22 @@ export default function TableMap({
             </button>
           )}
         </div>
+      )}
+
+      {/* Edit modals */}
+      {editModal?.type === 'addTable' && (
+        <AddTableModal
+          zones={zones}
+          defaultZoneId={editModal.zoneId}
+          onClose={() => setEditModal(null)}
+          onCreated={handleTableCreated}
+        />
+      )}
+      {editModal?.type === 'addZone' && (
+        <AddZoneModal
+          onClose={() => setEditModal(null)}
+          onCreated={handleZoneCreated}
+        />
       )}
     </div>
   )
