@@ -7,7 +7,7 @@ import type { ZoneWithTables, TableWithOrder, TableStatus } from '@/app/actions/
 import {
   getZonesWithTables, createOrder, getOpenOrder,
   reserveTable, cancelReservation,
-  addTable, deleteTable, addZone, deleteZone,
+  deleteTable, deleteZone,
 } from '@/app/actions/tpv'
 import TableCard from './TableCard'
 import NavDrawer from '@/components/NavDrawer'

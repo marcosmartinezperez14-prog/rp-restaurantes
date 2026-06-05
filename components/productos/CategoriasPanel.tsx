@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition } from 'react'
 import type { Categoria } from '@/app/actions/productos'
 import { createCategoria, updateCategoria, deleteCategoria } from '@/app/actions/productos'
 
@@ -11,17 +11,12 @@ interface Props {
 }
 
 export default function CategoriasPanel({ categories, onClose, onChanged }: Props) {
-  const [localCategories, setLocalCategories] = useState(categories)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [newName, setNewName] = useState('')
   const [rowError, setRowError] = useState<Record<string, string>>({})
   const [newError, setNewError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-
-  useEffect(() => {
-    setLocalCategories(categories)
-  }, [categories])
 
   function handleCreate() {
     if (!newName.trim()) { setNewError('El nombre es obligatorio'); return }
@@ -113,12 +108,12 @@ export default function CategoriasPanel({ categories, onClose, onChanged }: Prop
           {/* Lista */}
           <div className="flex flex-col gap-0.5">
             <p className="text-xs font-medium text-[#64748b] mb-1">
-              {localCategories.length} categoría{localCategories.length !== 1 ? 's' : ''}
+              {categories.length} categoría{categories.length !== 1 ? 's' : ''}
             </p>
-            {localCategories.length === 0 && (
+            {categories.length === 0 && (
               <p className="text-sm text-[#94a3b8] py-4 text-center">Sin categorías</p>
             )}
-            {localCategories.map(cat => (
+            {categories.map(cat => (
               <div key={cat.id} className="flex flex-col">
                 {editingId === cat.id ? (
                   <div className="flex gap-2 py-1.5">
