@@ -1,6 +1,7 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { guardarTema } from '@/app/actions/tema'
 
 const TEMAS = [
@@ -14,22 +15,29 @@ interface Props {
 }
 
 export default function AparienciaPanel({ temaActual }: Props) {
+  const [tema, setTema] = useState(temaActual)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const [nombreActual, modoActual] = temaActual.split('-') as [string, string]
+  const router = useRouter()
+
+  const partes = tema.split('-')
+  const nombre = partes[0]
+  const modo = partes[1] ?? 'light'
 
   function cambiarTema(nuevoTema: string) {
+    setTema(nuevoTema)
     document.documentElement.setAttribute('data-theme', nuevoTema)
+    setErrorMsg(null)
     startTransition(async () => {
-      await guardarTema(nuevoTema)
+      const result = await guardarTema(nuevoTema)
+      if (result?.error) {
+        setErrorMsg(result.error)
+        setTema(temaActual)
+        document.documentElement.setAttribute('data-theme', temaActual)
+      } else {
+        router.refresh()
+      }
     })
-  }
-
-  function setNombre(nombre: string) {
-    cambiarTema(`${nombre}-${modoActual}`)
-  }
-
-  function setModo(modo: string) {
-    cambiarTema(`${nombreActual}-${modo}`)
   }
 
   return (
@@ -44,11 +52,11 @@ export default function AparienciaPanel({ temaActual }: Props) {
         <p className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">Color del tema</p>
         <div className="grid grid-cols-3 gap-3">
           {TEMAS.map((t) => {
-            const activo = nombreActual === t.id
+            const activo = nombre === t.id
             return (
               <button
                 key={t.id}
-                onClick={() => setNombre(t.id)}
+                onClick={() => cambiarTema(`${t.id}-${modo}`)}
                 disabled={isPending}
                 className={`rounded-xl border-2 p-3 text-left transition-all ${
                   activo
@@ -56,10 +64,7 @@ export default function AparienciaPanel({ temaActual }: Props) {
                     : 'border-[var(--border)] bg-[var(--bg-surface)] hover:border-[var(--text-secondary)]'
                 }`}
               >
-                <div
-                  className="w-full h-10 rounded-lg mb-2"
-                  style={{ background: t.color }}
-                />
+                <div className="w-full h-10 rounded-lg mb-2" style={{ background: t.color }} />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-[var(--text-primary)]">{t.label}</span>
                   {activo && (
@@ -82,11 +87,11 @@ export default function AparienciaPanel({ temaActual }: Props) {
             { id: 'light', label: 'Claro', icon: '☀️' },
             { id: 'dark', label: 'Oscuro', icon: '🌙' },
           ].map((m) => {
-            const activo = modoActual === m.id
+            const activo = modo === m.id
             return (
               <button
                 key={m.id}
-                onClick={() => setModo(m.id)}
+                onClick={() => cambiarTema(`${nombre}-${m.id}`)}
                 disabled={isPending}
                 className={`flex-1 rounded-xl border-2 p-4 text-center transition-all ${
                   activo
@@ -106,6 +111,9 @@ export default function AparienciaPanel({ temaActual }: Props) {
 
       {isPending && (
         <p className="text-xs text-[var(--text-secondary)] mt-4">Guardando...</p>
+      )}
+      {errorMsg && (
+        <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-4">{errorMsg}</p>
       )}
     </div>
   )
