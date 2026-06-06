@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getOrderWithItems, getMenuData } from '@/app/actions/tpv'
 import OrderView from '@/components/tpv/OrderView'
-import NavDrawer from '@/components/NavDrawer'
 
 export default async function ComandaPage({
   params,
@@ -18,14 +17,13 @@ export default async function ComandaPage({
   if (!orderData || orderData.status !== 'open') redirect('/tpv')
 
   return (
-    <div className="flex flex-col h-screen bg-[#f4f6f9]">
-      <nav className="bg-white border-b border-[#e2e8f0] px-4 h-[52px] flex items-center gap-3 flex-shrink-0">
-        <NavDrawer />
-        <Link href="/tpv" className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors">
+    <div className="flex flex-col h-screen bg-[var(--bg-page)]">
+      <nav className="bg-[var(--bg-surface)] border-b border-[var(--border)] px-4 h-[52px] flex items-center gap-3 flex-shrink-0">
+        <Link href="/tpv" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
           ← Mapa
         </Link>
-        <span className="text-[#94a3b8]">›</span>
-        <span className="text-sm font-semibold text-[#0f172a]">
+        <span className="text-[var(--text-secondary)]">›</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)]">
           {orderData.table.name}
         </span>
       </nav>

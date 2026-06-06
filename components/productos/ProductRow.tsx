@@ -21,13 +21,6 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
   const [stockPending, setStockPending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const margin = product.cost_price !== null
-    ? product.price - product.cost_price
-    : null
-  const marginPct = margin !== null && product.cost_price && product.cost_price > 0
-    ? (margin / product.cost_price) * 100
-    : null
-
   const stockLow = product.track_stock && product.stock !== null && product.stock_min !== null
     && product.stock <= product.stock_min
   const stockCritical = product.track_stock && product.stock !== null
@@ -58,28 +51,20 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
 
   return (
     <>
-      <tr className={`border-b border-[#f1f5f9] hover:bg-slate-50 ${!product.is_visible ? 'opacity-50' : ''}`}>
+      <tr className={`border-b border-[var(--border)] hover:bg-[var(--bg-surface-hover)] ${!product.is_visible ? 'opacity-50' : ''}`}>
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
             {stockCritical && <span title="Stock crítico" className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />}
             {!stockCritical && stockLow && <span title="Stock bajo" className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />}
-            <span className="text-sm font-medium text-[#0f172a]">{product.name}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">{product.name}</span>
             {!product.is_available && (
               <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase font-semibold">No disp.</span>
             )}
           </div>
         </td>
-        <td className="px-4 py-3 text-xs text-[#64748b]">{categoryLabel}</td>
-        <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">{product.price.toFixed(2)} €</td>
-        <td className="px-4 py-3 text-sm text-right text-[#64748b]">
+        <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">{categoryLabel}</td>
+        <td className="px-4 py-3 text-sm text-right text-[var(--text-secondary)]">
           {product.cost_price !== null ? `${product.cost_price.toFixed(2)} €` : '—'}
-        </td>
-        <td className="px-4 py-3 text-sm text-right">
-          {margin !== null ? (
-            <span className={margin >= 0 ? 'text-green-700' : 'text-red-600'}>
-              {margin.toFixed(2)} €{marginPct !== null ? ` (${marginPct.toFixed(0)}%)` : ''}
-            </span>
-          ) : '—'}
         </td>
         <td className="px-4 py-3 text-sm text-right">
           {editingStock ? (
@@ -97,7 +82,7 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
                 onBlur={() => setEditingStock(false)}
                 className="w-20 text-right border border-blue-400 rounded px-1 py-0.5 text-sm text-black focus:outline-none"
               />
-              {stockPending && <span className="text-[#94a3b8] text-xs animate-pulse">...</span>}
+              {stockPending && <span className="text-[var(--text-secondary)] text-xs animate-pulse">...</span>}
             </div>
           ) : (
             <span
@@ -105,22 +90,22 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
               title="Clic para editar stock"
               className={`cursor-pointer ${
                 product.track_stock
-                  ? stockCritical ? 'text-red-600 font-bold' : stockLow ? 'text-amber-600 font-semibold' : 'text-[#0f172a]'
-                  : 'text-[#94a3b8]'
+                  ? stockCritical ? 'text-red-600 font-bold' : stockLow ? 'text-amber-600 font-semibold' : 'text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)]'
               }`}
             >
               {product.stock ?? 0}
               {product.track_stock && product.stock_min !== null && (
-                <span className="text-[#94a3b8] text-xs"> / mín {product.stock_min}</span>
+                <span className="text-[var(--text-secondary)] text-xs"> / mín {product.stock_min}</span>
               )}
             </span>
           )}
         </td>
-        <td className="px-4 py-3 text-xs text-[#64748b]">{product.supplier ?? '—'}</td>
+        <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">{product.supplier ?? '—'}</td>
         <td className="px-4 py-3">
           <div className="flex gap-1 justify-end flex-wrap">
             <button onClick={() => setModal('edit')}
-              className="px-2 py-1 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-100">
+              className="px-2 py-1 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-100">
               Editar
             </button>
             <button onClick={() => setModal('purchase')}
@@ -136,7 +121,7 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
               Merma
             </button>
             <button onClick={() => setModal(modal === 'history' ? null : 'history')}
-              className="px-2 py-1 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200">
+              className="px-2 py-1 text-xs bg-slate-100 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-200">
               Historial
             </button>
           </div>
@@ -144,7 +129,7 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
       </tr>
       {modal === 'history' && (
         <tr className="bg-slate-50">
-          <td colSpan={8} className="px-8 pb-3 pt-1">
+          <td colSpan={6} className="px-8 pb-3 pt-1">
             <StockHistory productId={product.id} />
           </td>
         </tr>

@@ -9,8 +9,8 @@ import {
   reserveTable, cancelReservation,
   deleteTable, deleteZone,
 } from '@/app/actions/tpv'
+import Link from 'next/link'
 import TableCard from './TableCard'
-import NavDrawer from '@/components/NavDrawer'
 import AddTableModal from './AddTableModal'
 import AddZoneModal from './AddZoneModal'
 
@@ -153,19 +153,22 @@ export default function TableMap({
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9]" onClick={menu ? closeMenu : undefined}>
+    <div className="min-h-screen bg-[var(--bg-page)]" onClick={menu ? closeMenu : undefined}>
       <nav className={`border-b px-4 h-[52px] flex items-center gap-3 flex-shrink-0 shadow-sm transition-colors ${
-        isEditing ? 'bg-amber-50 border-amber-200' : 'bg-white border-[#e2e8f0]'
+        isEditing ? 'bg-amber-50 border-amber-200' : 'bg-[var(--bg-surface)] border-[var(--border)]'
       }`}>
-        <NavDrawer />
-        <span className={`font-semibold flex-1 ${isEditing ? 'text-amber-700' : 'text-[#0f172a]'}`}>
+        <Link href="/dashboard" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+          ← Dashboard
+        </Link>
+        <span className="text-[var(--border)]">|</span>
+        <span className={`font-semibold flex-1 ${isEditing ? 'text-amber-700' : 'text-[var(--text-primary)]'}`}>
           {isEditing ? 'Editando mapa' : 'TPV'}
         </span>
         {!isEditing && (
           <button
             onClick={handleRefresh}
             disabled={isPending}
-            className="px-3 py-1.5 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 text-sm bg-[var(--bg-surface-hover)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:opacity-80 disabled:opacity-50 transition-colors"
           >
             {isPending ? 'Actualizando...' : 'Actualizar'}
           </button>
@@ -175,7 +178,7 @@ export default function TableMap({
           className={`px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
             isEditing
               ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-              : 'bg-slate-100 border-[#e2e8f0] text-[#64748b] hover:bg-slate-200'
+              : 'bg-[var(--bg-surface-hover)] border-[var(--border)] text-[var(--text-secondary)] hover:opacity-80'
           }`}
         >
           {isEditing ? '✓ Salir de edición' : 'Editar mapa'}
@@ -214,8 +217,8 @@ export default function TableMap({
               <div key={zone.id}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: zone.color }} />
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-[#64748b]">{zone.name}</h2>
-                  <div className="flex-1 h-px bg-[#e2e8f0]" />
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{zone.name}</h2>
+                  <div className="flex-1 h-px bg-[var(--border)]" />
                   {isEditing && (
                     <button
                       onClick={() => handleDeleteZone(zone.id)}
@@ -241,13 +244,13 @@ export default function TableMap({
                   {isEditing && (
                     <button
                       onClick={() => setEditModal({ type: 'addTable', zoneId: zone.id })}
-                      className="border-2 border-dashed border-[#e2e8f0] rounded-[10px] min-w-[100px] min-h-[90px] flex items-center justify-center text-[#94a3b8] hover:border-blue-300 hover:text-blue-500 transition-colors text-sm font-medium"
+                      className="border-2 border-dashed border-[var(--border)] rounded-[10px] min-w-[100px] min-h-[90px] flex items-center justify-center text-[var(--text-muted)] hover:border-blue-300 hover:text-blue-500 transition-colors text-sm font-medium"
                     >
                       + Mesa
                     </button>
                   )}
                   {zone.tables.length === 0 && !isEditing && (
-                    <p className="text-sm text-[#94a3b8]">Sin mesas en esta zona</p>
+                    <p className="text-sm text-[var(--text-muted)]">Sin mesas en esta zona</p>
                   )}
                 </div>
               </div>
@@ -257,14 +260,14 @@ export default function TableMap({
           {isEditing && (
             <button
               onClick={() => setEditModal({ type: 'addZone' })}
-              className="border-2 border-dashed border-[#e2e8f0] rounded-xl py-4 flex items-center justify-center gap-2 text-[#94a3b8] hover:border-blue-300 hover:text-blue-500 transition-colors text-sm font-medium"
+              className="border-2 border-dashed border-[var(--border)] rounded-xl py-4 flex items-center justify-center gap-2 text-[var(--text-muted)] hover:border-blue-300 hover:text-blue-500 transition-colors text-sm font-medium"
             >
               + Nueva zona
             </button>
           )}
 
           {zones.length === 0 && (
-            <p className="text-center text-[#94a3b8] py-12">No hay zonas configuradas</p>
+            <p className="text-center text-[var(--text-muted)] py-12">No hay zonas configuradas</p>
           )}
         </div>
       </div>
@@ -272,17 +275,17 @@ export default function TableMap({
       {/* Action menu (normal mode) */}
       {menu && !isEditing && (
         <div
-          className="fixed z-50 bg-white rounded-xl shadow-xl border border-[#e2e8f0] overflow-hidden w-52"
+          className="fixed z-50 bg-[var(--bg-surface)] rounded-xl shadow-xl border border-[var(--border)] overflow-hidden w-52"
           style={{ top: Math.min(menu.y, window.innerHeight - 160), left: Math.min(menu.x, window.innerWidth - 216) }}
           onClick={e => e.stopPropagation()}
         >
-          <div className="px-4 py-2.5 border-b border-[#e2e8f0] bg-slate-50">
-            <p className="text-xs font-bold text-[#64748b] uppercase tracking-wide">{menu.table.name}</p>
+          <div className="px-4 py-2.5 border-b border-[var(--border)] bg-[var(--bg-surface-hover)]">
+            <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">{menu.table.name}</p>
           </div>
           <button
             onClick={handleOpenComanda}
             disabled={isPending}
-            className="w-full text-left px-4 py-3 text-sm font-semibold text-[#0f172a] hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 transition-colors"
+            className="w-full text-left px-4 py-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 transition-colors"
           >
             📋 Abrir comanda
           </button>
@@ -290,7 +293,7 @@ export default function TableMap({
             <button
               onClick={handleReserve}
               disabled={isPending}
-              className="w-full text-left px-4 py-3 text-sm font-semibold text-[#0f172a] hover:bg-yellow-50 hover:text-yellow-700 disabled:opacity-50 transition-colors border-t border-[#e2e8f0]"
+              className="w-full text-left px-4 py-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-yellow-50 hover:text-yellow-700 disabled:opacity-50 transition-colors border-t border-[var(--border)]"
             >
               🔒 Reservar mesa
             </button>
@@ -299,7 +302,7 @@ export default function TableMap({
             <button
               onClick={handleCancelReservation}
               disabled={isPending}
-              className="w-full text-left px-4 py-3 text-sm font-semibold text-[#0f172a] hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors border-t border-[#e2e8f0]"
+              className="w-full text-left px-4 py-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors border-t border-[var(--border)]"
             >
               ✕ Cancelar reserva
             </button>

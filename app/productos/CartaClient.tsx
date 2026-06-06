@@ -55,7 +55,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
         <button
           onClick={handleRefresh}
           disabled={isPending}
-          className="px-3 py-2 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50"
+          className="px-3 py-2 text-sm bg-[var(--bg-surface-hover)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:opacity-80 disabled:opacity-50"
         >
           {isPending ? 'Actualizando...' : 'Actualizar'}
         </button>
@@ -67,7 +67,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
               className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                 !filterCategoryId
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-[#64748b] border-[#e2e8f0] hover:bg-slate-50'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-surface-hover)]'
               }`}
             >
               Todos
@@ -79,7 +79,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
                 className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                   filterCategoryId === c.id
                     ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-[#64748b] border-[#e2e8f0] hover:bg-slate-50'
+                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-surface-hover)]'
                 }`}
               >
                 {c.name}
@@ -97,7 +97,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
       </div>
 
       {menuItems.length > 0 && (
-        <div className="flex gap-3 mb-4 text-sm text-[#64748b]">
+        <div className="flex gap-3 mb-4 text-sm text-[var(--text-secondary)]">
           <span>{menuItems.length} platos</span>
           <span>·</span>
           <span>{menuItems.filter(m => m.is_active).length} activos</span>
@@ -105,7 +105,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
       )}
 
       {visible.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-[#94a3b8]">
+        <div className="flex flex-col items-center justify-center py-20 text-[var(--text-muted)]">
           <div className="text-4xl mb-3">🍽️</div>
           <p className="text-sm font-medium">
             {menuItems.length === 0 ? 'La carta está vacía' : 'Sin platos en esta categoría'}

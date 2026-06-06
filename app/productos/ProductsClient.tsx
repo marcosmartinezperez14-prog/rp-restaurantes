@@ -58,13 +58,13 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
   return (
     <div>
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 border-b border-[#e2e8f0]">
+      <div className="flex gap-1 mb-5 border-b border-[var(--border)]">
         <button
           onClick={() => setActiveTab('productos')}
           className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
             activeTab === 'productos'
               ? 'border-blue-600 text-blue-700 bg-blue-50'
-              : 'border-transparent text-[#64748b] hover:text-[#0f172a]'
+              : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           📦 Productos
@@ -74,7 +74,7 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
           className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
             activeTab === 'carta'
               ? 'border-blue-600 text-blue-700 bg-blue-50'
-              : 'border-transparent text-[#64748b] hover:text-[#0f172a]'
+              : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           🍽️ Carta
@@ -89,7 +89,7 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar producto o categoría..."
-              className="bg-white border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 w-64"
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 w-64"
             />
             {lowStockCount > 0 && (
               <button
@@ -106,19 +106,19 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
             <button
               onClick={handleRefresh}
               disabled={isPending}
-              className="px-3 py-2 text-sm bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 disabled:opacity-50"
+              className="px-3 py-2 text-sm bg-[var(--bg-surface-hover)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:opacity-80 disabled:opacity-50"
             >
               {isPending ? 'Actualizando...' : 'Actualizar'}
             </button>
             <Link
               href="/productos/movimientos"
-              className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
+              className="px-4 py-2 text-sm border border-[var(--border)] bg-[var(--bg-surface)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] font-medium"
             >
               Movimientos
             </Link>
             <button
               onClick={() => setShowCategorias(true)}
-              className="px-4 py-2 text-sm border border-[#e2e8f0] bg-white rounded-lg text-[#64748b] hover:bg-slate-50 font-medium"
+              className="px-4 py-2 text-sm border border-[var(--border)] bg-[var(--bg-surface)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] font-medium"
             >
               Categorías
             </button>
@@ -131,18 +131,16 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
           </div>
 
           {/* Tabla */}
-          <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#e2e8f0] bg-slate-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Producto</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Categoría</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">P. Venta</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">P. Coste</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Margen</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Stock</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Proveedor</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Acciones</th>
+                <tr className="border-b border-[var(--border)] bg-[var(--bg-surface-hover)]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Producto</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Categoría</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">P. Coste</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Stock</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Proveedor</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,7 +154,7 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
                 ))}
                 {visible.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-sm text-[#94a3b8]">
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
                       {search || filterLow ? 'Sin resultados para el filtro aplicado' : 'Sin productos'}
                     </td>
                   </tr>

@@ -1,8 +1,82 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ─── Tema: Slate Light (default) ─────────────────────────── */
+:root,
+[data-theme="slate-light"] {
+  --primary:          #0f172a;
+  --primary-hover:    #1e293b;
+  --bg-page:          #f4f6f9;
+  --bg-surface:       #ffffff;
+  --bg-surface-hover: #f8fafc;
+  --text-primary:     #0f172a;
+  --text-secondary:   #64748b;
+  --text-muted:       #374151;
+  --border:           #e2e8f0;
+}
+
+/* ─── Tema: Slate Dark ─────────────────────────────────────── */
+[data-theme="slate-dark"] {
+  --primary:          #1e293b;
+  --primary-hover:    #334155;
+  --bg-page:          #0f172a;
+  --bg-surface:       #1e293b;
+  --bg-surface-hover: #334155;
+  --text-primary:     #f1f5f9;
+  --text-secondary:   #94a3b8;
+  --text-muted:       #cbd5e1;
+  --border:           #334155;
+}
+
+/* ─── Tema: Ocean Light ────────────────────────────────────── */
+[data-theme="ocean-light"] {
+  --primary:          #1d4ed8;
+  --primary-hover:    #1e40af;
+  --bg-page:          #f0f7ff;
+  --bg-surface:       #ffffff;
+  --bg-surface-hover: #eff6ff;
+  --text-primary:     #0f172a;
+  --text-secondary:   #64748b;
+  --text-muted:       #374151;
+  --border:           #e2e8f0;
+}
+
+/* ─── Tema: Ocean Dark ─────────────────────────────────────── */
+[data-theme="ocean-dark"] {
+  --primary:          #1d4ed8;
+  --primary-hover:    #1e40af;
+  --bg-page:          #0a0f1e;
+  --bg-surface:       #0f1a2e;
+  --bg-surface-hover: #1e3a5f;
+  --text-primary:     #f1f5f9;
+  --text-secondary:   #93c5fd;
+  --text-muted:       #bfdbfe;
+  --border:           #1e3a5f;
+}
+
+/* ─── Tema: Sunset Light ───────────────────────────────────── */
+[data-theme="sunset-light"] {
+  --primary:          #c2410c;
+  --primary-hover:    #9a3412;
+  --bg-page:          #fff7ed;
+  --bg-surface:       #ffffff;
+  --bg-surface-hover: #ffedd5;
+  --text-primary:     #0f172a;
+  --text-secondary:   #64748b;
+  --text-muted:       #374151;
+  --border:           #e2e8f0;
+}
+
+/* ─── Tema: Sunset Dark ────────────────────────────────────── */
+[data-theme="sunset-dark"] {
+  --primary:          #c2410c;
+  --primary-hover:    #9a3412;
+  --bg-page:          #0c0a09;
+  --bg-surface:       #1c1917;
+  --bg-surface-hover: #292524;
+  --text-primary:     #f1f5f9;
+  --text-secondary:   #a8a29e;
+  --text-muted:       #d6d3d1;
+  --border:           #292524;
 }
 
 @theme inline {
@@ -13,11 +87,11 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-page);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 input, select, textarea {
-  color: #0f172a !important;
+  color: var(--text-primary) !important;
 }

@@ -29,7 +29,6 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
   const [name, setName] = useState('')
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
   const [description, setDescription] = useState('')
-  const [price, setPrice] = useState('')
   const [costPrice, setCostPrice] = useState('')
   const [taxRate, setTaxRate] = useState(10)
   const [stock, setStock] = useState('0')
@@ -50,13 +49,11 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
   }
 
   function handleSave() {
-    const priceNum = parseFloat(price.replace(',', '.'))
     const costNum = costPrice.trim() ? parseFloat(costPrice.replace(',', '.')) : undefined
     const stockNum = parseFloat(stock) || 0
     const stockMinNum = parseFloat(stockMin) || 0
 
     if (!name.trim()) { setError('El nombre es obligatorio'); return }
-    if (isNaN(priceNum) || priceNum <= 0) { setError('El precio de venta debe ser mayor que 0'); return }
     if (costNum !== undefined && (isNaN(costNum) || costNum < 0)) {
       setError('El precio de compra no puede ser negativo')
       return
@@ -68,7 +65,6 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
         name,
         categoryIds: selectedCategoryIds,
         description: description || undefined,
-        price: priceNum,
         costPrice: costNum,
         taxRate,
         stock: stockNum,
@@ -86,9 +82,9 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
     })
   }
 
-  const inputClass = 'border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400 w-full'
+  const inputClass = 'border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-blue-400 w-full'
   const labelClass = 'flex flex-col gap-1'
-  const labelTextClass = 'text-xs font-medium text-[#64748b]'
+  const labelTextClass = 'text-xs font-medium text-[var(--text-secondary)]'
 
   return (
     <>
@@ -96,11 +92,11 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-[480px] bg-white shadow-2xl z-50 flex flex-col">
+      <div className="fixed inset-y-0 right-0 w-full max-w-[480px] bg-[var(--bg-surface)] shadow-2xl z-50 flex flex-col">
         {/* Cabecera */}
-        <div className="px-5 py-4 border-b border-[#e2e8f0] flex items-center justify-between flex-shrink-0">
-          <h2 className="text-[15px] font-bold text-[#0f172a]">Nuevo producto</h2>
-          <button onClick={onClose} className="text-[#94a3b8] hover:text-[#0f172a] text-xl leading-none">✕</button>
+        <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between flex-shrink-0">
+          <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Nuevo producto</h2>
+          <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none">✕</button>
         </div>
 
         {/* Cuerpo scrollable */}
@@ -116,9 +112,9 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
           {/* Categorías */}
           <div className={labelClass}>
             <span className={labelTextClass}>Categorías</span>
-            <div className="border border-[#e2e8f0] rounded-lg p-2 flex flex-col gap-0.5 max-h-36 overflow-y-auto">
+            <div className="border border-[var(--border)] rounded-lg p-2 flex flex-col gap-0.5 max-h-36 overflow-y-auto">
               {categories.length === 0 && (
-                <p className="text-xs text-[#94a3b8] py-1 px-1">Sin categorías disponibles</p>
+                <p className="text-xs text-[var(--text-secondary)] py-1 px-1">Sin categorías disponibles</p>
               )}
               {categories.map(c => (
                 <label key={c.id} className="flex items-center gap-2 cursor-pointer px-1 py-0.5 hover:bg-slate-50 rounded">
@@ -128,7 +124,7 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
                     onChange={() => toggleCategory(c.id)}
                     className="accent-blue-600 w-4 h-4"
                   />
-                  <span className="text-sm text-[#0f172a]">{c.name}</span>
+                  <span className="text-sm text-[var(--text-primary)]">{c.name}</span>
                 </label>
               ))}
             </div>
@@ -142,25 +138,18 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
               className={`${inputClass} resize-none`} />
           </label>
 
-          {/* Precio venta + Precio compra */}
-          <div className="grid grid-cols-2 gap-3">
-            <label className={labelClass}>
-              <span className={labelTextClass}>Precio venta (€) *</span>
-              <input value={price} onChange={e => setPrice(e.target.value)}
-                type="number" min="0.01" step="0.01" placeholder="0.00" className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              <span className={labelTextClass}>Precio compra (€)</span>
-              <input value={costPrice} onChange={e => setCostPrice(e.target.value)}
-                type="number" min="0" step="0.01" placeholder="0.00" className={inputClass} />
-            </label>
-          </div>
+          {/* Precio compra */}
+          <label className={labelClass}>
+            <span className={labelTextClass}>Precio compra (€)</span>
+            <input value={costPrice} onChange={e => setCostPrice(e.target.value)}
+              type="number" min="0" step="0.01" placeholder="0.00" className={inputClass} />
+          </label>
 
           {/* IVA */}
           <label className={labelClass}>
             <span className={labelTextClass}>IVA aplicable *</span>
             <select value={taxRate} onChange={e => setTaxRate(Number(e.target.value))}
-              className={`${inputClass} bg-white`}>
+              className={`${inputClass} bg-[var(--bg-surface)]`}>
               {TAX_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
@@ -199,7 +188,7 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={trackStock} onChange={e => setTrackStock(e.target.checked)}
               className="accent-blue-600 w-4 h-4" />
-            <span className="text-sm text-[#0f172a]">Controlar stock</span>
+            <span className="text-sm text-[var(--text-primary)]">Controlar stock</span>
           </label>
 
           {/* Proveedor + SKU */}
@@ -221,23 +210,23 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={isAvailable} onChange={e => setIsAvailable(e.target.checked)}
                 className="accent-blue-600 w-4 h-4" />
-              <span className="text-sm text-[#0f172a]">Disponible</span>
+              <span className="text-sm text-[var(--text-primary)]">Disponible</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={isVisible} onChange={e => setIsVisible(e.target.checked)}
                 className="accent-blue-600 w-4 h-4" />
-              <span className="text-sm text-[#0f172a]">Visible en carta</span>
+              <span className="text-sm text-[var(--text-primary)]">Visible en carta</span>
             </label>
           </div>
 
         </div>
 
         {/* Footer fijo */}
-        <div className="px-5 py-3 border-t border-[#e2e8f0] flex-shrink-0">
+        <div className="px-5 py-3 border-t border-[var(--border)] flex-shrink-0">
           {error && <p className="text-red-600 text-xs mb-3">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button onClick={onClose}
-              className="px-4 py-2 text-sm border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50">
+              className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-50">
               Cancelar
             </button>
             <button onClick={handleSave} disabled={isPending}

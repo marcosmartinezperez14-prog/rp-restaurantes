@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getOrderWithItems } from '@/app/actions/tpv'
 import PaymentForm from '@/components/tpv/PaymentForm'
-import NavDrawer from '@/components/NavDrawer'
 
 export default async function CobroPage({
   params,
@@ -17,17 +16,16 @@ export default async function CobroPage({
   const activeItems = order.items.filter(i => i.status !== 'cancelled')
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9]">
-      <nav className="bg-white border-b border-[#e2e8f0] px-4 h-[52px] flex items-center gap-3">
-        <NavDrawer />
+    <div className="min-h-screen bg-[var(--bg-page)]">
+      <nav className="bg-[var(--bg-surface)] border-b border-[var(--border)] px-4 h-[52px] flex items-center gap-3">
         <Link
           href={`/tpv/comanda/${orderId}`}
-          className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors"
+          className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           ← Comanda
         </Link>
-        <span className="text-[#94a3b8]">›</span>
-        <span className="text-sm font-semibold text-[#0f172a]">
+        <span className="text-[var(--text-secondary)]">›</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)]">
           Cobro — {order.table.name}
         </span>
       </nav>

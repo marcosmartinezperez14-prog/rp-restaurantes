@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { OrderWithItems, OrderItem, Category, ProductWithModifiers, SelectedModifier } from '@/app/actions/tpv'
-import { addOrderItem } from '@/app/actions/tpv'
+import { addOrderItem, getOrderItemStatuses } from '@/app/actions/tpv'
 import ProductsPanel from './ProductsPanel'
 import OrderPanel from './OrderPanel'
 
@@ -12,35 +12,114 @@ interface Props {
   products: ProductWithModifiers[]
 }
 
+type Toast = { id: string; product_name: string; quantity: number }
+
+const POLL_MS = 3000
+
 export default function OrderView({ order, categories, products }: Props) {
   const [items, setItems] = useState<OrderItem[]>(order.items)
-  const [isPending, startTransition] = useTransition()
+  const [toasts, setToasts] = useState<Toast[]>([])
+  const [isPending, setIsPending] = useState(false)
+  const itemsRef = useRef<OrderItem[]>(order.items)
+  const notifiedRef = useRef<Set<string>>(new Set())
 
-  function handleAddProduct(productId: string, modifiers: SelectedModifier[], quantity: number) {
-    startTransition(async () => {
-      const result = await addOrderItem(order.id, productId, quantity, modifiers)
-      if ('error' in result) return
-      const product = products.find(p => p.id === productId)
-      if (!product) return
-      const unitPrice = product.price + modifiers.reduce((s, m) => s + m.price_adjustment, 0)
-      const newItem: OrderItem = {
-        id: result.itemId,
-        product_name: product.name,
-        product_price: product.price,
-        tax_rate: product.tax_rate,
-        quantity,
-        unit_price: unitPrice,
-        total_price: unitPrice * quantity,
-        modifiers,
-        notes: null,
-        status: 'pending',
+  // Keep ref in sync with state
+  useEffect(() => { itemsRef.current = items }, [items])
+
+  // Poll kitchen statuses every 3 s
+  useEffect(() => {
+    let mounted = true
+
+    const poll = async () => {
+      if (!mounted) return
+      const statuses = await getOrderItemStatuses(order.id)
+      if (!mounted) return
+
+      const prev = itemsRef.current
+      const newToasts: Toast[] = []
+      let hasChanges = false
+
+      const next = prev.map(item => {
+        const fresh = statuses.find(s => s.id === item.id)
+        if (!fresh || fresh.status === item.status) return item
+        hasChanges = true
+        if (fresh.status === 'ready' && !notifiedRef.current.has(item.id)) {
+          notifiedRef.current.add(item.id)
+          newToasts.push({ id: item.id, product_name: item.product_name, quantity: item.quantity })
+        }
+        return { ...item, status: fresh.status }
+      })
+
+      if (hasChanges) setItems(next)
+
+      for (const toast of newToasts) {
+        setToasts(t => [...t, toast])
+        setTimeout(() => setToasts(t => t.filter(x => x.id !== toast.id)), 7000)
       }
-      setItems(prev => [...prev, newItem])
-    })
+    }
+
+    const interval = setInterval(poll, POLL_MS)
+    return () => { mounted = false; clearInterval(interval) }
+  }, [order.id])
+
+  function dismissToast(id: string) {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }
+
+  async function handleAddProduct(productId: string, modifiers: SelectedModifier[], quantity: number) {
+    setIsPending(true)
+    const result = await addOrderItem(order.id, productId, quantity, modifiers)
+    setIsPending(false)
+    if ('error' in result) {
+      alert('Error al añadir: ' + result.error)
+      return
+    }
+    const product = products.find(p => p.id === productId)
+    if (!product) return
+    const unitPrice = product.price + modifiers.reduce((s, m) => s + m.price_adjustment, 0)
+    const newItem: OrderItem = {
+      id: result.itemId,
+      product_name: product.name,
+      product_price: product.price,
+      tax_rate: product.tax_rate,
+      quantity,
+      unit_price: unitPrice,
+      total_price: unitPrice * quantity,
+      modifiers,
+      notes: null,
+      status: 'pending',
+    }
+    setItems(prev => [...prev, newItem])
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="relative flex h-full overflow-hidden">
+      {/* Toast notifications — listo para sacar */}
+      {toasts.length > 0 && (
+        <div className="absolute top-3 right-3 z-50 flex flex-col gap-2 pointer-events-none">
+          {toasts.map(toast => (
+            <div
+              key={toast.id}
+              className="pointer-events-auto flex items-center gap-3 bg-green-600 text-white px-4 py-3 rounded-xl shadow-xl min-w-[230px]"
+            >
+              <span className="text-xl">🔔</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wide opacity-75">¡Plato listo!</p>
+                <p className="text-sm font-bold truncate">
+                  {toast.product_name}{toast.quantity > 1 ? ` ×${toast.quantity}` : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => dismissToast(toast.id)}
+                className="text-white/60 hover:text-white text-lg leading-none shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex-[3] overflow-hidden">
         <ProductsPanel
           categories={categories}
