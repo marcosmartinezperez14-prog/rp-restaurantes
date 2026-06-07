@@ -12,6 +12,8 @@ export interface UsuarioEquipo {
   user_role_id: string
 }
 
+export const ROLES_EDITORES: RolNombre[] = ['admin', 'gerente']
+
 export const PERMISOS_POR_ROL: Record<RolNombre, {
   label: string
   color: string
@@ -22,30 +24,30 @@ export const PERMISOS_POR_ROL: Record<RolNombre, {
     label: 'Administrador',
     color: 'purple',
     descripcion: 'Acceso total al sistema',
-    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo', 'configuracion'],
+    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo', 'personal', 'configuracion'],
   },
   gerente: {
     label: 'Gerente',
     color: 'blue',
     descripcion: 'Todo menos configuración crítica',
-    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo'],
+    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo', 'personal'],
   },
   camarero: {
     label: 'Camarero',
     color: 'green',
     descripcion: 'Solo TPV y pedidos',
-    modulos: ['tpv', 'pedidos'],
+    modulos: ['tpv', 'pedidos', 'personal'],
   },
   cocinero: {
     label: 'Cocinero',
     color: 'orange',
     descripcion: 'Solo visualización de pedidos',
-    modulos: ['pedidos'],
+    modulos: ['pedidos', 'personal'],
   },
   contable: {
     label: 'Contable',
     color: 'yellow',
     descripcion: 'Solo finanzas y facturas',
-    modulos: ['finanzas', 'facturas'],
+    modulos: ['finanzas', 'facturas', 'personal'],
   },
 }

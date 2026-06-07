@@ -13,9 +13,10 @@ interface Props {
   initialProducts: ProductoConCategoria[]
   initialCategories: Categoria[]
   initialMenuItems: MenuItem[]
+  canEdit?: boolean
 }
 
-export default function ProductsClient({ initialProducts, initialCategories, initialMenuItems }: Props) {
+export default function ProductsClient({ initialProducts, initialCategories, initialMenuItems, canEdit = false }: Props) {
   const [activeTab, setActiveTab] = useState<'productos' | 'carta'>('productos')
   const [products, setProducts] = useState(initialProducts)
   const [categories, setCategories] = useState(initialCategories)
@@ -116,18 +117,22 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
             >
               Movimientos
             </Link>
-            <button
-              onClick={() => setShowCategorias(true)}
-              className="px-4 py-2 text-sm border border-[var(--border)] bg-[var(--bg-surface)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] font-medium"
-            >
-              Categorías
-            </button>
-            <button
-              onClick={() => setShowAdd(true)}
-              className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
-            >
-              <span className="text-base leading-none">+</span> Añadir producto
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setShowCategorias(true)}
+                className="px-4 py-2 text-sm border border-[var(--border)] bg-[var(--bg-surface)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] font-medium"
+              >
+                Categorías
+              </button>
+            )}
+            {canEdit && (
+              <button
+                onClick={() => setShowAdd(true)}
+                className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
+              >
+                <span className="text-base leading-none">+</span> Añadir producto
+              </button>
+            )}
           </div>
 
           {/* Tabla */}
@@ -150,6 +155,7 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
                     product={product}
                     allCategories={categories}
                     onRefresh={handleRefresh}
+                    canEdit={canEdit}
                   />
                 ))}
                 {visible.length === 0 && (
@@ -189,6 +195,7 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
           categories={categories}
           allProducts={products}
           onProductsRefresh={handleRefresh}
+          canEdit={canEdit}
         />
       )}
     </div>

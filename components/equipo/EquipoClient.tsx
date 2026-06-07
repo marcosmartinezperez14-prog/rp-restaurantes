@@ -57,6 +57,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
   const [usuarios, setUsuarios] = useState<UsuarioEquipo[]>(usuariosIniciales)
   const [mostrarModalAnadir, setMostrarModalAnadir] = useState(false)
   const [usuarioCambioRol, setUsuarioCambioRol] = useState<UsuarioEquipo | null>(null)
+  const [usuarioCambioPassword, setUsuarioCambioPassword] = useState<UsuarioEquipo | null>(null)
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [cargando, setCargando] = useState(false)
@@ -417,12 +418,18 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
                     </svg>
                   </button>
                   {menuAbierto === usuario.id && (
-                    <div className="absolute right-0 top-8 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-lg py-1 w-44 z-10">
+                    <div className="absolute right-0 top-8 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-lg py-1 w-48 z-10">
                       <button
                         onClick={() => { setUsuarioCambioRol(usuario); setMenuAbierto(null) }}
                         className="w-full text-left px-4 py-2 text-sm text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] transition-colors"
                       >
                         Cambiar rol
+                      </button>
+                      <button
+                        onClick={() => { setUsuarioCambioPassword(usuario); setMenuAbierto(null) }}
+                        className="w-full text-left px-4 py-2 text-sm text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+                      >
+                        Cambiar contraseña
                       </button>
                       {usuario.activo && (
                         <button
@@ -483,11 +490,124 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
       {/* Modales */}
       {mostrarModalAnadir && <ModalAnadirUsuario />}
       {usuarioCambioRol && <ModalCambiarRol usuario={usuarioCambioRol} />}
+      {usuarioCambioPassword && (
+        <ModalCambiarPasswordAdmin
+          usuario={usuarioCambioPassword}
+          onClose={() => setUsuarioCambioPassword(null)}
+          onExito={() => {
+            setUsuarioCambioPassword(null)
+            mostrarToast(`Contraseña de ${usuarioCambioPassword.nombre} actualizada`, 'exito')
+          }}
+        />
+      )}
 
       {/* Overlay para cerrar menú */}
       {menuAbierto && (
         <div className="fixed inset-0 z-0" onClick={() => setMenuAbierto(null)} />
       )}
+    </div>
+  )
+}
+
+// ─── Modal cambiar contraseña (admin) ─────────────────────────────────────────
+
+function ModalCambiarPasswordAdmin({
+  usuario,
+  onClose,
+  onExito,
+}: {
+  usuario: UsuarioEquipo
+  onClose: () => void
+  onExito: () => void
+}) {
+  const [nueva, setNueva] = useState('')
+  const [confirmar, setConfirmar] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
+
+  async function handleGuardar() {
+    setError(null)
+    if (nueva.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    if (nueva !== confirmar) { setError('Las contraseñas no coinciden'); return }
+
+    setGuardando(true)
+    try {
+      const res = await fetch('/api/equipo/cambiar-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auth_id: usuario.auth_id, nueva_password: nueva }),
+      })
+      const data = await res.json()
+      if (!data.success) { setError(data.error ?? 'Error al cambiar la contraseña'); return }
+      onExito()
+    } catch {
+      setError('Error de conexión. Inténtalo de nuevo.')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--border)]">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">Cambiar contraseña</h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{usuario.nombre}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Nueva contraseña</label>
+            <input
+              type="password"
+              value={nueva}
+              onChange={e => setNueva(e.target.value)}
+              placeholder="Mínimo 8 caracteres"
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Confirmar contraseña</label>
+            <input
+              type="password"
+              value={confirmar}
+              onChange={e => setConfirmar(e.target.value)}
+              placeholder="Repite la contraseña"
+              onKeyDown={e => e.key === 'Enter' && handleGuardar()}
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+            />
+          </div>
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          )}
+        </div>
+
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleGuardar}
+            disabled={guardando}
+            className="flex-1 py-2 text-sm bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {guardando ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

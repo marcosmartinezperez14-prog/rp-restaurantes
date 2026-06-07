@@ -16,7 +16,7 @@ const COLUMNS: { status: KitchenStatus; label: string; emptyText: string; header
     label: 'Por hacer',
     emptyText: 'Sin platos pendientes',
     headerBg: 'bg-amber-400/10 border-amber-400/30',
-    headerText: 'text-amber-300',
+    headerText: 'text-amber-600',
     dot: 'bg-amber-400',
   },
   {
@@ -24,7 +24,7 @@ const COLUMNS: { status: KitchenStatus; label: string; emptyText: string; header
     label: 'Preparando',
     emptyText: 'Nada en preparación',
     headerBg: 'bg-blue-500/10 border-blue-500/30',
-    headerText: 'text-blue-300',
+    headerText: 'text-blue-600',
     dot: 'bg-blue-400',
   },
   {
@@ -32,7 +32,7 @@ const COLUMNS: { status: KitchenStatus; label: string; emptyText: string; header
     label: 'Listo',
     emptyText: 'Nada listo aún',
     headerBg: 'bg-green-500/10 border-green-500/30',
-    headerText: 'text-green-300',
+    headerText: 'text-green-600',
     dot: 'bg-green-400',
   },
 ]
@@ -102,14 +102,14 @@ export default function CocinaClient({ initialItems, restaurantId }: Props) {
                 <span className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
                 <span className={`text-sm font-bold ${col.headerText}`}>{col.label}</span>
               </div>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${col.dot} text-[#0f172a]`}>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${col.dot} text-black`}>
                 {colItems.length}
               </span>
             </div>
 
             <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-0.5">
               {colItems.length === 0 ? (
-                <div className="text-center text-[#475569] text-sm py-10">
+                <div className="text-center text-[var(--text-muted)] text-sm py-10">
                   {col.emptyText}
                 </div>
               ) : (
@@ -144,35 +144,35 @@ function KitchenCard({
 
   return (
     <div
-      className={`bg-[#1e293b] rounded-xl border-2 p-3 transition-colors ${
-        isOld ? 'border-red-500/70' : 'border-[#334155]'
+      className={`bg-[var(--bg-surface)] rounded-xl border-2 p-3 transition-colors ${
+        isOld ? 'border-red-500/70' : 'border-[var(--border)]'
       }`}
     >
       <div className="flex items-start justify-between mb-2 gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs font-bold text-white bg-[#334155] px-2 py-0.5 rounded-lg">
+          <span className="text-xs font-bold text-[var(--text-primary)] bg-[var(--bg-surface-hover)] px-2 py-0.5 rounded-lg">
             {item.table_name}
           </span>
-          <span className="text-xs text-[#64748b]">#{item.order_number}</span>
+          <span className="text-xs text-[var(--text-secondary)]">#{item.order_number}</span>
         </div>
-        <span className={`text-xs font-medium shrink-0 ${isOld ? 'text-red-400' : 'text-[#64748b]'}`}>
+        <span className={`text-xs font-medium shrink-0 ${isOld ? 'text-red-500' : 'text-[var(--text-secondary)]'}`}>
           {minutesAgo < 1 ? 'Ahora' : `${minutesAgo} min`}
         </span>
       </div>
 
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-sm font-semibold text-white leading-snug">
+        <span className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
           {item.product_name}
         </span>
         {item.quantity > 1 && (
-          <span className="shrink-0 text-xs font-bold bg-white text-[#0f172a] px-1.5 py-0.5 rounded-md">
+          <span className="shrink-0 text-xs font-bold bg-[var(--text-primary)] text-[var(--bg-surface)] px-1.5 py-0.5 rounded-md">
             ×{item.quantity}
           </span>
         )}
       </div>
 
       {item.notes && (
-        <p className="text-xs text-amber-300 bg-amber-400/10 rounded-lg px-2 py-1 mb-2">
+        <p className="text-xs text-amber-700 bg-amber-400/10 rounded-lg px-2 py-1 mb-2">
           📝 {item.notes}
         </p>
       )}
@@ -186,7 +186,7 @@ function KitchenCard({
           {isUpdating ? '…' : NEXT_LABEL[item.status] + ' →'}
         </button>
       ) : (
-        <p className="text-center text-xs text-green-400 font-semibold py-1">
+        <p className="text-center text-xs text-green-600 font-semibold py-1">
           Esperando que el camarero sirva
         </p>
       )}

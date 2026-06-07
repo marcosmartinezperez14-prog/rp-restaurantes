@@ -91,7 +91,7 @@ export type MenuItem = {
   ingredients: MenuItemIngredient[]
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -103,6 +103,22 @@ async function getRestaurantId(
     .eq('id', userId)
     .single()
   return data?.restaurant_id ?? null
+}
+
+const ROLES_CON_EDICION = ['admin', 'gerente']
+
+async function puedeEditar(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('users')
+    .select('user_roles!user_id(roles(name))')
+    .eq('id', userId)
+    .single()
+  const roles = data?.user_roles as { roles: { name: string } | null }[] | undefined
+  const rol = roles?.[0]?.roles?.name ?? null
+  return !rol || ROLES_CON_EDICION.includes(rol)
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -169,6 +185,7 @@ export async function updateProducto(
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   const { categoryIds, ...productData } = data
 
@@ -217,6 +234,7 @@ export async function registrarCompra(params: {
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   if (params.quantity <= 0) return { error: 'La cantidad debe ser mayor que 0' }
   if (params.costPrice < 0) return { error: 'El precio no puede ser negativo' }
@@ -269,6 +287,7 @@ export async function ajustarStock(params: {
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   const { data: current } = await supabase
     .from('products')
@@ -360,7 +379,7 @@ export async function createProduct(params: {
   name: string
   categoryIds: string[]
   description?: string
-  price: number
+  price?: number
   costPrice?: number
   taxRate: number
   stock: number
@@ -378,9 +397,9 @@ export async function createProduct(params: {
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
-  if (params.price <= 0) return { error: 'El precio de venta debe ser mayor que 0' }
   if (params.costPrice !== undefined && params.costPrice < 0) {
     return { error: 'El precio de compra no puede ser negativo' }
   }
@@ -391,7 +410,7 @@ export async function createProduct(params: {
       restaurant_id: restaurantId,
       name: params.name.trim(),
       description: params.description?.trim() || null,
-      price: params.price,
+      price: params.price ?? 0,
       cost_price: params.costPrice ?? null,
       tax_rate: params.taxRate,
       stock: params.stock,
@@ -440,13 +459,14 @@ export async function createProduct(params: {
 
 export async function createCategoria(
   name: string
-): Promise<{ success: true } | { error: string }> {
+): Promise<{ id: string; name: string } | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   if (!name.trim()) return { error: 'El nombre es obligatorio' }
 
@@ -461,12 +481,14 @@ export async function createCategoria(
 
   const position = (maxPosRow?.position ?? -1) + 1
 
-  const { error } = await supabase
+  const { data: newCat, error } = await supabase
     .from('categories')
     .insert({ restaurant_id: restaurantId, name: name.trim(), position })
+    .select('id, name')
+    .single()
 
-  if (error) return { error: error.message }
-  return { success: true }
+  if (error || !newCat) return { error: error?.message ?? 'No se pudo crear la categoría' }
+  return { id: newCat.id, name: newCat.name }
 }
 
 export async function updateCategoria(
@@ -479,6 +501,7 @@ export async function updateCategoria(
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   if (!name.trim()) return { error: 'El nombre es obligatorio' }
 
@@ -502,6 +525,7 @@ export async function editarStock(
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   const { data: current } = await supabase
     .from('products')
@@ -547,6 +571,7 @@ export async function deleteCategoria(
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   const { count } = await supabase
     .from('product_categories')
@@ -737,6 +762,7 @@ export async function createMenuItem(params: {
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
   if (params.price < 0) return { error: 'El precio no puede ser negativo' }
@@ -791,6 +817,7 @@ export async function updateMenuItem(
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (params.name !== undefined) updateData.name = params.name.trim()
@@ -839,6 +866,7 @@ export async function deleteMenuItem(itemId: string): Promise<{ error?: string }
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
   const { error } = await supabase
     .from('menu_items')

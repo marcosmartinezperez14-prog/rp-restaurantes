@@ -300,58 +300,24 @@ export async function getMenuData(): Promise<{ categories: Category[]; products:
     .is('deleted_at', null)
     .order('position')
 
-  const { data: products } = await supabase
-    .from('products')
-    .select('id, name, price, tax_rate, is_available, category_id')
+  const { data: items } = await supabase
+    .from('menu_items')
+    .select('id, name, price, is_active, category_id')
     .eq('restaurant_id', restaurantId)
-    .eq('is_visible', true)
+    .eq('is_active', true)
     .is('deleted_at', null)
-    .order('position')
-
-  const productIds = (products ?? []).map(p => p.id)
-
-  const { data: groups } = productIds.length > 0
-    ? await supabase
-        .from('product_modifier_groups')
-        .select('id, product_id, name, is_required, min_selections, max_selections, position')
-        .in('product_id', productIds)
-        .is('deleted_at', null)
-        .order('position')
-    : { data: [] as { id: string; product_id: string; name: string; is_required: boolean; min_selections: number; max_selections: number; position: number }[] }
-
-  const groupIds = (groups ?? []).map(g => g.id)
-
-  const { data: options } = groupIds.length > 0
-    ? await supabase
-        .from('product_modifier_options')
-        .select('id, group_id, name, price_adjustment, position')
-        .in('group_id', groupIds)
-        .eq('is_active', true)
-        .is('deleted_at', null)
-        .order('position')
-    : { data: [] as { id: string; group_id: string; name: string; price_adjustment: number; position: number }[] }
+    .order('name')
 
   return {
     categories: categories ?? [],
-    products: (products ?? []).map(p => ({
+    products: (items ?? []).map(p => ({
       id: p.id,
       name: p.name,
       price: Number(p.price),
-      tax_rate: Number(p.tax_rate),
-      is_available: p.is_available,
-      category_id: p.category_id,
-      modifierGroups: (groups ?? [])
-        .filter(g => g.product_id === p.id)
-        .map(g => ({
-          id: g.id,
-          name: g.name,
-          is_required: g.is_required,
-          min_selections: g.min_selections,
-          max_selections: g.max_selections,
-          options: (options ?? [])
-            .filter(o => o.group_id === g.id)
-            .map(o => ({ id: o.id, name: o.name, price_adjustment: Number(o.price_adjustment) })),
-        })),
+      tax_rate: 0,
+      is_available: p.is_active,
+      category_id: p.category_id ?? '',
+      modifierGroups: [],
     })),
   }
 }
@@ -381,9 +347,10 @@ export async function addOrderItem(
   if (!orderCheck) return { error: 'Comanda no encontrada' }
 
   const { data: product } = await supabase
-    .from('products')
-    .select('name, price, tax_rate, track_stock, stock')
+    .from('menu_items')
+    .select('name, price')
     .eq('id', productId)
+    .eq('restaurant_id', restaurantId)
     .single()
 
   if (!product) return { error: 'Producto no encontrado' }
@@ -400,7 +367,7 @@ export async function addOrderItem(
       product_id: productId,
       product_name: product.name,
       product_price: basePrice,
-      tax_rate: Number(product.tax_rate),
+      tax_rate: 0,
       quantity,
       unit_price: unitPrice,
       total_price: totalPrice,
@@ -413,26 +380,45 @@ export async function addOrderItem(
 
   if (error || !item) return { error: 'No se pudo añadir el producto' }
 
-  if (product.track_stock) {
-    const newStock = (Number(product.stock) || 0) - quantity
-    await supabase.from('products')
-      .update({ stock: newStock })
-      .eq('id', productId)
-      .eq('restaurant_id', restaurantId)
-
-    await supabase.from('stock_movements').insert({
-      restaurant_id: restaurantId,
-      product_id: productId,
-      type: 'venta',
-      quantity,
-      cost_price: null,
-      purchase_date: null,
-      notes: null,
-      created_by: user.id,
-    })
-  }
-
   return { itemId: item.id }
+}
+
+export async function markOrderItemServed(itemId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) return { error: 'Sin restaurante' }
+
+  const { error } = await supabase
+    .from('order_items')
+    .update({ status: 'served' })
+    .eq('id', itemId)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function getOrderItemStatuses(
+  orderId: string
+): Promise<{ id: string; status: OrderItemStatus }[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) return []
+
+  const { data } = await supabase
+    .from('order_items')
+    .select('id, status')
+    .eq('order_id', orderId)
+    .eq('restaurant_id', restaurantId)
+    .not('status', 'eq', 'cancelled')
+
+  return data ?? []
 }
 
 export async function updateOrderItemQuantity(

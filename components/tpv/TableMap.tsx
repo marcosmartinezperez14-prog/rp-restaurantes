@@ -20,9 +20,11 @@ type EditModal = { type: 'addTable'; zoneId: string } | { type: 'addZone' }
 export default function TableMap({
   initialData,
   restaurantId,
+  canEdit = false,
 }: {
   initialData: ZoneWithTables[]
   restaurantId: string
+  canEdit?: boolean
 }) {
   const [zones, setZones] = useState(initialData)
   const [isPending, startTransition] = useTransition()
@@ -173,16 +175,18 @@ export default function TableMap({
             {isPending ? 'Actualizando...' : 'Actualizar'}
           </button>
         )}
-        <button
-          onClick={() => { setIsEditing(e => !e); setError(null) }}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
-            isEditing
-              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-              : 'bg-[var(--bg-surface-hover)] border-[var(--border)] text-[var(--text-secondary)] hover:opacity-80'
-          }`}
-        >
-          {isEditing ? '✓ Salir de edición' : 'Editar mapa'}
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => { setIsEditing(e => !e); setError(null) }}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
+              isEditing
+                ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
+                : 'bg-[var(--bg-surface-hover)] border-[var(--border)] text-[var(--text-secondary)] hover:opacity-80'
+            }`}
+          >
+            {isEditing ? '✓ Salir de edición' : 'Editar mapa'}
+          </button>
+        )}
       </nav>
 
       <div className="p-6">

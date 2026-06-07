@@ -20,16 +20,16 @@ export default async function CocinaPage() {
   const items = await getKitchenItems()
 
   return (
-    <div className="min-h-screen bg-[#0f172a] flex flex-col">
-      <header className="bg-[#1e293b] border-b border-[#334155] px-4 h-[52px] flex items-center gap-4 shrink-0">
+    <div className="min-h-screen bg-[var(--bg-page)] flex flex-col">
+      <header className="bg-[var(--bg-surface)] border-b border-[var(--border)] px-4 h-[52px] flex items-center gap-4 shrink-0">
         <Link
           href="/dashboard"
-          className="text-[#64748b] hover:text-white transition-colors text-sm"
+          className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm"
         >
           ← Dashboard
         </Link>
-        <span className="text-[#334155]">|</span>
-        <h1 className="text-white font-bold text-base">🍳 Cocina</h1>
+        <span className="text-[var(--border)]">|</span>
+        <h1 className="text-[var(--text-primary)] font-bold text-base">🍳 Cocina</h1>
       </header>
 
       <main className="flex-1 overflow-hidden p-4">

@@ -6,10 +6,11 @@ import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/app/actions/auth'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Inicio',   icon: '🏠' },
-  { href: '/tpv',       label: 'TPV',       icon: '🖥️' },
-  { href: '/reservas',  label: 'Reservas',  icon: '📅' },
-  { href: '/productos', label: 'Productos', icon: '📦' },
+  { href: '/dashboard',          label: 'Inicio',    icon: '🏠' },
+  { href: '/tpv',                label: 'TPV',        icon: '🖥️' },
+  { href: '/reservas',           label: 'Reservas',   icon: '📅' },
+  { href: '/productos',          label: 'Productos',  icon: '📦' },
+  { href: '/dashboard/personal', label: 'Personal',   icon: '🗓️' },
 ]
 
 export default function NavDrawer() {

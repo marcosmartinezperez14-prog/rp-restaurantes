@@ -11,7 +11,7 @@ export async function clearAllData(): Promise<{ deleted: Record<string, number>;
   const { data: userData } = await supabase
     .from('users')
     .select('restaurant_id')
-    .eq('id', user.id)
+    .eq('auth_id', user.id)
     .single()
 
   const restaurantId = userData?.restaurant_id

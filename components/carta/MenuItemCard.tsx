@@ -14,9 +14,10 @@ interface Props {
   item: MenuItem
   onEdit: (item: MenuItem) => void
   onRefresh: () => void
+  canEdit?: boolean
 }
 
-export default function MenuItemCard({ item, onEdit, onRefresh }: Props) {
+export default function MenuItemCard({ item, onEdit, onRefresh, canEdit = false }: Props) {
   const [isPending, startTransition] = useTransition()
 
   const totalCost = item.ingredients.reduce((sum, ing) => {
@@ -99,29 +100,31 @@ export default function MenuItemCard({ item, onEdit, onRefresh }: Props) {
           </div>
         )}
 
-        <div className="flex items-center gap-2 pt-1 border-t border-[#f1f5f9] mt-1">
-          <button
-            onClick={handleToggleActive}
-            disabled={isPending}
-            className="flex-1 px-2 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-50"
-          >
-            {item.is_active ? 'Desactivar' : 'Activar'}
-          </button>
-          <button
-            onClick={() => onEdit(item)}
-            disabled={isPending}
-            className="flex-1 px-2 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-50"
-          >
-            Editar
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={isPending}
-            className="px-2 py-1.5 text-xs border border-red-100 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50"
-          >
-            ✕
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex items-center gap-2 pt-1 border-t border-[#f1f5f9] mt-1">
+            <button
+              onClick={handleToggleActive}
+              disabled={isPending}
+              className="flex-1 px-2 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-50"
+            >
+              {item.is_active ? 'Desactivar' : 'Activar'}
+            </button>
+            <button
+              onClick={() => onEdit(item)}
+              disabled={isPending}
+              className="flex-1 px-2 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-50"
+            >
+              Editar
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isPending}
+              className="px-2 py-1.5 text-xs border border-red-100 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/AppShell'
 import { logoutAction } from '@/app/actions/auth'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
+import ClearDataButton from './ClearDataButton'
 
 const NAV_CARDS = [
   {
@@ -11,9 +12,9 @@ const NAV_CARDS = [
     icon: '🖥️',
     label: 'TPV',
     description: 'Mesas, comandas y cobros',
-    color: 'bg-blue-50 border-blue-200 hover:bg-blue-100',
-    iconBg: 'bg-blue-100',
-    labelColor: 'text-blue-700',
+    color: 'bg-[var(--bg-surface)] border-blue-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-blue-500/15',
+    labelColor: 'text-blue-600',
     modulo: 'tpv',
   },
   {
@@ -21,9 +22,9 @@ const NAV_CARDS = [
     icon: '📅',
     label: 'Reservas',
     description: 'Gestión de reservas del día',
-    color: 'bg-violet-50 border-violet-200 hover:bg-violet-100',
-    iconBg: 'bg-violet-100',
-    labelColor: 'text-violet-700',
+    color: 'bg-[var(--bg-surface)] border-violet-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-violet-500/15',
+    labelColor: 'text-violet-600',
     modulo: 'pedidos',
   },
   {
@@ -31,9 +32,9 @@ const NAV_CARDS = [
     icon: '📦',
     label: 'Productos',
     description: 'Inventario, stock y carta',
-    color: 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100',
-    iconBg: 'bg-emerald-100',
-    labelColor: 'text-emerald-700',
+    color: 'bg-[var(--bg-surface)] border-emerald-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-emerald-500/15',
+    labelColor: 'text-emerald-600',
     modulo: 'productos',
   },
   {
@@ -41,9 +42,9 @@ const NAV_CARDS = [
     icon: '💰',
     label: 'Finanzas',
     description: 'Ingresos, gastos y beneficio',
-    color: 'bg-orange-50 border-orange-200 hover:bg-orange-100',
-    iconBg: 'bg-orange-100',
-    labelColor: 'text-orange-700',
+    color: 'bg-[var(--bg-surface)] border-orange-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-orange-500/15',
+    labelColor: 'text-orange-600',
     modulo: 'finanzas',
   },
   {
@@ -51,9 +52,9 @@ const NAV_CARDS = [
     icon: '🍳',
     label: 'Cocina',
     description: 'Platos pendientes y en preparación',
-    color: 'bg-red-50 border-red-200 hover:bg-red-100',
-    iconBg: 'bg-red-100',
-    labelColor: 'text-red-700',
+    color: 'bg-[var(--bg-surface)] border-red-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-red-500/15',
+    labelColor: 'text-red-600',
     modulo: 'pedidos',
   },
   {
@@ -61,19 +62,29 @@ const NAV_CARDS = [
     icon: '👥',
     label: 'Equipo',
     description: 'Usuarios, roles y permisos',
-    color: 'bg-purple-50 border-purple-200 hover:bg-purple-100',
-    iconBg: 'bg-purple-100',
-    labelColor: 'text-purple-700',
+    color: 'bg-[var(--bg-surface)] border-purple-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-purple-500/15',
+    labelColor: 'text-purple-600',
     modulo: 'equipo',
+  },
+  {
+    href: '/dashboard/personal',
+    icon: '🗓️',
+    label: 'Personal',
+    description: 'Turnos, vacaciones y días libres',
+    color: 'bg-[var(--bg-surface)] border-teal-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-teal-500/15',
+    labelColor: 'text-teal-600',
+    modulo: 'personal',
   },
   {
     href: '/dashboard/configuracion',
     icon: '⚙️',
     label: 'Configuración',
     description: 'Apariencia y preferencias',
-    color: 'bg-slate-50 border-slate-200 hover:bg-slate-100',
-    iconBg: 'bg-slate-100',
-    labelColor: 'text-slate-700',
+    color: 'bg-[var(--bg-surface)] border-slate-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-slate-500/15',
+    labelColor: 'text-slate-600',
     modulo: 'configuracion',
   },
 ]
@@ -101,24 +112,24 @@ export default async function DashboardPage() {
 
   return (
     <AppShell title="Inicio">
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-4xl mx-auto">
         <p className="text-sm text-[var(--text-secondary)] mb-6">
           Bienvenido, <span className="font-medium text-[var(--text-primary)]">{nombreMostrado}</span>
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5 mb-8">
           {cardsVisibles.map(card => (
             <Link
               key={card.href}
               href={card.href}
-              className={`flex flex-col items-center gap-3 p-6 rounded-2xl border transition-colors ${card.color}`}
+              className={`flex flex-col items-center gap-4 p-8 rounded-2xl border transition-colors ${card.color}`}
             >
-              <div className={`w-14 h-14 rounded-2xl ${card.iconBg} flex items-center justify-center text-3xl`}>
+              <div className={`w-16 h-16 rounded-2xl ${card.iconBg} flex items-center justify-center text-4xl`}>
                 {card.icon}
               </div>
               <div className="text-center">
-                <div className={`text-base font-bold ${card.labelColor}`}>{card.label}</div>
-                <div className="text-xs text-[var(--text-secondary)] mt-0.5">{card.description}</div>
+                <div className={`text-lg font-bold ${card.labelColor}`}>{card.label}</div>
+                <div className="text-sm text-[var(--text-secondary)] mt-1">{card.description}</div>
               </div>
             </Link>
           ))}
@@ -132,6 +143,16 @@ export default async function DashboardPage() {
             Cerrar sesión
           </button>
         </form>
+
+        {rol === 'admin' && (
+          <div className="mt-8 border border-red-200 rounded-2xl p-5">
+            <h3 className="text-sm font-semibold text-red-700 mb-1">Zona peligrosa</h3>
+            <p className="text-xs text-[var(--text-secondary)] mb-2">
+              Elimina todos los datos transaccionales del restaurante (pedidos, pagos, reservas, movimientos de stock, carta). Los usuarios, productos y configuración se conservan.
+            </p>
+            <ClearDataButton />
+          </div>
+        )}
       </div>
     </AppShell>
   )

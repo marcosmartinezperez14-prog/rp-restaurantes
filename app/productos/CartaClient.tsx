@@ -11,9 +11,10 @@ interface Props {
   categories: Categoria[]
   allProducts: ProductoConCategoria[]
   onProductsRefresh: () => void
+  canEdit?: boolean
 }
 
-export default function CartaClient({ initialMenuItems, categories, allProducts }: Props) {
+export default function CartaClient({ initialMenuItems, categories, allProducts, canEdit = false }: Props) {
   const [menuItems, setMenuItems] = useState(initialMenuItems)
   const [filterCategoryId, setFilterCategoryId] = useState('')
   const [showPanel, setShowPanel] = useState(false)
@@ -88,12 +89,14 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
           </div>
         )}
 
-        <button
-          onClick={handleNewItem}
-          className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
-        >
-          + Nuevo plato
-        </button>
+        {canEdit && (
+          <button
+            onClick={handleNewItem}
+            className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+          >
+            + Nuevo plato
+          </button>
+        )}
       </div>
 
       {menuItems.length > 0 && (
@@ -110,7 +113,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
           <p className="text-sm font-medium">
             {menuItems.length === 0 ? 'La carta está vacía' : 'Sin platos en esta categoría'}
           </p>
-          {menuItems.length === 0 && (
+          {menuItems.length === 0 && canEdit && (
             <button
               onClick={handleNewItem}
               className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
@@ -127,12 +130,13 @@ export default function CartaClient({ initialMenuItems, categories, allProducts 
               item={item}
               onEdit={handleEdit}
               onRefresh={handleRefresh}
+              canEdit={canEdit}
             />
           ))}
         </div>
       )}
 
-      {showPanel && (
+      {showPanel && canEdit && (
         <MenuItemFormPanel
           item={editItem}
           categories={categories}

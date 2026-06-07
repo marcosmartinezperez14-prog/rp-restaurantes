@@ -12,9 +12,10 @@ interface Props {
   product: ProductoConCategoria
   allCategories: Categoria[]
   onRefresh: () => void
+  canEdit?: boolean
 }
 
-export default function ProductRow({ product, allCategories, onRefresh }: Props) {
+export default function ProductRow({ product, allCategories, onRefresh, canEdit = false }: Props) {
   const [modal, setModal] = useState<'edit' | 'purchase' | 'ajuste' | 'merma' | 'history' | null>(null)
   const [editingStock, setEditingStock] = useState(false)
   const [stockDraft, setStockDraft] = useState('')
@@ -67,7 +68,7 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
           {product.cost_price !== null ? `${product.cost_price.toFixed(2)} €` : '—'}
         </td>
         <td className="px-4 py-3 text-sm text-right">
-          {editingStock ? (
+          {canEdit && editingStock ? (
             <div className="flex items-center justify-end gap-1">
               <input
                 ref={inputRef}
@@ -86,9 +87,9 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
             </div>
           ) : (
             <span
-              onClick={startEditStock}
-              title="Clic para editar stock"
-              className={`cursor-pointer ${
+              onClick={canEdit ? startEditStock : undefined}
+              title={canEdit ? 'Clic para editar stock' : undefined}
+              className={`${canEdit ? 'cursor-pointer' : ''} ${
                 product.track_stock
                   ? stockCritical ? 'text-red-600 font-bold' : stockLow ? 'text-amber-600 font-semibold' : 'text-[var(--text-primary)]'
                   : 'text-[var(--text-secondary)]'
@@ -104,22 +105,30 @@ export default function ProductRow({ product, allCategories, onRefresh }: Props)
         <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">{product.supplier ?? '—'}</td>
         <td className="px-4 py-3">
           <div className="flex gap-1 justify-end flex-wrap">
-            <button onClick={() => setModal('edit')}
-              className="px-2 py-1 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-100">
-              Editar
-            </button>
-            <button onClick={() => setModal('purchase')}
-              className="px-2 py-1 text-xs bg-green-50 border border-green-200 rounded-lg text-green-700 hover:bg-green-100">
-              Compra
-            </button>
-            <button onClick={() => setModal('ajuste')}
-              className="px-2 py-1 text-xs bg-amber-50 border border-amber-200 rounded-lg text-amber-700 hover:bg-amber-100">
-              Ajuste
-            </button>
-            <button onClick={() => setModal('merma')}
-              className="px-2 py-1 text-xs bg-red-50 border border-red-200 rounded-lg text-red-600 hover:bg-red-100">
-              Merma
-            </button>
+            {canEdit && (
+              <button onClick={() => setModal('edit')}
+                className="px-2 py-1 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-100">
+                Editar
+              </button>
+            )}
+            {canEdit && (
+              <button onClick={() => setModal('purchase')}
+                className="px-2 py-1 text-xs bg-green-50 border border-green-200 rounded-lg text-green-700 hover:bg-green-100">
+                Compra
+              </button>
+            )}
+            {canEdit && (
+              <button onClick={() => setModal('ajuste')}
+                className="px-2 py-1 text-xs bg-amber-50 border border-amber-200 rounded-lg text-amber-700 hover:bg-amber-100">
+                Ajuste
+              </button>
+            )}
+            {canEdit && (
+              <button onClick={() => setModal('merma')}
+                className="px-2 py-1 text-xs bg-red-50 border border-red-200 rounded-lg text-red-600 hover:bg-red-100">
+                Merma
+              </button>
+            )}
             <button onClick={() => setModal(modal === 'history' ? null : 'history')}
               className="px-2 py-1 text-xs bg-slate-100 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-200">
               Historial
