@@ -13,17 +13,12 @@ export default async function ProductosPage() {
 
   const { data: usuarioActual } = await supabase
     .from('users')
-    .select('restaurant_id')
-    .eq('id', user.id)
+    .select('restaurant_id, user_roles!user_id(roles(name))')
+    .eq('auth_id', user.id)
     .single()
 
-  const { data: userRoleRow } = await supabase
-    .from('user_roles')
-    .select('roles(name)')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  const rol = ((userRoleRow?.roles as { name: string } | null)?.name ?? null) as RolNombre | null
+  const roles = usuarioActual?.user_roles as { roles: { name: string } | null }[] | undefined
+  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
   const tieneAcceso = !rol || PERMISOS_POR_ROL[rol].modulos.includes('productos')
   const canEdit = !rol || ROLES_EDITORES.includes(rol)
 
