@@ -21,14 +21,15 @@ export async function loginAction(
   const password = (formData.get('password') as string) ?? ''
 
   if (!username.trim()) return { error: 'El campo usuario es obligatorio.' }
-  if (!isValidUsername(username.trim())) return { error: 'El usuario solo puede contener letras, números, guiones y guiones bajos.' }
   if (!password) return { error: 'El campo contraseña es obligatorio.' }
 
+  // Si contiene @ se trata como email real; si no, se mapea al dominio interno
+  const email = username.trim().includes('@')
+    ? username.trim()
+    : usernameToEmail(username)
+
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({
-    email: usernameToEmail(username),
-    password,
-  })
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
     return { error: 'Credenciales incorrectas. Verifica tu usuario y contraseña.' }
