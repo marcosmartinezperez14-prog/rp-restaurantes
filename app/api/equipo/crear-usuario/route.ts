@@ -9,15 +9,21 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, nombre, password, role_name } = await req.json()
+    const { username, nombre, password, role_name } = await req.json()
 
-    if (!email || !nombre || !password || !role_name) {
+    if (!username || !nombre || !password || !role_name) {
       return NextResponse.json({ success: false, error: 'Faltan campos obligatorios' }, { status: 400 })
+    }
+
+    if (!/^[a-z0-9_-]+$/i.test(username)) {
+      return NextResponse.json({ success: false, error: 'El usuario solo puede contener letras, números, guiones y guiones bajos' }, { status: 400 })
     }
 
     if (password.length < 8) {
       return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
     }
+
+    const email = `${username.trim().toLowerCase()}@rp-internal.com`
 
     const supabase = await createServerClient()
     const { data: { user: caller } } = await supabase.auth.getUser()
@@ -46,7 +52,7 @@ export async function POST(req: NextRequest) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name: nombre },
+      user_metadata: { username: username.trim().toLowerCase(), name: nombre },
     })
 
     if (authError || !authData.user) {

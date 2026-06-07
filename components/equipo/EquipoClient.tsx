@@ -74,7 +74,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
 
   function ModalAnadirUsuario() {
     const [nombre, setNombre] = useState('')
-    const [email, setEmail] = useState('')
+    const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [rolSeleccionado, setRolSeleccionado] = useState<RolNombre>('camarero')
     const [error, setError] = useState<string | null>(null)
@@ -83,7 +83,8 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
     async function handleGuardar() {
       setError(null)
       if (!nombre.trim()) { setError('El nombre es obligatorio'); return }
-      if (!email.trim()) { setError('El email es obligatorio'); return }
+      if (!username.trim()) { setError('El usuario es obligatorio'); return }
+      if (!/^[a-z0-9_-]+$/i.test(username.trim())) { setError('El usuario solo puede contener letras, números, guiones y guiones bajos'); return }
       if (!password.trim()) { setError('La contraseña es obligatoria'); return }
       if (password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
 
@@ -92,7 +93,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
         const res = await fetch('/api/equipo/crear-usuario', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), nombre: nombre.trim(), password, role_name: rolSeleccionado }),
+          body: JSON.stringify({ username: username.trim(), nombre: nombre.trim(), password, role_name: rolSeleccionado }),
         })
         const data = await res.json()
         if (!data.success) {
@@ -103,7 +104,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
           id: data.usuario.id,
           auth_id: data.usuario.auth_id,
           nombre: nombre.trim(),
-          email: email.trim(),
+          email: `${username.trim().toLowerCase()}@rp-internal.com`,
           avatar_url: null,
           activo: true,
           created_at: new Date().toISOString(),
@@ -150,12 +151,13 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Email</label>
+              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Usuario</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="maria@restaurante.com"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Ej: maria_garcia"
+                autoComplete="off"
                 className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
               />
             </div>
@@ -452,7 +454,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-[var(--text-primary)] text-sm truncate">{usuario.nombre}</p>
-                  <p className="text-xs text-[var(--text-secondary)] truncate">{usuario.email}</p>
+                  <p className="text-xs text-[var(--text-secondary)] truncate">@{usuario.email.replace('@rp-internal.com', '')}</p>
                 </div>
               </div>
 

@@ -108,7 +108,10 @@ export default async function DashboardPage() {
     ? NAV_CARDS.filter(c => modulosPermitidos.includes(c.modulo) || c.modulo === 'configuracion')
     : NAV_CARDS
 
-  const nombreMostrado = usuarioActual?.nombre || user.email
+  const nombreMostrado = usuarioActual?.nombre
+    ?? user.user_metadata?.username
+    ?? user.email?.replace('@rp-internal.com', '')
+    ?? ''
 
   return (
     <AppShell title="Inicio">
