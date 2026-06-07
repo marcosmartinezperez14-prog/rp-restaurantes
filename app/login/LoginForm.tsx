@@ -2,7 +2,6 @@
 'use client'
 
 import { useActionState } from 'react'
-import Link from 'next/link'
 import { loginAction } from '@/app/actions/auth'
 
 export default function LoginForm() {
@@ -64,12 +63,6 @@ export default function LoginForm() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          ¿No tienes cuenta?{' '}
-          <Link href="/registro" className="text-blue-600 hover:underline font-medium">
-            Regístrate
-          </Link>
-        </p>
       </div>
     </div>
   )
