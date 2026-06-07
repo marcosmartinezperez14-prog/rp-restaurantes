@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/AppShell'
 import { logoutAction } from '@/app/actions/auth'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
-import ClearDataButton from './ClearDataButton'
 
 const NAV_CARDS = [
   {
@@ -147,15 +146,6 @@ export default async function DashboardPage() {
           </button>
         </form>
 
-        {rol === 'admin' && (
-          <div className="mt-8 border border-red-200 rounded-2xl p-5">
-            <h3 className="text-sm font-semibold text-red-700 mb-1">Zona peligrosa</h3>
-            <p className="text-xs text-[var(--text-secondary)] mb-2">
-              Elimina todos los datos transaccionales del restaurante (pedidos, pagos, reservas, movimientos de stock, carta). Los usuarios, productos y configuración se conservan.
-            </p>
-            <ClearDataButton />
-          </div>
-        )}
       </div>
     </AppShell>
   )
