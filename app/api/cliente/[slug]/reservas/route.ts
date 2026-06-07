@@ -16,6 +16,9 @@ export async function POST(
     if (!hora) return NextResponse.json({ error: 'La hora es obligatoria' }, { status: 400 })
     if (!num_personas || num_personas < 1) return NextResponse.json({ error: 'El número de personas debe ser al menos 1' }, { status: 400 })
 
+    const today = new Date().toISOString().split('T')[0]
+    if (fecha < today) return NextResponse.json({ error: 'La fecha no puede ser en el pasado' }, { status: 400 })
+
     const { data: restaurante } = await supabaseAdmin
       .from('restaurants')
       .select('id')

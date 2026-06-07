@@ -47,6 +47,22 @@ export default async function ClienteCartaPage({
       })),
   })).filter(cat => cat.items.length > 0)
 
+  // Items sin categoría al final
+  const sinCategoria = (items ?? []).filter(i => !i.category_id)
+  if (sinCategoria.length > 0) {
+    carta.push({
+      id: 'sin-categoria',
+      nombre: 'Otros',
+      items: sinCategoria.map(i => ({
+        id: i.id,
+        nombre: i.name,
+        descripcion: i.description ?? null,
+        precio: Number(i.price),
+        imagen_url: i.image_url ?? null,
+      })),
+    })
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Cabecera restaurante */}

@@ -31,6 +31,7 @@ export async function GET(
     .select('id, name, capacity')
     .eq('id', mesa_id)
     .eq('restaurant_id', restaurante.id)
+    .eq('is_active', true)
     .maybeSingle()
 
   if (!mesa) return NextResponse.json({ error: 'Mesa no encontrada' }, { status: 404 })
@@ -86,6 +87,7 @@ export async function POST(
       .select('id')
       .eq('id', mesa_id)
       .eq('restaurant_id', restaurante.id)
+      .eq('is_active', true)
       .maybeSingle()
 
     if (!mesa) return NextResponse.json({ error: 'Mesa no encontrada' }, { status: 404 })
@@ -106,8 +108,12 @@ export async function POST(
       orderId = orderAbierta.id
     } else {
       // Crear nueva order
-      const { data: orderNumber } = await supabaseAdmin
+      const { data: orderNumber, error: rpcError } = await supabaseAdmin
         .rpc('get_next_order_number', { p_restaurant_id: restaurante.id })
+
+      if (rpcError || orderNumber === null) {
+        return NextResponse.json({ error: 'No se pudo crear la comanda' }, { status: 500 })
+      }
 
       const today = new Date().toISOString().split('T')[0]
       const { data: nuevaOrder, error: orderError } = await supabaseAdmin
@@ -136,21 +142,44 @@ export async function POST(
         .eq('id', mesa_id)
     }
 
+    // Verificar items contra la BD (precio real, items del restaurante)
+    const { data: menuItems, error: menuError } = await supabaseAdmin
+      .from('menu_items')
+      .select('id, name, price')
+      .in('id', items.map(i => i.menu_item_id))
+      .eq('restaurant_id', restaurante.id)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+
+    if (menuError || !menuItems?.length) {
+      return NextResponse.json({ error: 'Productos no válidos' }, { status: 400 })
+    }
+
+    const menuItemsMap = new Map(menuItems.map(m => [m.id, m]))
+    const itemsInvalidos = items.filter(i => !menuItemsMap.has(i.menu_item_id))
+    if (itemsInvalidos.length > 0) {
+      return NextResponse.json({ error: 'Algunos productos no están disponibles' }, { status: 400 })
+    }
+
     // Insertar items
-    const orderItemsData = items.map(item => ({
-      restaurant_id: restaurante.id,
-      order_id: orderId,
-      product_id: item.menu_item_id,
-      product_name: item.nombre,
-      product_price: item.precio,
-      tax_rate: 0,
-      quantity: item.cantidad,
-      unit_price: item.precio,
-      total_price: item.precio * item.cantidad,
-      modifiers: [],
-      notes: null,
-      status: 'pending',
-    }))
+    const orderItemsData = items.map(item => {
+      const menuItem = menuItemsMap.get(item.menu_item_id)!
+      const precio = Number(menuItem.price)
+      return {
+        restaurant_id: restaurante.id,
+        order_id: orderId,
+        product_id: item.menu_item_id,
+        product_name: menuItem.name,
+        product_price: precio,
+        tax_rate: 0,
+        quantity: item.cantidad,
+        unit_price: precio,
+        total_price: precio * item.cantidad,
+        modifiers: [],
+        notes: null,
+        status: 'pending',
+      }
+    })
 
     const { error: itemsError } = await supabaseAdmin
       .from('order_items')
