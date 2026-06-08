@@ -59,7 +59,7 @@ export async function POST(
         return NextResponse.json({ error: 'El restaurante no acepta reservas ese día' }, { status: 400 })
       }
 
-      const horaValida = diaConfig.franjas.some(f => hora >= f.apertura && hora < f.cierre)
+      const horaValida = diaConfig.franjas.length > 0 && diaConfig.franjas.some(f => hora >= f.apertura && hora < f.cierre)
       if (!horaValida) {
         return NextResponse.json({ error: 'Fuera del horario de reservas' }, { status: 400 })
       }
