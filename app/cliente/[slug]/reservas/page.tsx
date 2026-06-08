@@ -16,6 +16,7 @@ export default function ReservasPage() {
   const [error, setError] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  const [autoConfirm, setAutoConfirm] = useState(true)
 
   const hoy = new Date().toISOString().split('T')[0]
 
@@ -43,6 +44,7 @@ export default function ReservasPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'No se pudo realizar la reserva'); return }
+      setAutoConfirm(data.auto_confirm !== false)
       setEnviado(true)
     } catch {
       setError('Error de conexión. Inténtalo de nuevo.')
@@ -54,11 +56,14 @@ export default function ReservasPage() {
   if (enviado) {
     return (
       <div className="max-w-md mx-auto px-4 py-12 text-center">
-        <div className="text-5xl mb-4">✓</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">¡Reserva recibida!</h2>
+        <div className="text-5xl mb-4">{autoConfirm ? '✓' : '🕐'}</div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          {autoConfirm ? '¡Reserva confirmada!' : 'Reserva recibida'}
+        </h2>
         <p className="text-gray-500 text-sm">
-          Te esperamos el {fecha.split('-').reverse().join('/')} a las {hora}h.<br />
-          Nos pondremos en contacto si necesitamos confirmar.
+          {autoConfirm
+            ? <>{`Te esperamos el ${fecha.split('-').reverse().join('/')} a las ${hora}h.`}<br />Nos pondremos en contacto si necesitamos confirmar.</>
+            : 'Te confirmaremos lo antes posible.'}
         </p>
         <a
           href={`/cliente/${slug}`}
