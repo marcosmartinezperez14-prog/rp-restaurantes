@@ -24,13 +24,13 @@ export const PERMISOS_POR_ROL: Record<RolNombre, {
     label: 'Administrador',
     color: 'purple',
     descripcion: 'Acceso total al sistema',
-    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo', 'personal', 'configuracion'],
+    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo', 'personal', 'configuracion', 'administracion'],
   },
   gerente: {
     label: 'Gerente',
     color: 'blue',
     descripcion: 'Todo menos configuración crítica',
-    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo', 'personal'],
+    modulos: ['dashboard', 'tpv', 'pedidos', 'productos', 'finanzas', 'facturas', 'equipo', 'personal', 'administracion'],
   },
   camarero: {
     label: 'Camarero',
