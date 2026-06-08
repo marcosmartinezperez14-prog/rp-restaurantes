@@ -6,6 +6,7 @@ import { getReservationsByDate, updateReservationStatus, deleteReservation } fro
 import NewReservationModal from './NewReservationModal'
 
 const STATUS_CONFIG: Record<ReservationStatus, { label: string; color: string }> = {
+  pending:   { label: 'Pendiente',     color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
   confirmed: { label: 'Confirmada',    color: 'bg-blue-50 text-blue-700 border-blue-200' },
   seated:    { label: 'Sentada',       color: 'bg-green-50 text-green-700 border-green-200' },
   completed: { label: 'Completada',    color: 'bg-slate-100 text-slate-600 border-slate-200' },
@@ -14,6 +15,7 @@ const STATUS_CONFIG: Record<ReservationStatus, { label: string; color: string }>
 }
 
 const NEXT_STATUSES: Record<ReservationStatus, ReservationStatus[]> = {
+  pending:   ['confirmed', 'cancelled'],
   confirmed: ['seated', 'cancelled', 'no_show'],
   seated:    ['completed', 'cancelled'],
   completed: [],
@@ -22,6 +24,7 @@ const NEXT_STATUSES: Record<ReservationStatus, ReservationStatus[]> = {
 }
 
 const STATUS_LABELS: Record<ReservationStatus, string> = {
+  pending:   'Pendiente',
   confirmed: 'Confirmada',
   seated:    'Sentar',
   completed: 'Completar',

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type ReservationStatus = 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show'
+export type ReservationStatus = 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show' | 'pending'
 
 export type Reservation = {
   id: string
