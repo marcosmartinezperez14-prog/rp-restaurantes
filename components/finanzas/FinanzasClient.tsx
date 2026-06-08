@@ -7,6 +7,8 @@ import {
 } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import type { Movimiento, MovimientoTipo, Recurrencia } from '@/types/finanzas'
+import type { TicketResumen } from '@/types/ticket'
+import TicketPreview from '@/components/tpv/TicketPreview'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -24,7 +26,15 @@ const RECURRENCIAS: { value: Recurrencia; label: string; desc: string }[] = [
   { value: 'anual',   label: 'Anual',   desc: 'Se repite cada año en la misma fecha' },
 ]
 
+const METODO_LABEL: Record<string, string> = {
+  cash:  'Efectivo',
+  card:  'Tarjeta',
+  bizum: 'Bizum',
+  mixed: 'Mixto',
+}
+
 type Periodo = 'este_mes' | 'mes_anterior' | 'ultimos_3_meses' | 'este_ano' | 'todo'
+type Tab = 'movimientos' | 'tickets'
 
 const PERIODOS: { value: Periodo; label: string }[] = [
   { value: 'este_mes',        label: 'Este mes' },
@@ -59,7 +69,6 @@ function getPeriodoRange(periodo: Periodo): { desde: Date; hasta: Date } {
   }
 }
 
-// Calcula el importe total de un movimiento dentro del rango [desde, hasta]
 function calcularImporteEnRango(m: Movimiento, desde: Date, hasta: Date): number {
   const importe = Number(m.importe)
   const inicio = new Date(m.fecha + 'T00:00:00')
@@ -132,14 +141,17 @@ interface Props {
   ingresos_tpv: number
   num_tickets: number
   restaurantId: string
+  tickets: TicketResumen[]
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
-export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num_tickets, restaurantId }: Props) {
+export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num_tickets, restaurantId, tickets }: Props) {
   const [movimientos, setMovimientos] = useState(inicial)
   const [periodo, setPeriodo] = useState<Periodo>('este_mes')
+  const [tab, setTab] = useState<Tab>('movimientos')
   const [modalTipo, setModalTipo] = useState<MovimientoTipo | null>(null)
+  const [ticketModalId, setTicketModalId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [eliminandoId, setEliminandoId] = useState<string | null>(null)
 
@@ -158,6 +170,13 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
   const beneficio_neto = ingresos_tpv + ingresos_manuales - gastos_total
 
   const datosGrafico = useMemo(() => getDatosGrafico(movimientos), [movimientos])
+
+  const ticketsFiltrados = useMemo(() => {
+    return tickets.filter(t => {
+      const fecha = new Date(t.fecha)
+      return fecha >= desde && fecha <= hasta
+    })
+  }, [tickets, desde, hasta])
 
   function showToast(msg: string) {
     setToast(msg)
@@ -209,7 +228,24 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
         ))}
       </div>
 
-      {/* B — Tarjetas resumen */}
+      {/* B — Tabs */}
+      <div className="flex border-b border-[#e2e8f0]">
+        {(['movimientos', 'tickets'] as Tab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+              tab === t
+                ? 'border-[#0f172a] text-[#0f172a]'
+                : 'border-transparent text-[#64748b] hover:text-[#0f172a]'
+            }`}
+          >
+            {t === 'movimientos' ? 'Movimientos' : `Tickets (${num_tickets})`}
+          </button>
+        ))}
+      </div>
+
+      {/* C — Tarjetas resumen (ambas tabs) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Tarjeta titulo="Ingresos TPV" valor={ingresos_tpv} subtexto={`${num_tickets} ticket${num_tickets !== 1 ? 's' : ''}`} color="verde" />
         <Tarjeta titulo="Ingresos manuales" valor={ingresos_manuales} color="azul" />
@@ -217,121 +253,196 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
         <Tarjeta titulo="Beneficio neto" valor={beneficio_neto} color={beneficio_neto >= 0 ? 'verde' : 'rojo'} signo />
       </div>
 
-      {/* C — Gráfico */}
-      <div className="bg-white rounded-xl border border-[#e2e8f0] p-4">
-        <h2 className="text-sm font-semibold text-[#0f172a] mb-4">Últimos 6 meses</h2>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={datosGrafico} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="periodo" tick={{ fontSize: 12, fill: '#94a3b8' }} />
-            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} width={72} tickFormatter={v => v.toLocaleString('es-ES') + ' €'} />
-            <Tooltip
-              formatter={(value, name) => [fmt(Number(value)), name]}
-              labelStyle={{ color: '#0f172a', fontWeight: 600 }}
-              contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
-            />
-            <Legend wrapperStyle={{ fontSize: 13 }} />
-            <Bar dataKey="Ingresos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* D — Botones */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => setModalTipo('ingreso')}
-          className="px-4 py-2.5 text-sm bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 flex items-center gap-1.5"
-        >
-          <span className="text-base leading-none">+</span> Añadir ingreso
-        </button>
-        <button
-          onClick={() => setModalTipo('gasto')}
-          className="px-4 py-2.5 text-sm bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 flex items-center gap-1.5"
-        >
-          <span className="text-base leading-none">+</span> Añadir gasto
-        </button>
-      </div>
-
-      {/* E — Tabla (muestra todos, el período solo afecta al resumen) */}
-      <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
-        <div className="px-4 py-3 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[#0f172a]">
-            Todos los movimientos {movimientos.length > 0 && `(${movimientos.length})`}
-          </h2>
-          <span className="text-xs text-[#94a3b8]">El período solo afecta al resumen</span>
-        </div>
-
-        {movimientos.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="text-4xl mb-3">📊</div>
-            <p className="text-sm text-[#94a3b8]">Aún no hay movimientos registrados</p>
+      {/* D — Contenido por tab */}
+      {tab === 'movimientos' && (
+        <>
+          {/* Gráfico */}
+          <div className="bg-white rounded-xl border border-[#e2e8f0] p-4">
+            <h2 className="text-sm font-semibold text-[#0f172a] mb-4">Últimos 6 meses</h2>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={datosGrafico} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="periodo" tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} width={72} tickFormatter={v => v.toLocaleString('es-ES') + ' €'} />
+                <Tooltip
+                  formatter={(value, name) => [fmt(Number(value)), name]}
+                  labelStyle={{ color: '#0f172a', fontWeight: 600 }}
+                  contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
+                />
+                <Legend wrapperStyle={{ fontSize: 13 }} />
+                <Bar dataKey="Ingresos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#e2e8f0] bg-slate-50">
-                  {['Fecha', 'Tipo', 'Concepto', 'Categoría', 'Importe', 'Acciones'].map(h => (
-                    <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Importe' || h === 'Acciones' ? 'text-right' : 'text-left'}`}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {movimientos.map(m => {
-                  const recLabel = etiquetaRecurrencia(m)
-                  return (
-                    <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-slate-50">
-                      <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">{m.fecha}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-block w-fit px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'ingreso' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
-                          </span>
-                          {recLabel && (
-                            <span className="inline-block w-fit px-2 py-0.5 text-xs font-medium rounded-full bg-violet-100 text-violet-700">
-                              {recLabel}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[#0f172a]">
-                        <span>{m.concepto}</span>
-                        {m.notas && <span className="block text-xs text-[#94a3b8]">{m.notas}</span>}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[#64748b]">{m.categoria}</td>
-                      <td className={`px-4 py-3 text-sm text-right font-semibold whitespace-nowrap ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
-                        {m.tipo === 'ingreso' ? '+' : '−'}{fmt(Number(m.importe))}
-                        {recLabel && <span className="block text-xs font-normal text-[#94a3b8]">{m.recurrencia === 'mensual' ? '/mes' : '/año'}</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => handleEliminar(m.id)}
-                          disabled={eliminandoId === m.id}
-                          className="px-2 py-1 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50 transition-colors"
-                        >
-                          {eliminandoId === m.id ? '...' : 'Eliminar'}
-                        </button>
-                      </td>
+
+          {/* Botones añadir */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setModalTipo('ingreso')}
+              className="px-4 py-2.5 text-sm bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 flex items-center gap-1.5"
+            >
+              <span className="text-base leading-none">+</span> Añadir ingreso
+            </button>
+            <button
+              onClick={() => setModalTipo('gasto')}
+              className="px-4 py-2.5 text-sm bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 flex items-center gap-1.5"
+            >
+              <span className="text-base leading-none">+</span> Añadir gasto
+            </button>
+          </div>
+
+          {/* Tabla movimientos */}
+          <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#e2e8f0] flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-[#0f172a]">
+                Todos los movimientos {movimientos.length > 0 && `(${movimientos.length})`}
+              </h2>
+              <span className="text-xs text-[#94a3b8]">El período solo afecta al resumen</span>
+            </div>
+
+            {movimientos.length === 0 ? (
+              <div className="py-16 text-center">
+                <div className="text-4xl mb-3">📊</div>
+                <p className="text-sm text-[#94a3b8]">Aún no hay movimientos registrados</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                      {['Fecha', 'Tipo', 'Concepto', 'Categoría', 'Importe', 'Acciones'].map(h => (
+                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Importe' || h === 'Acciones' ? 'text-right' : 'text-left'}`}>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {movimientos.map(m => {
+                      const recLabel = etiquetaRecurrencia(m)
+                      return (
+                        <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-slate-50">
+                          <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">{m.fecha}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-block w-fit px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'ingreso' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
+                              </span>
+                              {recLabel && (
+                                <span className="inline-block w-fit px-2 py-0.5 text-xs font-medium rounded-full bg-violet-100 text-violet-700">
+                                  {recLabel}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[#0f172a]">
+                            <span>{m.concepto}</span>
+                            {m.notas && <span className="block text-xs text-[#94a3b8]">{m.notas}</span>}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[#64748b]">{m.categoria}</td>
+                          <td className={`px-4 py-3 text-sm text-right font-semibold whitespace-nowrap ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
+                            {m.tipo === 'ingreso' ? '+' : '−'}{fmt(Number(m.importe))}
+                            {recLabel && <span className="block text-xs font-normal text-[#94a3b8]">{m.recurrencia === 'mensual' ? '/mes' : '/año'}</span>}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handleEliminar(m.id)}
+                              disabled={eliminandoId === m.id}
+                              className="px-2 py-1 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50 transition-colors"
+                            >
+                              {eliminandoId === m.id ? '...' : 'Eliminar'}
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* F — Modal */}
-      {modalTipo && (
-        <MovimientoModal
-          tipo={modalTipo}
-          restaurantId={restaurantId}
-          onClose={() => setModalTipo(null)}
-          onSaved={handleMovimientoAdded}
-        />
+          {/* Modal movimiento */}
+          {modalTipo && (
+            <MovimientoModal
+              tipo={modalTipo}
+              restaurantId={restaurantId}
+              onClose={() => setModalTipo(null)}
+              onSaved={handleMovimientoAdded}
+            />
+          )}
+        </>
+      )}
+
+      {tab === 'tickets' && (
+        <>
+          {/* Tabla tickets */}
+          <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#e2e8f0]">
+              <h2 className="text-sm font-semibold text-[#0f172a]">
+                Tickets {ticketsFiltrados.length > 0 && `(${ticketsFiltrados.length})`}
+              </h2>
+            </div>
+
+            {ticketsFiltrados.length === 0 ? (
+              <div className="py-16 text-center">
+                <div className="text-4xl mb-3">🧾</div>
+                <p className="text-sm text-[#94a3b8]">No hay tickets en este período</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                      {['Nº Ticket', 'Fecha', 'Mesa', 'Método', 'Total', ''].map(h => (
+                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Total' || h === '' ? 'text-right' : 'text-left'}`}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ticketsFiltrados.map(t => (
+                      <tr key={t.id} className="border-b border-[#f1f5f9] hover:bg-slate-50">
+                        <td className="px-4 py-3 text-sm font-mono text-[#0f172a]">{t.numero_ticket}</td>
+                        <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">
+                          {new Date(t.fecha).toLocaleString('es-ES', {
+                            day: '2-digit', month: '2-digit', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#64748b]">{t.mesa_nombre}</td>
+                        <td className="px-4 py-3 text-sm text-[#64748b]">
+                          {METODO_LABEL[t.metodo_pago] ?? t.metodo_pago}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">
+                          {fmt(t.total)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => setTicketModalId(t.id)}
+                            className="px-3 py-1.5 text-xs font-semibold bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                          >
+                            Ver ticket
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Modal TicketPreview */}
+          {ticketModalId && (
+            <TicketPreview
+              ticketId={ticketModalId}
+              onClose={() => setTicketModalId(null)}
+            />
+          )}
+        </>
       )}
     </div>
   )
@@ -376,7 +487,6 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState<string | null>(null)
 
-  // Texto informativo dinámico según recurrencia y fecha
   const infoRecurrencia = useMemo(() => {
     if (recurrencia === 'unico') return null
     const d = new Date(fecha + 'T00:00:00')
@@ -427,7 +537,6 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
             <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
           )}
 
-          {/* Concepto */}
           <div>
             <label className="block text-xs font-semibold text-[#64748b] mb-1">Concepto *</label>
             <input type="text" value={concepto} onChange={e => setConcepto(e.target.value)}
@@ -435,7 +544,6 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
               className="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
           </div>
 
-          {/* Importe + Fecha */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-[#64748b] mb-1">Importe (€) *</label>
@@ -452,7 +560,6 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
             </div>
           </div>
 
-          {/* Categoría */}
           <div>
             <label className="block text-xs font-semibold text-[#64748b] mb-1">Categoría *</label>
             <select value={categoria} onChange={e => setCategoria(e.target.value)}
@@ -462,7 +569,6 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
             </select>
           </div>
 
-          {/* Recurrencia */}
           <div>
             <label className="block text-xs font-semibold text-[#64748b] mb-2">Repetición</label>
             <div className="grid grid-cols-3 gap-2">
@@ -487,7 +593,6 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
             )}
           </div>
 
-          {/* Notas */}
           <div>
             <label className="block text-xs font-semibold text-[#64748b] mb-1">Notas (opcional)</label>
             <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
