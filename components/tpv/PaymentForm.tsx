@@ -42,7 +42,6 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
       const result = await processPayment(order.id, buildParams())
       if ('error' in result) { setError(result.error); return }
       setTicketId(result.ticketId)
-      router.refresh()
     })
   }
 
