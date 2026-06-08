@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/reservas',           label: 'Reservas',   icon: '📅' },
   { href: '/productos',          label: 'Productos',  icon: '📦' },
   { href: '/dashboard/personal', label: 'Personal',   icon: '🗓️' },
+  { href: '/dashboard/caja',     label: 'Caja',       icon: '🏦' },
 ]
 
 export default function NavDrawer() {

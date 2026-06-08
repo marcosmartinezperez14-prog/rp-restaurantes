@@ -87,6 +87,16 @@ const NAV_CARDS = [
     modulo: 'configuracion',
   },
   {
+    href: '/dashboard/caja',
+    icon: '🏦',
+    label: 'Caja',
+    description: 'Turnos, apertura y cierre de caja',
+    color: 'bg-[var(--bg-surface)] border-green-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-green-500/15',
+    labelColor: 'text-green-600',
+    modulo: 'administracion',
+  },
+  {
     href: '/dashboard/administracion',
     icon: '🔧',
     label: 'Administración',
