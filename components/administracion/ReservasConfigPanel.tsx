@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { ReservasConfig, Schedule, DiaSchedule } from '@/types/administracion'
+import type { ReservasConfig, Schedule, DiaSchedule, Franja } from '@/types/administracion'
 import { guardarReservasConfig } from '@/app/actions/administracion'
 
 const DIAS: { key: keyof Schedule; label: string }[] = [
@@ -29,13 +29,37 @@ export default function ReservasConfigPanel({ initialConfig }: { initialConfig: 
   const [isPending, startTransition] = useTransition()
 
   function setDia(key: keyof Schedule, partial: Partial<DiaSchedule>) {
-    setConfig(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [key]: { ...prev.schedule[key], ...partial },
-      },
-    }))
+    setConfig(prev => {
+      const current = prev.schedule[key]
+      const updated = { ...current, ...partial }
+      if (updated.activo && updated.franjas.length === 0) {
+        updated.franjas = [{ apertura: '', cierre: '' }]
+      }
+      return { ...prev, schedule: { ...prev.schedule, [key]: updated } }
+    })
+  }
+
+  function setFranja(key: keyof Schedule, index: number, partial: Partial<Franja>) {
+    setConfig(prev => {
+      const franjas = prev.schedule[key].franjas.map((f, i) =>
+        i === index ? { ...f, ...partial } : f
+      )
+      return { ...prev, schedule: { ...prev.schedule, [key]: { ...prev.schedule[key], franjas } } }
+    })
+  }
+
+  function addFranja(key: keyof Schedule) {
+    setConfig(prev => {
+      const franjas = [...prev.schedule[key].franjas, { apertura: '', cierre: '' }]
+      return { ...prev, schedule: { ...prev.schedule, [key]: { ...prev.schedule[key], franjas } } }
+    })
+  }
+
+  function removeFranja(key: keyof Schedule, index: number) {
+    setConfig(prev => {
+      const franjas = prev.schedule[key].franjas.filter((_, i) => i !== index)
+      return { ...prev, schedule: { ...prev.schedule, [key]: { ...prev.schedule[key], franjas } } }
+    })
   }
 
   function handleGuardar() {
@@ -55,42 +79,61 @@ export default function ReservasConfigPanel({ initialConfig }: { initialConfig: 
       {/* Horario por día */}
       <div>
         <p className="text-sm font-medium text-[var(--text-secondary)] mb-3">Horario de reservas</p>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {DIAS.map(({ key, label }) => {
             const dia = config.schedule[key]
             return (
-              <div key={key} className="flex items-center gap-4 py-2 border-b border-[var(--border)] last:border-0">
-                {/* Toggle activo */}
-                <button
-                  onClick={() => setDia(key, { activo: !dia.activo })}
-                  className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${dia.activo ? 'bg-blue-600' : 'bg-gray-300'}`}
-                >
-                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${dia.activo ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
+              <div key={key} className="border-b border-[var(--border)] pb-3 last:border-0 last:pb-0">
+                <div className="flex items-center gap-3 mb-2">
+                  {/* Toggle activo */}
+                  <button
+                    onClick={() => setDia(key, { activo: !dia.activo })}
+                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${dia.activo ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${dia.activo ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                  <span className={`text-sm font-medium w-24 ${dia.activo ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                    {label}
+                  </span>
+                  {!dia.activo && (
+                    <span className="text-xs text-[var(--text-secondary)]">Cerrado</span>
+                  )}
+                </div>
 
-                {/* Nombre del día */}
-                <span className={`text-sm w-24 flex-shrink-0 ${dia.activo ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-secondary)]'}`}>
-                  {label}
-                </span>
-
-                {dia.activo ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      value={dia.apertura}
-                      onChange={e => setDia(key, { apertura: e.target.value })}
-                      className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-xs text-[var(--text-secondary)]">hasta</span>
-                    <input
-                      type="time"
-                      value={dia.cierre}
-                      onChange={e => setDia(key, { cierre: e.target.value })}
-                      className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                {dia.activo && (
+                  <div className="ml-[52px] space-y-2">
+                    {dia.franjas.map((franja, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={franja.apertura}
+                          onChange={e => setFranja(key, i, { apertura: e.target.value })}
+                          className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-[var(--text-secondary)]">hasta</span>
+                        <input
+                          type="time"
+                          value={franja.cierre}
+                          onChange={e => setFranja(key, i, { cierre: e.target.value })}
+                          className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        {dia.franjas.length > 1 && (
+                          <button
+                            onClick={() => removeFranja(key, i)}
+                            className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors text-sm font-bold"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addFranja(key)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-1"
+                    >
+                      + Añadir franja
+                    </button>
                   </div>
-                ) : (
-                  <span className="text-xs text-[var(--text-secondary)]">Cerrado</span>
                 )}
               </div>
             )
