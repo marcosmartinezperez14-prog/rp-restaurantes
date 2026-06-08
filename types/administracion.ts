@@ -1,7 +1,11 @@
-export type DiaSchedule = {
-  activo: boolean
+export type Franja = {
   apertura: string
   cierre: string
+}
+
+export type DiaSchedule = {
+  activo: boolean
+  franjas: Franja[]
 }
 
 export type Schedule = {
@@ -20,16 +24,18 @@ export type ReservasConfig = {
   schedule: Schedule
 }
 
+const DEFAULT_FRANJA: Franja = { apertura: '13:00', cierre: '23:30' }
+
 export const DEFAULT_CONFIG: ReservasConfig = {
   auto_confirm: true,
   duration_minutes: 90,
   schedule: {
-    lunes:     { activo: true,  apertura: '13:00', cierre: '23:30' },
-    martes:    { activo: true,  apertura: '13:00', cierre: '23:30' },
-    miercoles: { activo: true,  apertura: '13:00', cierre: '23:30' },
-    jueves:    { activo: true,  apertura: '13:00', cierre: '23:30' },
-    viernes:   { activo: true,  apertura: '13:00', cierre: '23:30' },
-    sabado:    { activo: true,  apertura: '13:00', cierre: '23:30' },
-    domingo:   { activo: false, apertura: '13:00', cierre: '23:30' },
+    lunes:     { activo: true,  franjas: [DEFAULT_FRANJA] },
+    martes:    { activo: true,  franjas: [DEFAULT_FRANJA] },
+    miercoles: { activo: true,  franjas: [DEFAULT_FRANJA] },
+    jueves:    { activo: true,  franjas: [DEFAULT_FRANJA] },
+    viernes:   { activo: true,  franjas: [DEFAULT_FRANJA] },
+    sabado:    { activo: true,  franjas: [DEFAULT_FRANJA] },
+    domingo:   { activo: false, franjas: [DEFAULT_FRANJA] },
   },
 }
