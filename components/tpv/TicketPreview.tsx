@@ -153,6 +153,7 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       {/* Print-only: ocultar todo excepto el ticket */}
       <style>{`
+        @page { size: 80mm auto; margin: 0; }
         @media print {
           * { visibility: hidden !important; }
           .rp-ticket-print {
@@ -162,6 +163,7 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
             top: 0; left: 0; right: 0;
             background: white;
             padding: 0;
+            width: 80mm;
           }
           .rp-ticket-print * { visibility: visible !important; }
         }
