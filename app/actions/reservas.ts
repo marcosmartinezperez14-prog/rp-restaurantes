@@ -2,6 +2,12 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import type { Schedule } from '@/types/administracion'
+
+const DIA_MAP: Record<number, keyof Schedule> = {
+  0: 'domingo', 1: 'lunes', 2: 'martes', 3: 'miercoles',
+  4: 'jueves', 5: 'viernes', 6: 'sabado',
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -103,6 +109,29 @@ export async function createReservation(params: {
   if (!params.customerName.trim()) return { error: 'El nombre es obligatorio' }
   if (!params.customerPhone.trim()) return { error: 'El teléfono es obligatorio' }
   if (params.partySize < 1) return { error: 'El número de comensales debe ser al menos 1' }
+
+  const { data: settings } = await supabase
+    .from('reservation_settings')
+    .select('schedule')
+    .eq('restaurant_id', restaurantId)
+    .maybeSingle()
+
+  if (settings) {
+    const schedule = settings.schedule as Schedule
+    const [anio, mes, dia] = params.date.split('-').map(Number)
+    const diaSemana = new Date(anio, mes - 1, dia).getDay()
+    const diaConfig = schedule[DIA_MAP[diaSemana]]
+
+    if (!diaConfig.activo) {
+      return { error: 'El restaurante no acepta reservas ese día' }
+    }
+
+    const franjas = diaConfig.franjas ?? []
+    const horaValida = franjas.length > 0 && franjas.some(f => params.time >= f.apertura && params.time < f.cierre)
+    if (!horaValida) {
+      return { error: 'Fuera del horario de reservas configurado' }
+    }
+  }
 
   // Auto-assign best table in zone: smallest capacity >= partySize
   let tableId: string | null = null
