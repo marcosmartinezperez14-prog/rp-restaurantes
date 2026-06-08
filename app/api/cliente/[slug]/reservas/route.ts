@@ -38,7 +38,6 @@ export async function POST(
 
     if (!restaurante) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
 
-    // Consultar configuración de reservas
     const { data: settings } = await supabaseAdmin
       .from('reservation_settings')
       .select('auto_confirm, schedule')
@@ -51,7 +50,6 @@ export async function POST(
       const schedule = settings.schedule as Schedule
       autoConfirm = settings.auto_confirm
 
-      // Validar día de la semana
       const [anio, mes, dia] = fecha.split('-').map(Number)
       const diaSemana = new Date(anio, mes - 1, dia).getDay()
       const diaKey = DIA_MAP[diaSemana]
@@ -61,8 +59,9 @@ export async function POST(
         return NextResponse.json({ error: 'El restaurante no acepta reservas ese día' }, { status: 400 })
       }
 
-      if (hora < diaConfig.apertura || hora >= diaConfig.cierre) {
-        return NextResponse.json({ error: `Fuera del horario de reservas (${diaConfig.apertura}–${diaConfig.cierre})` }, { status: 400 })
+      const horaValida = diaConfig.franjas.some(f => hora >= f.apertura && hora < f.cierre)
+      if (!horaValida) {
+        return NextResponse.json({ error: 'Fuera del horario de reservas' }, { status: 400 })
       }
     }
 
