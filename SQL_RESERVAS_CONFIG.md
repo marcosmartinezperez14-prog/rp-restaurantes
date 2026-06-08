@@ -9,13 +9,13 @@ CREATE TABLE IF NOT EXISTS reservation_settings (
   auto_confirm     BOOLEAN NOT NULL DEFAULT true,
   duration_minutes INT NOT NULL DEFAULT 90,
   schedule         JSONB NOT NULL DEFAULT '{
-    "lunes":     { "activo": true,  "apertura": "13:00", "cierre": "23:30" },
-    "martes":    { "activo": true,  "apertura": "13:00", "cierre": "23:30" },
-    "miercoles": { "activo": true,  "apertura": "13:00", "cierre": "23:30" },
-    "jueves":    { "activo": true,  "apertura": "13:00", "cierre": "23:30" },
-    "viernes":   { "activo": true,  "apertura": "13:00", "cierre": "23:30" },
-    "sabado":    { "activo": true,  "apertura": "13:00", "cierre": "23:30" },
-    "domingo":   { "activo": false, "apertura": "13:00", "cierre": "23:30" }
+    "lunes":     { "activo": true,  "franjas": [{"apertura": "13:00", "cierre": "23:30"}] },
+    "martes":    { "activo": true,  "franjas": [{"apertura": "13:00", "cierre": "23:30"}] },
+    "miercoles": { "activo": true,  "franjas": [{"apertura": "13:00", "cierre": "23:30"}] },
+    "jueves":    { "activo": true,  "franjas": [{"apertura": "13:00", "cierre": "23:30"}] },
+    "viernes":   { "activo": true,  "franjas": [{"apertura": "13:00", "cierre": "23:30"}] },
+    "sabado":    { "activo": true,  "franjas": [{"apertura": "13:00", "cierre": "23:30"}] },
+    "domingo":   { "activo": false, "franjas": [{"apertura": "13:00", "cierre": "23:30"}] }
   }'::jsonb,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
