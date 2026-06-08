@@ -38,11 +38,15 @@ export async function POST(
 
     if (!restaurante) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
 
-    const { data: settings } = await supabaseAdmin
+    const { data: settings, error: settingsError } = await supabaseAdmin
       .from('reservation_settings')
       .select('auto_confirm, schedule')
       .eq('restaurant_id', restaurante.id)
       .maybeSingle()
+
+    if (settingsError) {
+      return NextResponse.json({ error: `Error al leer configuración: ${settingsError.message}` }, { status: 500 })
+    }
 
     let autoConfirm = true
 
