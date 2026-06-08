@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { Schedule, ReservasConfig } from '@/types/administracion'
 import { DEFAULT_CONFIG } from '@/types/administracion'
 
-export type { DiaSchedule, Schedule, ReservasConfig } from '@/types/administracion'
+export type { Franja, DiaSchedule, Schedule, ReservasConfig } from '@/types/administracion'
 
 async function getRestaurantId(supabase: Awaited<ReturnType<typeof createClient>>, authId: string): Promise<string | null> {
   const { data } = await supabase
@@ -59,11 +59,16 @@ export async function guardarReservasConfig(config: ReservasConfig): Promise<{ o
   for (const dia of dias) {
     const d = config.schedule[dia]
     if (d.activo) {
-      if (!isValidTime(d.apertura) || !isValidTime(d.cierre)) {
-        return { error: `Horario inválido para ${dia}` }
+      if (d.franjas.length === 0) {
+        return { error: `Añade al menos una franja para ${dia}` }
       }
-      if (d.apertura >= d.cierre) {
-        return { error: `La hora de cierre debe ser posterior a la apertura (${dia})` }
+      for (const franja of d.franjas) {
+        if (!isValidTime(franja.apertura) || !isValidTime(franja.cierre)) {
+          return { error: `Horario inválido para ${dia}` }
+        }
+        if (franja.apertura >= franja.cierre) {
+          return { error: `La hora de cierre debe ser posterior a la apertura (${dia})` }
+        }
       }
     }
   }
