@@ -154,8 +154,16 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
       {/* Print-only: ocultar todo excepto el ticket */}
       <style>{`
         @media print {
-          body > * { display: none !important; }
-          .rp-ticket-print { display: block !important; position: fixed; inset: 0; }
+          * { visibility: hidden !important; }
+          .rp-ticket-print {
+            display: block !important;
+            visibility: visible !important;
+            position: fixed !important;
+            top: 0; left: 0; right: 0;
+            background: white;
+            padding: 0;
+          }
+          .rp-ticket-print * { visibility: visible !important; }
         }
         .rp-ticket-print { display: none; }
       `}</style>
@@ -360,7 +368,7 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
               onClick={handlePrintBrowser}
               className="w-full py-2.5 rounded-xl text-sm font-semibold border border-[#e2e8f0] text-[#64748b] hover:bg-slate-50 transition-colors"
             >
-              Imprimir con navegador
+              Imprimir en impresora local
             </button>
           </div>
         )}
