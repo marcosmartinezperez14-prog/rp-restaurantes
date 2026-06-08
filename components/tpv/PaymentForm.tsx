@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { OrderWithItems, PaymentMethod, ProcessPaymentParams } from '@/app/actions/tpv'
 import { processPayment } from '@/app/actions/tpv'
+import TicketPreview from '@/components/tpv/TicketPreview'
 
 export default function PaymentForm({ order }: { order: OrderWithItems }) {
   const [method, setMethod] = useState<PaymentMethod>('card')
@@ -12,6 +13,7 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
   const [mixedCard, setMixedCard] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [ticketId, setTicketId] = useState<string | null>(null)
   const router = useRouter()
 
   const total = order.total
@@ -39,7 +41,8 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
     startTransition(async () => {
       const result = await processPayment(order.id, buildParams())
       if ('error' in result) { setError(result.error); return }
-      router.push('/tpv')
+      setTicketId(result.ticketId)
+      router.refresh()
     })
   }
 
@@ -51,6 +54,13 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
   ]
 
   return (
+    <>
+    {ticketId && (
+      <TicketPreview
+        ticketId={ticketId}
+        onClose={() => { setTicketId(null); router.push('/tpv') }}
+      />
+    )}
     <div className="flex flex-col gap-5">
       {/* Total */}
       <div className="bg-white rounded-2xl p-6 border border-[#e2e8f0]">
@@ -165,5 +175,6 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
         {isPending ? 'Procesando...' : `Confirmar cobro — ${Number(total).toFixed(2)} €`}
       </button>
     </div>
+    </>
   )
 }
