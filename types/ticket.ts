@@ -3,11 +3,11 @@ export interface TicketCompleto {
   numero_ticket: string
   fecha: string
   mesa_nombre: string
-  comensales: number
   subtotal: number
   iva: number
   total: number
   metodo_pago: string
+  estado?: string
   hash_verifactu?: string
   qr_verifactu?: string
   restaurante: {
@@ -21,8 +21,15 @@ export interface TicketCompleto {
     cantidad: number
     precio_unitario: number
     subtotal: number
-    producto: {
-      nombre: string
-    }
+    producto: { nombre: string }
   }[]
+}
+
+export interface TicketResumen {
+  id: string
+  numero_ticket: string
+  fecha: string
+  total: number
+  metodo_pago: string
+  mesa_nombre: string
 }
