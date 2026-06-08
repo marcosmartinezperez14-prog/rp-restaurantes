@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { ReservasConfig, Schedule, DiaSchedule } from '@/app/actions/administracion'
+import type { ReservasConfig, Schedule, DiaSchedule } from '@/types/administracion'
 import { guardarReservasConfig } from '@/app/actions/administracion'
 
 const DIAS: { key: keyof Schedule; label: string }[] = [

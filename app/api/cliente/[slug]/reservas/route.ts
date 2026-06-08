@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import type { Schedule } from '@/app/actions/administracion'
+import type { Schedule } from '@/types/administracion'
 
 const DIA_MAP: Record<number, keyof Schedule> = {
   0: 'domingo',
