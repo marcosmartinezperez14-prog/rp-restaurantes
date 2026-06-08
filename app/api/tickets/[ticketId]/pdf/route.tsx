@@ -287,7 +287,6 @@ async function fetchTicketData(ticketId: string, restaurantId: string): Promise<
     numero_ticket: ticket.ticket_number,
     fecha: ticket.issued_at,
     mesa_nombre: mesaNombre,
-    comensales: 0,
     subtotal: Number(ticket.subtotal),
     iva: Number(iva.toFixed(2)),
     total,
