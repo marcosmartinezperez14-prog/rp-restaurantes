@@ -86,6 +86,16 @@ const NAV_CARDS = [
     labelColor: 'text-slate-600',
     modulo: 'configuracion',
   },
+  {
+    href: '/dashboard/administracion',
+    icon: '🔧',
+    label: 'Administración',
+    description: 'Reservas, horarios y configuración avanzada',
+    color: 'bg-[var(--bg-surface)] border-rose-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-rose-500/15',
+    labelColor: 'text-rose-600',
+    modulo: 'administracion',
+  },
 ]
 
 export default async function DashboardPage() {
