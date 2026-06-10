@@ -13,14 +13,13 @@ const TEMAS = [
 
 export default function ThemeButton() {
   const [open, setOpen] = useState(false)
-  const [tema, setTema] = useState('slate-light')
+  const [tema, setTema] = useState(() =>
+    typeof window !== 'undefined'
+      ? (document.documentElement.dataset.theme ?? 'slate-light')
+      : 'slate-light'
+  )
   const [isPending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const current = document.documentElement.dataset.theme ?? 'slate-light'
-    setTema(current)
-  }, [])
 
   useEffect(() => {
     if (!open) return
