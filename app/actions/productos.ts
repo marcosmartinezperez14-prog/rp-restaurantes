@@ -84,6 +84,7 @@ export type MenuItem = {
   price: number
   image_url: string | null
   is_active: boolean
+  cantidad_minima: number
   deleted_at: string | null
   created_at: string
   updated_at: string
@@ -702,7 +703,7 @@ export async function getMenuItems(): Promise<MenuItem[]> {
     .from('menu_items')
     .select(`
       id, restaurant_id, category_id, name, description, price,
-      image_url, is_active, deleted_at, created_at, updated_at,
+      image_url, is_active, cantidad_minima, deleted_at, created_at, updated_at,
       categories(name),
       menu_item_ingredients(
         id, menu_item_id, product_id, restaurant_id, quantity, unit,
@@ -722,6 +723,7 @@ export async function getMenuItems(): Promise<MenuItem[]> {
     price: Number(item.price),
     image_url: item.image_url ?? null,
     is_active: item.is_active,
+    cantidad_minima: Number(item.cantidad_minima) || 1,
     deleted_at: item.deleted_at ?? null,
     created_at: item.created_at,
     updated_at: item.updated_at,
@@ -754,6 +756,7 @@ export async function createMenuItem(params: {
   price: number
   imageUrl?: string
   isActive: boolean
+  cantidadMinima?: number
   ingredients: { productId: string; quantity: number; unit: string }[]
 }): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient()
@@ -777,6 +780,7 @@ export async function createMenuItem(params: {
       price: params.price,
       image_url: params.imageUrl || null,
       is_active: params.isActive,
+      cantidad_minima: params.cantidadMinima ?? 1,
     })
     .select('id')
     .single()
@@ -808,6 +812,7 @@ export async function updateMenuItem(
     price?: number
     imageUrl?: string | null
     isActive?: boolean
+    cantidadMinima?: number
     ingredients?: { productId: string; quantity: number; unit: string }[]
   }
 ): Promise<{ error?: string }> {
@@ -826,6 +831,7 @@ export async function updateMenuItem(
   if (params.price !== undefined) updateData.price = params.price
   if (params.imageUrl !== undefined) updateData.image_url = params.imageUrl || null
   if (params.isActive !== undefined) updateData.is_active = params.isActive
+  if (params.cantidadMinima !== undefined) updateData.cantidad_minima = params.cantidadMinima
 
   const { error: updateErr } = await supabase
     .from('menu_items')
