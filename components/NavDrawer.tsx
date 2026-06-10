@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/tpv',                label: 'TPV',        icon: '🖥️' },
   { href: '/reservas',           label: 'Reservas',   icon: '📅' },
   { href: '/productos',          label: 'Productos',  icon: '📦' },
+  { href: '/dashboard/informes', label: 'Informes',   icon: '📊' },
   { href: '/dashboard/personal', label: 'Personal',   icon: '🗓️' },
   { href: '/dashboard/caja',     label: 'Caja',       icon: '🏦' },
 ]

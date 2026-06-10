@@ -77,6 +77,16 @@ const NAV_CARDS = [
     modulo: 'personal',
   },
   {
+    href: '/dashboard/informes',
+    icon: '📊',
+    label: 'Informes',
+    description: 'Ventas, productos y franjas horarias',
+    color: 'bg-[var(--bg-surface)] border-cyan-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-cyan-500/15',
+    labelColor: 'text-cyan-600',
+    modulo: 'administracion',
+  },
+  {
     href: '/dashboard/configuracion',
     icon: '⚙️',
     label: 'Configuración',
