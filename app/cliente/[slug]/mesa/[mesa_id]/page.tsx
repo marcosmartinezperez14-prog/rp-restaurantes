@@ -36,7 +36,7 @@ export default function MesaPage() {
     setCarrito(prev => {
       const existe = prev.find(i => i.id === item.id)
       if (existe) return prev.map(i => i.id === item.id ? { ...i, cantidad: i.cantidad + 1 } : i)
-      return [...prev, { ...item, cantidad: 1 }]
+      return [...prev, { ...item, cantidad: item.cantidad_minima }]
     })
   }
 
@@ -44,7 +44,7 @@ export default function MesaPage() {
     setCarrito(prev => {
       const item = prev.find(i => i.id === itemId)
       if (!item) return prev
-      if (item.cantidad === 1) return prev.filter(i => i.id !== itemId)
+      if (item.cantidad <= item.cantidad_minima) return prev.filter(i => i.id !== itemId)
       return prev.map(i => i.id === itemId ? { ...i, cantidad: i.cantidad - 1 } : i)
     })
   }
@@ -58,6 +58,11 @@ export default function MesaPage() {
 
   async function handleEnviarPedido() {
     setErrorEnvio(null)
+    const itemBajominimo = carrito.find(i => i.cantidad < i.cantidad_minima)
+    if (itemBajominimo) {
+      setErrorEnvio(`"${itemBajominimo.nombre}" tiene un mínimo de ${itemBajominimo.cantidad_minima} unidad(es) por pedido.`)
+      return
+    }
     setEnviando(true)
     try {
       const res = await fetch(`/api/cliente/${slug}/mesa/${mesaId}`, {
