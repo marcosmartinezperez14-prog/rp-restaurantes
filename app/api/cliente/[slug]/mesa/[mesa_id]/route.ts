@@ -45,7 +45,7 @@ export async function GET(
 
   const { data: items } = await supabaseAdmin
     .from('menu_items')
-    .select('id, name, description, price, image_url, category_id')
+    .select('id, name, description, price, image_url, category_id, cantidad_minima')
     .eq('restaurant_id', restaurante.id)
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -62,6 +62,7 @@ export async function GET(
         descripcion: item.description ?? null,
         precio: Number(item.price),
         imagen_url: item.image_url ?? null,
+        cantidad_minima: Number(item.cantidad_minima) || 1,
       })),
   })).filter(cat => cat.items.length > 0)
 
