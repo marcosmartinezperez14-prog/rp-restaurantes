@@ -4,9 +4,11 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 const TEMAS_VALIDOS = [
-  'slate-light', 'slate-dark',
-  'ocean-light', 'ocean-dark',
+  'slate-light',  'slate-dark',
+  'ocean-light',  'ocean-dark',
   'sunset-light', 'sunset-dark',
+  'forest-light', 'forest-dark',
+  'violet-light', 'violet-dark',
 ]
 
 export async function guardarTema(tema: string): Promise<{ error?: string }> {
