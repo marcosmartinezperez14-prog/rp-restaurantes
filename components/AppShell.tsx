@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ThemeButton from './ThemeButton'
 
 export default function AppShell({
   children,
@@ -20,7 +21,8 @@ export default function AppShell({
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
         </Link>
-        <h1 className="text-[15px] font-semibold text-white">{title}</h1>
+        <h1 className="text-[15px] font-semibold text-white flex-1">{title}</h1>
+        <ThemeButton />
       </header>
       <main className="flex-1 overflow-auto p-6">
         {children}
