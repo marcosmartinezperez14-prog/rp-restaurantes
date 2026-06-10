@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import { guardarTema } from '@/app/actions/tema'
 
 const TEMAS = [
-  { id: 'slate', label: 'Slate', color: '#0f172a' },
-  { id: 'ocean', label: 'Ocean', color: '#1d4ed8' },
+  { id: 'slate',  label: 'Slate',  color: '#0f172a' },
+  { id: 'ocean',  label: 'Ocean',  color: '#1d4ed8' },
   { id: 'sunset', label: 'Sunset', color: '#c2410c' },
+  { id: 'forest', label: 'Forest', color: '#15803d' },
+  { id: 'violet', label: 'Violet', color: '#7c3aed' },
 ]
 
 interface Props {
@@ -50,7 +52,7 @@ export default function AparienciaPanel({ temaActual }: Props) {
       {/* Color del tema */}
       <div className="mb-8">
         <p className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">Color del tema</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-5 gap-2">
           {TEMAS.map((t) => {
             const activo = nombre === t.id
             return (
@@ -64,11 +66,11 @@ export default function AparienciaPanel({ temaActual }: Props) {
                     : 'border-[var(--border)] bg-[var(--bg-surface)] hover:border-[var(--text-secondary)]'
                 }`}
               >
-                <div className="w-full h-10 rounded-lg mb-2" style={{ background: t.color }} />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">{t.label}</span>
+                <div className="w-full h-8 rounded-lg mb-2" style={{ background: t.color }} />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{t.label}</span>
                   {activo && (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: t.color }}>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white text-center" style={{ background: t.color }}>
                       Activo
                     </span>
                   )}
