@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 
 export default function ReservasPage() {
@@ -17,8 +17,20 @@ export default function ReservasPage() {
   const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [autoConfirm, setAutoConfirm] = useState(true)
+  const [maxOnlineComensales, setMaxOnlineComensales] = useState<number | null>(null)
 
   const hoy = new Date().toISOString().split('T')[0]
+
+  useEffect(() => {
+    fetch(`/api/cliente/${slug}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.max_online_comensales != null) {
+          setMaxOnlineComensales(data.max_online_comensales)
+        }
+      })
+      .catch(() => {})
+  }, [slug])
 
   async function handleEnviar() {
     setError(null)
@@ -27,6 +39,10 @@ export default function ReservasPage() {
     if (!fecha) { setError('La fecha es obligatoria'); return }
     if (!hora) { setError('La hora es obligatoria'); return }
     if (numPersonas < 1) { setError('El número de personas debe ser al menos 1'); return }
+    if (maxOnlineComensales !== null && numPersonas >= maxOnlineComensales) {
+      setError(`Para grupos de ${maxOnlineComensales} o más personas, contacta con nosotros por teléfono.`)
+      return
+    }
 
     setEnviando(true)
     try {
