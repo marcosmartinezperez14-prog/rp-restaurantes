@@ -89,3 +89,32 @@ export async function guardarReservasConfig(config: ReservasConfig): Promise<{ o
   if (error) return { error: error.message }
   return { ok: true }
 }
+
+export async function getAforoOnline(): Promise<number | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) return null
+  const { data } = await supabase
+    .from('restaurants')
+    .select('max_online_comensales')
+    .eq('id', restaurantId)
+    .single()
+  return data?.max_online_comensales ?? null
+}
+
+export async function guardarAforoOnline(max: number | null): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+  const restaurantId = await getRestaurantId(supabase, user.id)
+  if (!restaurantId) return { error: 'Restaurante no encontrado' }
+  const value = max !== null && max > 0 ? max : null
+  const { error } = await supabase
+    .from('restaurants')
+    .update({ max_online_comensales: value })
+    .eq('id', restaurantId)
+  if (error) return { error: error.message }
+  return { ok: true }
+}
