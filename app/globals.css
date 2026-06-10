@@ -79,6 +79,58 @@
   --border:           #292524;
 }
 
+/* ─── Tema: Forest Light ───────────────────────────────────── */
+[data-theme="forest-light"] {
+  --primary:          #15803d;
+  --primary-hover:    #166534;
+  --bg-page:          #f0fdf4;
+  --bg-surface:       #ffffff;
+  --bg-surface-hover: #dcfce7;
+  --text-primary:     #0f172a;
+  --text-secondary:   #64748b;
+  --text-muted:       #374151;
+  --border:           #e2e8f0;
+}
+
+/* ─── Tema: Forest Dark ────────────────────────────────────── */
+[data-theme="forest-dark"] {
+  --primary:          #15803d;
+  --primary-hover:    #166534;
+  --bg-page:          #052e16;
+  --bg-surface:       #14532d;
+  --bg-surface-hover: #166534;
+  --text-primary:     #f1f5f9;
+  --text-secondary:   #86efac;
+  --text-muted:       #bbf7d0;
+  --border:           #166534;
+}
+
+/* ─── Tema: Violet Light ───────────────────────────────────── */
+[data-theme="violet-light"] {
+  --primary:          #7c3aed;
+  --primary-hover:    #6d28d9;
+  --bg-page:          #faf5ff;
+  --bg-surface:       #ffffff;
+  --bg-surface-hover: #f3e8ff;
+  --text-primary:     #0f172a;
+  --text-secondary:   #64748b;
+  --text-muted:       #374151;
+  --border:           #e2e8f0;
+}
+
+/* ─── Tema: Violet Dark ────────────────────────────────────── */
+[data-theme="violet-dark"] {
+  --primary:          #7c3aed;
+  --primary-hover:    #6d28d9;
+  --bg-page:          #1e0a3c;
+  --bg-surface:       #2e1065;
+  --bg-surface-hover: #3b0764;
+  --text-primary:     #f1f5f9;
+  --text-secondary:   #c4b5fd;
+  --text-muted:       #ddd6fe;
+  --border:           #3b0764;
+}
+
 body {
   background: var(--bg-page);
   color: var(--text-primary);
