@@ -9,7 +9,7 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('restaurants')
-    .select('id, name, slug')
+    .select('id, name, slug, max_online_comensales')
     .eq('slug', slug)
     .single()
 
@@ -17,5 +17,10 @@ export async function GET(
     return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
   }
 
-  return NextResponse.json({ restaurante: data })
+  return NextResponse.json({
+    restaurante: {
+      ...data,
+      max_online_comensales: data.max_online_comensales ?? null,
+    },
+  })
 }
