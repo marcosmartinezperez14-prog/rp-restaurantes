@@ -18,7 +18,7 @@ export default async function EquipoPage() {
 
   if (!usuarioActual?.restaurant_id) redirect('/login')
 
-  const roles = usuarioActual.user_roles as { roles: { name: string } | null }[]
+  const roles = usuarioActual.user_roles as unknown as { roles: { name: string } | null }[]
   const rolActual = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
 
   if (rolActual !== 'admin' && rolActual !== 'gerente') {
@@ -53,7 +53,7 @@ export default async function EquipoPage() {
     .order('created_at', { ascending: true })
 
   const usuarios: UsuarioEquipo[] = (usuariosRaw ?? []).map((u) => {
-    const ur = (u.user_roles as { id: string; roles: { name: string } | null }[])?.[0]
+    const ur = (u.user_roles as unknown as { id: string; roles: { name: string } | null }[])?.[0]
     return {
       id: u.id,
       auth_id: u.auth_id,

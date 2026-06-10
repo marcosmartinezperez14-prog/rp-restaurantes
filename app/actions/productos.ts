@@ -117,7 +117,7 @@ async function puedeEditar(
     .select('user_roles!user_id(roles(name))')
     .eq('id', userId)
     .single()
-  const roles = data?.user_roles as { roles: { name: string } | null }[] | undefined
+  const roles = data?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
   const rol = roles?.[0]?.roles?.name ?? null
   return !rol || ROLES_CON_EDICION.includes(rol)
 }

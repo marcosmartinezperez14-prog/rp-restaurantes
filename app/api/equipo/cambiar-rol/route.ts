@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       .eq('auth_id', caller.id)
       .single()
 
-    const callerRoles = callerUser?.user_roles as { roles: { name: string } | null }[]
+    const callerRoles = callerUser?.user_roles as unknown as { roles: { name: string } | null }[]
     const callerRoleName = callerRoles?.[0]?.roles?.name ?? null
 
     if (callerRoleName !== 'admin') {

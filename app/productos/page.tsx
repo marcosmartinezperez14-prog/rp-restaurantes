@@ -17,7 +17,7 @@ export default async function ProductosPage() {
     .eq('auth_id', user.id)
     .single()
 
-  const roles = usuarioActual?.user_roles as { roles: { name: string } | null }[] | undefined
+  const roles = usuarioActual?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
   const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
   const tieneAcceso = !rol || PERMISOS_POR_ROL[rol].modulos.includes('productos')
   const canEdit = !rol || ROLES_EDITORES.includes(rol)

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    const callerRoles = callerUser.user_roles as { roles: { name: string } | null }[]
+    const callerRoles = callerUser.user_roles as unknown as { roles: { name: string } | null }[]
     const callerRoleName = callerRoles?.[0]?.roles?.name ?? null
 
     if (callerRoleName !== 'admin') {

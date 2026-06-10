@@ -45,6 +45,7 @@ export default async function ClienteCartaPage({
         descripcion: i.description ?? null,
         precio: Number(i.price),
         imagen_url: i.image_url ?? null,
+        cantidad_minima: 1,
       })),
   })).filter(cat => cat.items.length > 0)
 
@@ -60,6 +61,7 @@ export default async function ClienteCartaPage({
         descripcion: i.description ?? null,
         precio: Number(i.price),
         imagen_url: i.image_url ?? null,
+        cantidad_minima: 1,
       })),
     })
   }
