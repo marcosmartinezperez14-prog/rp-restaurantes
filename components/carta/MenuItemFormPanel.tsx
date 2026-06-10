@@ -32,6 +32,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
   const [price, setPrice] = useState(item?.price.toFixed(2) ?? '')
   const [imageUrl, setImageUrl] = useState(item?.image_url ?? '')
   const [isActive, setIsActive] = useState(item?.is_active ?? true)
+  const [cantidadMinima, setCantidadMinima] = useState(item?.cantidad_minima ?? 1)
   const [ingredients, setIngredients] = useState<IngredientDraft[]>(
     (item?.ingredients ?? []).map(ing => ({
       productId: ing.product_id,
@@ -179,6 +180,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
           imageUrl: imageUrl || null,
           isActive,
           ingredients: ingPayload,
+          cantidadMinima,
         })
       } else {
         res = await createMenuItem({
@@ -189,6 +191,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
           imageUrl: imageUrl || undefined,
           isActive,
           ingredients: ingPayload,
+          cantidadMinima,
         })
       }
 
@@ -298,6 +301,18 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imageUrl} alt="preview" className="h-20 w-20 object-cover rounded-lg border border-[var(--border)] mt-1" />
               )}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <div className="text-sm font-medium text-[var(--text-primary)]">Cantidad mínima por pedido</div>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={cantidadMinima}
+                onChange={e => setCantidadMinima(Math.max(1, parseInt(e.target.value) || 1))}
+                className={inputClass}
+              />
             </div>
 
             <label className="flex items-center gap-2 cursor-pointer">
