@@ -246,6 +246,32 @@ export async function dequeue(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// getFailed
+// ---------------------------------------------------------------------------
+
+/**
+ * Devuelve todas las operaciones con status 'failed', ordenadas por
+ * timestamp ASC (orden cronológico de inserción).
+ */
+export async function getFailed(): Promise<PendingOperation[]> {
+  if (typeof window === 'undefined') return []
+  const db = await openDB()
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const index = store.index('status')
+
+    // IDBIndex.getAll() está tipado como IDBRequest<any[]> en el DOM lib
+    const req = index.getAll(IDBKeyRange.only('failed')) as IDBRequest<PendingOperation[]>
+
+    req.onsuccess = () =>
+      resolve((req.result ?? []).sort((a, b) => a.timestamp - b.timestamp))
+    req.onerror = () => reject(req.error)
+  })
+}
+
+// ---------------------------------------------------------------------------
 // countPending
 // ---------------------------------------------------------------------------
 

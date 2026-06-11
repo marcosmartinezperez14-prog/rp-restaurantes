@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/app/actions/auth'
+import { getFailed } from '@/lib/offline/db'
+import FailedOperations from '@/components/offline/FailedOperations'
 
 const NAV_ITEMS = [
   { href: '/dashboard',          label: 'Inicio',    icon: '🏠' },
@@ -18,7 +20,13 @@ const NAV_ITEMS = [
 
 export default function NavDrawer() {
   const [open, setOpen] = useState(false)
+  const [failedCount, setFailedCount] = useState(0)
+  const [showFailed, setShowFailed] = useState(false)
   const pathname = usePathname()
+
+  useEffect(() => {
+    getFailed().then(ops => setFailedCount(ops.length)).catch(() => {})
+  }, [])
 
   return (
     <>
@@ -72,7 +80,15 @@ export default function NavDrawer() {
                 )
               })}
             </nav>
-            <div className="px-3 py-3 border-t border-[#e2e8f0]">
+            <div className="px-3 py-3 border-t border-[#e2e8f0] flex flex-col gap-1">
+              {failedCount > 0 && (
+                <button
+                  onClick={() => setShowFailed(true)}
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[13px] text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                >
+                  ⚠️ {failedCount} op. fallidas
+                </button>
+              )}
               <form action={logoutAction}>
                 <button
                   type="submit"
@@ -84,6 +100,14 @@ export default function NavDrawer() {
             </div>
           </aside>
         </>
+      )}
+      {showFailed && (
+        <FailedOperations
+          onClose={() => {
+            setShowFailed(false)
+            getFailed().then(ops => setFailedCount(ops.length)).catch(() => {})
+          }}
+        />
       )}
     </>
   )
