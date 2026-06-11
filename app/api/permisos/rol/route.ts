@@ -28,15 +28,19 @@ export async function GET() {
     return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
   }
 
-  const { data: roles } = await supabaseAdmin
+  const { data: roles, error: rolesError } = await supabaseAdmin
     .from('roles')
     .select('id, name')
     .order('name')
 
-  const { data: permisos } = await supabaseAdmin
+  if (rolesError) return NextResponse.json({ error: rolesError.message }, { status: 500 })
+
+  const { data: permisos, error: permisosError } = await supabaseAdmin
     .from('permisos_rol')
     .select('role_id, modulo_key, activo')
     .eq('restaurant_id', caller.restaurantId)
+
+  if (permisosError) return NextResponse.json({ error: permisosError.message }, { status: 500 })
 
   const permisosMap = new Map<string, boolean>()
   for (const p of (permisos ?? [])) {
@@ -75,6 +79,11 @@ export async function POST(req: NextRequest) {
 
   if (!role_id || !modulo_key || typeof activo !== 'boolean') {
     return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
+  }
+
+  const esModuloProtegible = MODULOS_SISTEMA.some(m => m.key === modulo_key && m.protegible)
+  if (!esModuloProtegible) {
+    return NextResponse.json({ error: 'Módulo inválido' }, { status: 400 })
   }
 
   const { data: roleData } = await supabaseAdmin

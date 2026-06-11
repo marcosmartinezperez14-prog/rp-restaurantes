@@ -13,7 +13,8 @@ const ORDEN_ROLES = ['admin', 'gerente', 'camarero', 'cocinero', 'contable']
 export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
   const [matriz, setMatriz] = useState<MatrizPermisos[]>([])
   const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [errorCarga, setErrorCarga] = useState<string | null>(null)
+  const [errorGuardado, setErrorGuardado] = useState<string | null>(null)
   const [tabActivo, setTabActivo] = useState<string | null>(null)
   const [guardando, setGuardando] = useState<Record<string, boolean>>({})
   const [mensajeGuardado, setMensajeGuardado] = useState<string | null>(null)
@@ -22,7 +23,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
     fetch('/api/permisos/rol')
       .then(r => r.json())
       .then(data => {
-        if (data.error) { setError(data.error); return }
+        if (data.error) { setErrorCarga(data.error); return }
         const ordenada = [...(data.data as MatrizPermisos[])].sort(
           (a, b) => ORDEN_ROLES.indexOf(a.role_name) - ORDEN_ROLES.indexOf(b.role_name)
         )
@@ -30,7 +31,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
         const configurables = getRolesConfigurables(ordenada, rolUsuarioActual)
         if (configurables.length > 0) setTabActivo(configurables[0].role_name)
       })
-      .catch(() => setError('No se pudo cargar la configuración'))
+      .catch(() => setErrorCarga('No se pudo cargar la configuración'))
       .finally(() => setCargando(false))
   }, [rolUsuarioActual])
 
@@ -44,6 +45,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
 
   async function handleToggle(roleId: string, moduloKey: string, nuevoActivo: boolean) {
     const guardandoKey = `${roleId}:${moduloKey}`
+    setErrorGuardado(null)
 
     setMatriz(prev => prev.map(r =>
       r.role_id === roleId
@@ -65,7 +67,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
             ? { ...r, permisos: { ...r.permisos, [moduloKey]: !nuevoActivo } }
             : r
         ))
-        setError(data.error ?? 'Error al guardar')
+        setErrorGuardado(data.error ?? 'Error al guardar')
         return
       }
       setMensajeGuardado('Guardado')
@@ -76,14 +78,14 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
           ? { ...r, permisos: { ...r.permisos, [moduloKey]: !nuevoActivo } }
           : r
       ))
-      setError('Error de conexión')
+      setErrorGuardado('Error de conexión')
     } finally {
       setGuardando(prev => ({ ...prev, [guardandoKey]: false }))
     }
   }
 
   if (cargando) return <p className="text-sm text-[var(--text-secondary)]">Cargando...</p>
-  if (error) return <p className="text-sm text-red-500">{error}</p>
+  if (errorCarga) return <p className="text-sm text-red-500">{errorCarga}</p>
 
   const modulosProtegibles = MODULOS_SISTEMA.filter(m => m.protegible || MODULOS_SIEMPRE_ACTIVOS.includes(m.key))
   const rolesConfigurables = getRolesConfigurables(matriz, rolUsuarioActual)
@@ -94,6 +96,17 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
       {mensajeGuardado && (
         <div className="text-sm text-green-600 font-medium">{mensajeGuardado}</div>
       )}
+      {errorGuardado && (
+        <div className="flex items-center gap-2 text-sm text-red-500">
+          <span>{errorGuardado}</span>
+          <button
+            onClick={() => setErrorGuardado(null)}
+            className="text-red-400 hover:text-red-600 text-xs underline"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       {matriz.find(r => r.role_name === 'admin') && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
@@ -103,6 +116,10 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
             <span className="ml-2 text-xs text-[var(--text-secondary)] italic">Acceso total — no configurable</span>
           </div>
         </div>
+      )}
+
+      {rolesConfigurables.length === 0 && (
+        <p className="text-sm text-[var(--text-secondary)]">No hay roles configurables para tu nivel de acceso.</p>
       )}
 
       <div className="flex gap-1 border-b border-[var(--border)]">

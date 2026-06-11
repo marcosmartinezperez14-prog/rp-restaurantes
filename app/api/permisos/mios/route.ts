@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { RespuestaMios } from '@/types/permisos'
+import { MODULOS_SISTEMA } from '@/lib/permisos/modulos'
 
 export async function GET() {
   const supabase = await createClient()
@@ -26,11 +27,8 @@ export async function GET() {
     permisos[row.modulo_key] = row.activo
   }
 
-  // Admin siempre tiene acceso a todo
   if (rol === 'admin') {
-    for (const key of Object.keys(permisos)) {
-      permisos[key] = true
-    }
+    for (const m of MODULOS_SISTEMA) permisos[m.key] = true
   }
 
   const respuesta: RespuestaMios = { rol, permisos }

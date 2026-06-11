@@ -52,8 +52,9 @@ export function usePermisos() {
     }
 
     fetch('/api/permisos/mios')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject())
       .then((data: RespuestaMios) => {
+        if (!data || typeof data.permisos !== 'object' || data.permisos === null) return
         escribirCache(data)
         setRol(data.rol)
         setPermisos(data.permisos)
