@@ -87,6 +87,16 @@ const NAV_CARDS = [
     modulo: 'administracion',
   },
   {
+    href: '/dashboard/negocio',
+    icon: '🏪',
+    label: 'Mi negocio',
+    description: 'KPIs del día en un vistazo',
+    color: 'bg-[var(--bg-surface)] border-indigo-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-indigo-500/15',
+    labelColor: 'text-indigo-600',
+    modulo: 'administracion',
+  },
+  {
     href: '/dashboard/configuracion',
     icon: '⚙️',
     label: 'Configuración',

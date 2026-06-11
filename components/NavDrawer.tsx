@@ -7,6 +7,7 @@ import { logoutAction } from '@/app/actions/auth'
 
 const NAV_ITEMS = [
   { href: '/dashboard',          label: 'Inicio',    icon: '🏠' },
+  { href: '/dashboard/negocio', label: 'Mi negocio', icon: '🏪' },
   { href: '/tpv',                label: 'TPV',        icon: '🖥️' },
   { href: '/reservas',           label: 'Reservas',   icon: '📅' },
   { href: '/productos',          label: 'Productos',  icon: '📦' },
