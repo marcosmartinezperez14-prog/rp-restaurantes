@@ -62,7 +62,8 @@ export default function CajaClient({
     setLoading(true)
     try {
       const result = await offlineFetch({
-        type: 'close_shift',
+        // TODO: OperationType podría añadir 'open_shift' para distinguir de 'close_shift'
+        type: 'close_shift', // closest available type
         endpoint: '/api/caja/abrir',
         method: 'POST',
         payload: { fondo_inicial: parseFloat(fondoInicial) || 0 },

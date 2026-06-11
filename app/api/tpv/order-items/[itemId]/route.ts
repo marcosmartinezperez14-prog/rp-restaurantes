@@ -51,6 +51,10 @@ export async function PATCH(
         .eq('restaurant_id', restaurantId)
         .single()
 
+      if (!item) {
+        return NextResponse.json({ error: 'Línea no encontrada' }, { status: 404 })
+      }
+
       const { error } = await supabase
         .from('order_items')
         .update({

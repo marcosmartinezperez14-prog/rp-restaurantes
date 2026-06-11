@@ -48,7 +48,8 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
     startTransition(async () => {
       if (newQty <= 0) {
         const result = await offlineFetch({
-          type: 'change_table_status',
+          // TODO: OperationType podría añadir 'cancel_order_item' para mejor diagnóstico
+          type: 'change_table_status', // closest available type
           endpoint: `/api/tpv/order-items/${item.id}`,
           method: 'PATCH',
           payload: { quantity: 0 },
@@ -63,7 +64,8 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
         onItemsChange(items.filter(i => i.id !== item.id))
       } else {
         const result = await offlineFetch({
-          type: 'change_table_status',
+          // TODO: OperationType podría añadir 'update_item_quantity' para mejor diagnóstico
+          type: 'change_table_status', // closest available type
           endpoint: `/api/tpv/order-items/${item.id}`,
           method: 'PATCH',
           payload: { quantity: newQty },
@@ -89,7 +91,8 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
   function handleCancel() {
     startTransition(async () => {
       const result = await offlineFetch({
-        type: 'change_table_status',
+        // TODO: OperationType podría añadir 'cancel_order' para mejor diagnóstico
+        type: 'change_table_status', // closest available type
         endpoint: `/api/tpv/orders/${order.id}`,
         method: 'DELETE',
         payload: {},
