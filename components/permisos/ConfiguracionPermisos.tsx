@@ -85,7 +85,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
   if (cargando) return <p className="text-sm text-[var(--text-secondary)]">Cargando...</p>
   if (error) return <p className="text-sm text-red-500">{error}</p>
 
-  const modulosProtegibles = MODULOS_SISTEMA.filter(m => m.protegible)
+  const modulosProtegibles = MODULOS_SISTEMA.filter(m => m.protegible || MODULOS_SIEMPRE_ACTIVOS.includes(m.key))
   const rolesConfigurables = getRolesConfigurables(matriz, rolUsuarioActual)
   const rolActivo = matriz.find(r => r.role_name === tabActivo)
 
