@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: '/productos',          label: 'Productos',  icon: '📦' },
   { href: '/dashboard/informes', label: 'Informes',   icon: '📊' },
   { href: '/dashboard/personal', label: 'Personal',   icon: '🗓️' },
+  { href: '/dashboard/fichaje',  label: 'Fichaje',    icon: '⏱️' },
   { href: '/dashboard/caja',     label: 'Caja',       icon: '🏦' },
 ]
 
