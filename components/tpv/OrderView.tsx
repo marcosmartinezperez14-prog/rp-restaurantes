@@ -93,6 +93,7 @@ export default function OrderView({ order, categories, products }: Props) {
       unit_price: unitPrice,
       total_price: unitPrice * quantity,
       modifiers,
+      modifiers_snapshot: [],
       notes: null,
       status: 'pending',
     }

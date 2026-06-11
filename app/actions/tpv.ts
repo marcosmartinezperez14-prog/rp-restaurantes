@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import type { ModifierGroup, ModifierOption, ModifierSnapshot } from '@/types/modificadores'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -9,20 +10,7 @@ export type TableStatus = 'free' | 'occupied' | 'reserved' | 'billing'
 export type OrderItemStatus = 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
 export type PaymentMethod = 'cash' | 'card' | 'bizum' | 'mixed'
 
-export type ModifierOption = {
-  id: string
-  name: string
-  price_adjustment: number
-}
-
-export type ModifierGroup = {
-  id: string
-  name: string
-  is_required: boolean
-  min_selections: number
-  max_selections: number
-  options: ModifierOption[]
-}
+export type { ModifierGroup, ModifierOption }
 
 export type ProductWithModifiers = {
   id: string
@@ -69,6 +57,7 @@ export type OrderItem = {
   unit_price: number
   total_price: number
   modifiers: SelectedModifier[]
+  modifiers_snapshot: ModifierSnapshot[]
   notes: string | null
   status: OrderItemStatus
 }
@@ -258,7 +247,7 @@ export async function getOrderWithItems(orderId: string): Promise<OrderWithItems
 
   const { data: items } = await supabase
     .from('order_items')
-    .select('id, product_name, product_price, tax_rate, quantity, unit_price, total_price, modifiers, notes, status')
+    .select('id, product_name, product_price, tax_rate, quantity, unit_price, total_price, modifiers, modifiers_snapshot, notes, status')
     .eq('order_id', orderId)
     .neq('status', 'cancelled')
     .order('created_at')
@@ -279,6 +268,7 @@ export async function getOrderWithItems(orderId: string): Promise<OrderWithItems
       unit_price: Number(item.unit_price),
       total_price: Number(item.total_price),
       modifiers: (item.modifiers as SelectedModifier[]) ?? [],
+      modifiers_snapshot: (item.modifiers_snapshot as ModifierSnapshot[]) ?? [],
       notes: item.notes,
       status: item.status as OrderItemStatus,
     })),
