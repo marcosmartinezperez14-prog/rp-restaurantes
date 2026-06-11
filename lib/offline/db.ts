@@ -44,6 +44,7 @@ const STORE_NAME = 'pending_operations'
 // ---------------------------------------------------------------------------
 
 let _db: IDBDatabase | null = null
+let _opening: Promise<IDBDatabase> | null = null
 
 // ---------------------------------------------------------------------------
 // Helper: envuelve un IDBRequest en una Promise tipada
@@ -57,6 +58,19 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: espera a que una transacción complete (oncomplete) antes de
+// considerar la escritura durable en disco.
+// ---------------------------------------------------------------------------
+
+function waitTx(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error)
+  })
+}
+
+// ---------------------------------------------------------------------------
 // openDB
 // ---------------------------------------------------------------------------
 
@@ -64,17 +78,21 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
  * Inicializa (o abre) la base de datos IndexedDB.
  * Cachea la instancia en una variable de módulo.
  * Protegida contra entornos SSR (window/indexedDB no disponibles).
+ *
+ * Fix C1: cachea también la promesa en curso para evitar que llamadas
+ * concurrentes abran múltiples instancias antes de que la primera resuelva.
+ * Fix m4: registra onversionchange para cerrar la conexión si otra pestaña
+ * intenta actualizar la DB.
  */
 export async function openDB(): Promise<IDBDatabase> {
   if (typeof window === 'undefined') {
     throw new Error('IndexedDB no está disponible en entornos SSR.')
   }
 
-  if (_db !== null) {
-    return _db
-  }
+  if (_db !== null) return _db
+  if (_opening !== null) return _opening
 
-  return new Promise<IDBDatabase>((resolve, reject) => {
+  _opening = new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
 
     request.onupgradeneeded = (event) => {
@@ -89,13 +107,27 @@ export async function openDB(): Promise<IDBDatabase> {
 
     request.onsuccess = () => {
       _db = request.result
+      // m4: si otra pestaña sube la versión, cerramos limpiamente
+      _db.onversionchange = () => {
+        _db?.close()
+        _db = null
+      }
+      _opening = null
       resolve(_db)
     }
 
-    request.onerror = () => reject(request.error)
-    request.onblocked = () =>
+    request.onerror = () => {
+      _opening = null
+      reject(request.error)
+    }
+
+    request.onblocked = () => {
+      _opening = null
       reject(new Error('IndexedDB bloqueada por otra pestaña.'))
+    }
   })
+
+  return _opening
 }
 
 // ---------------------------------------------------------------------------
@@ -111,9 +143,15 @@ export async function enqueue(
 ): Promise<PendingOperation> {
   const db = await openDB()
 
+  // m1: fallback para entornos que no implementan crypto.randomUUID
+  const id =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
   const operation: PendingOperation = {
     ...op,
-    id: crypto.randomUUID(),
+    id,
     timestamp: Date.now(),
     attempts: 0,
     status: 'pending',
@@ -122,7 +160,9 @@ export async function enqueue(
   const tx = db.transaction(STORE_NAME, 'readwrite')
   const store = tx.objectStore(STORE_NAME)
 
+  // I3: esperamos tanto el add como el oncomplete de la transacción
   await promisifyRequest(store.add(operation))
+  await waitTx(tx)
 
   return operation
 }
@@ -134,20 +174,25 @@ export async function enqueue(
 /**
  * Devuelve todas las operaciones con status 'pending', ordenadas por
  * timestamp ASC (orden cronológico de inserción).
+ *
+ * I1+I2: usa el índice 'status' para filtrar en IDB en vez de traer todo
+ * y filtrar en JS; ordena en memoria por timestamp.
  */
 export async function getPending(): Promise<PendingOperation[]> {
   const db = await openDB()
 
-  const tx = db.transaction(STORE_NAME, 'readonly')
-  const store = tx.objectStore(STORE_NAME)
-  const index = store.index('timestamp')
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const index = store.index('status')
 
-  // getAll sobre el índice timestamp devuelve los registros ordenados ASC
-  const all = await promisifyRequest<PendingOperation[]>(
-    index.getAll() as IDBRequest<PendingOperation[]>
-  )
+    // IDBIndex.getAll() está tipado como IDBRequest<any[]> en el DOM lib
+    const req = index.getAll(IDBKeyRange.only('pending')) as IDBRequest<PendingOperation[]>
 
-  return all.filter((op) => op.status === 'pending')
+    req.onsuccess = () =>
+      resolve((req.result ?? []).sort((a, b) => a.timestamp - b.timestamp))
+    req.onerror = () => reject(req.error)
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +221,10 @@ export async function updateOperation(
   }
 
   const updated: PendingOperation = { ...existing, ...changes }
+
+  // I3: esperamos tanto el put como el oncomplete de la transacción
   await promisifyRequest(store.put(updated))
+  await waitTx(tx)
 }
 
 // ---------------------------------------------------------------------------
@@ -192,7 +240,9 @@ export async function dequeue(id: string): Promise<void> {
   const tx = db.transaction(STORE_NAME, 'readwrite')
   const store = tx.objectStore(STORE_NAME)
 
+  // I3: esperamos tanto el delete como el oncomplete de la transacción
   await promisifyRequest(store.delete(id))
+  await waitTx(tx)
 }
 
 // ---------------------------------------------------------------------------
