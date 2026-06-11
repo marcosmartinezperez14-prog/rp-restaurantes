@@ -22,6 +22,8 @@ export interface TicketCompleto {
     precio_unitario: number
     subtotal: number
     producto: { nombre: string }
+    modifiers_snapshot?: { option_name: string; group_name: string }[]
+    notes?: string | null
   }[]
 }
 

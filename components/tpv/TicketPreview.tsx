@@ -38,7 +38,7 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
 
       const { data: items } = await supabase
         .from('order_items')
-        .select('id, product_name, quantity, unit_price, total_price')
+        .select('id, product_name, quantity, unit_price, total_price, modifiers_snapshot, notes')
         .eq('order_id', ticket.order_id)
         .neq('status', 'cancelled')
 
@@ -83,6 +83,8 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
           precio_unitario: Number(i.unit_price),
           subtotal: Number(i.total_price),
           producto: { nombre: i.product_name },
+          modifiers_snapshot: (i.modifiers_snapshot as { option_name: string; group_name: string }[] | null) ?? [],
+          notes: i.notes as string | null ?? null,
         })),
       }
 
@@ -263,13 +265,27 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
 
                 {/* Items */}
                 {ticket.items.map(item => (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2, fontSize: 11 }}>
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 4 }}>
-                      {item.producto.nombre}
-                    </span>
-                    <span style={{ width: 28, textAlign: 'right' }}>{item.cantidad}</span>
-                    <span style={{ width: 60, textAlign: 'right' }}>{fmt(item.precio_unitario)}</span>
-                    <span style={{ width: 60, textAlign: 'right' }}>{fmt(item.subtotal)}</span>
+                  <div key={item.id} style={{ marginBottom: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 4 }}>
+                        {item.producto.nombre}
+                      </span>
+                      <span style={{ width: 28, textAlign: 'right' }}>{item.cantidad}</span>
+                      <span style={{ width: 60, textAlign: 'right' }}>{fmt(item.precio_unitario)}</span>
+                      <span style={{ width: 60, textAlign: 'right' }}>{fmt(item.subtotal)}</span>
+                    </div>
+                    {item.modifiers_snapshot && item.modifiers_snapshot.length > 0 && (
+                      <div style={{ paddingLeft: 16, fontSize: 11, color: '#666' }}>
+                        {item.modifiers_snapshot.map((m, idx) => (
+                          <div key={idx}>· {m.option_name}</div>
+                        ))}
+                      </div>
+                    )}
+                    {item.notes && (
+                      <div style={{ paddingLeft: 16, fontSize: 11, color: '#888', fontStyle: 'italic' }}>
+                        Nota: {item.notes}
+                      </div>
+                    )}
                   </div>
                 ))}
 
