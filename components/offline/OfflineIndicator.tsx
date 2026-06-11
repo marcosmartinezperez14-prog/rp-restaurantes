@@ -26,8 +26,7 @@ export function OfflineIndicator({
     }
   }, [isOnline, pendingCount])
 
-  if (!visible && isOnline && pendingCount === 0) return null
-  if (isOnline && pendingCount === 0) return null
+  if (isOnline && pendingCount === 0 && !visible) return null
 
   return (
     <div
