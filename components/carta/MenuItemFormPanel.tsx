@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { MenuItem, ProductoConCategoria, Categoria } from '@/app/actions/productos'
 import { createMenuItem, updateMenuItem, createCategoria } from '@/app/actions/productos'
+import GestorModificadores from './GestorModificadores'
 
 const UNIT_OPTIONS = ['unit', 'kg', 'g', 'l', 'ml', 'dozen']
 
@@ -440,6 +441,13 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
               ))}
             </div>
           </div>
+
+          {/* Variantes y modificadores — solo cuando el plato ya existe */}
+          {isEditing && item?.id && (
+            <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-4 mt-2">
+              <GestorModificadores menuItemId={item.id} menuItemName={item.name ?? ''} />
+            </div>
+          )}
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
         </div>
