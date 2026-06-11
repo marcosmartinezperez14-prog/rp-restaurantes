@@ -55,11 +55,14 @@ export default function FailedOperations({ onClose }: FailedOperationsProps) {
 
   const handleDiscard = async (op: PendingOperation) => {
     if (!window.confirm('¿Descartar esta operación? No se podrá recuperar.')) return
+    setProcessing(true)
     try {
       await dequeue(op.id)
       await loadFailed()
     } catch (err) {
       console.error('[FailedOperations] Error al descartar operación:', err)
+    } finally {
+      setProcessing(false)
     }
   }
 
