@@ -77,6 +77,16 @@ const NAV_CARDS = [
     modulo: 'personal',
   },
   {
+    href: '/dashboard/fichaje',
+    icon: '⏱️',
+    label: 'Fichaje',
+    description: 'Registra tu jornada laboral',
+    color: 'bg-[var(--bg-surface)] border-amber-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-amber-500/15',
+    labelColor: 'text-amber-600',
+    modulo: 'personal',
+  },
+  {
     href: '/dashboard/informes',
     icon: '📊',
     label: 'Informes',
