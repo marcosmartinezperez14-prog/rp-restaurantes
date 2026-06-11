@@ -136,6 +136,16 @@ const NAV_CARDS = [
     labelColor: 'text-rose-600',
     modulo: 'administracion',
   },
+  {
+    href: '/dashboard/permisos',
+    icon: '🔐',
+    label: 'Permisos',
+    description: 'Configura el acceso por rol',
+    color: 'bg-[var(--bg-surface)] border-purple-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-purple-500/15',
+    labelColor: 'text-purple-600',
+    modulo: 'administracion',
+  },
 ]
 
 export default async function DashboardPage() {
