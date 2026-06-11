@@ -92,7 +92,7 @@ export function useOfflineFetch(): {
         return { ok: true, offline: false, data }
       } catch (err) {
         // Error de red (sin conexión detectada por el navegador tras el intento)
-        if (err instanceof TypeError && err.message.includes('fetch')) {
+        if (err instanceof TypeError) {
           const op = await enqueue({ ...options, maxAttempts: 5 })
           setPendingCount(await countPending())
           return { ok: true, offline: true, localId: op.id, data: null }
