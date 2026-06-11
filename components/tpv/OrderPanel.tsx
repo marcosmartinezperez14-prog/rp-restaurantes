@@ -47,20 +47,34 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
     const newQty = item.quantity + delta
     startTransition(async () => {
       if (newQty <= 0) {
-        await offlineFetch({
+        const result = await offlineFetch({
           type: 'change_table_status',
           endpoint: `/api/tpv/order-items/${item.id}`,
           method: 'PATCH',
           payload: { quantity: 0 },
         })
+        if (!result.ok) {
+          console.error('Error al actualizar cantidad:', result.error)
+          return
+        }
+        if (result.offline) {
+          return // encolado, UI ya actualizada optimistamente
+        }
         onItemsChange(items.filter(i => i.id !== item.id))
       } else {
-        await offlineFetch({
+        const result = await offlineFetch({
           type: 'change_table_status',
           endpoint: `/api/tpv/order-items/${item.id}`,
           method: 'PATCH',
           payload: { quantity: newQty },
         })
+        if (!result.ok) {
+          console.error('Error al actualizar cantidad:', result.error)
+          return
+        }
+        if (result.offline) {
+          return // encolado, UI ya actualizada optimistamente
+        }
         onItemsChange(
           items.map(i =>
             i.id === item.id
@@ -80,7 +94,15 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
         method: 'DELETE',
         payload: {},
       })
-      if (result.ok) router.push('/tpv')
+      if (!result.ok) {
+        console.error('Error al cancelar:', result.error)
+        return
+      }
+      if (result.offline) {
+        // encolado — no redirigir hasta que se sincronice
+        return
+      }
+      router.push('/tpv') // solo redirigir si la operación fue online exitosa
     })
   }
 
