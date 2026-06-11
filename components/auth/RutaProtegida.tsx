@@ -25,10 +25,10 @@ export default function RutaProtegida({ rol, modulo, moduloKey, children }: Prop
       router.replace('/dashboard')
       return
     }
-    if (!loading && moduloKey && !tieneAcceso(moduloKey)) {
+    if (!loading && !tieneAccesoDB) {
       router.replace('/dashboard')
     }
-  }, [tieneAccesoEstatico, loading, moduloKey, tieneAcceso, router])
+  }, [tieneAccesoEstatico, loading, tieneAccesoDB, router])
 
   if (!tieneAccesoEstatico) {
     return (
