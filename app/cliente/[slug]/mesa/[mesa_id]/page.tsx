@@ -268,6 +268,7 @@ export default function MesaPage() {
       {selectorItem && (
         <SelectorModificadores
           menuItem={{ id: selectorItem.id, name: selectorItem.nombre, price: selectorItem.precio }}
+          cantidadMinima={selectorItem.cantidad_minima}
           onConfirmar={handleSelectorConfirmar}
           onCancelar={() => setSelectorItem(null)}
         />

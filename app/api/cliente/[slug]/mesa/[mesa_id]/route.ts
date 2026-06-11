@@ -4,7 +4,6 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 type ItemPedido = {
   menu_item_id: string
   nombre: string
-  precio: number
   cantidad: number
   modifiers_snapshot?: Array<{
     group_id: string
@@ -175,9 +174,9 @@ export async function POST(
     const orderItemsData = items.map(item => {
       const menuItem = menuItemsMap.get(item.menu_item_id)!
       const basePrice = Number(menuItem.price)
-      // Trust client-sent precio (includes modifier pricing calculated by SelectorModificadores)
-      const unitPrice = typeof item.precio === 'number' && item.precio > 0 ? item.precio : basePrice
       const snapshot = item.modifiers_snapshot ?? []
+      const supplementSum = snapshot.reduce((sum: number, s: { price_delta: number }) => sum + (s.price_delta ?? 0), 0)
+      const unitPrice = Math.max(0, basePrice + supplementSum)
       return {
         restaurant_id: restaurante.id,
         order_id: orderId,

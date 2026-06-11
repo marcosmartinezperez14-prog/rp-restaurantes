@@ -5,6 +5,7 @@ import type { ModifierGroup, ModifierSelection, ModifierSnapshot, ItemConModific
 
 interface Props {
   menuItem: { id: string; name: string; price: number }
+  cantidadMinima?: number
   onConfirmar: (resultado: ItemConModificadores) => void
   onCancelar: () => void
 }
@@ -13,13 +14,13 @@ function fmt(v: number) {
   return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
 }
 
-export default function SelectorModificadores({ menuItem, onConfirmar, onCancelar }: Props) {
+export default function SelectorModificadores({ menuItem, cantidadMinima = 1, onConfirmar, onCancelar }: Props) {
   const [grupos, setGrupos] = useState<ModifierGroup[]>([])
   const [cargando, setCargando] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [selecciones, setSelecciones] = useState<ModifierSelection[]>([])
   const [nota, setNota] = useState('')
-  const [cantidad, setCantidad] = useState(1)
+  const [cantidad, setCantidad] = useState(cantidadMinima)
   const [erroresGrupos, setErroresGrupos] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function SelectorModificadores({ menuItem, onConfirmar, onCancela
         const data: ModifierGroup[] = json.data ?? []
 
         if (data.length === 0) {
-          onConfirmar({ menu_item_id: menuItem.id, cantidad: 1, precio_final: menuItem.price, modifiers_snapshot: [] })
+          onConfirmar({ menu_item_id: menuItem.id, cantidad: cantidadMinima, precio_final: menuItem.price, modifiers_snapshot: [] })
           return
         }
 
@@ -51,7 +52,7 @@ export default function SelectorModificadores({ menuItem, onConfirmar, onCancela
     }
     cargar()
     return () => { cancelled = true }
-  }, [menuItem.id, menuItem.price, onConfirmar])
+  }, [menuItem.id, menuItem.price, cantidadMinima, onConfirmar])
 
   function toggleOpcion(groupId: string, optionId: string, allowsMultiple: boolean) {
     setSelecciones(prev => prev.map(s => {
@@ -234,7 +235,7 @@ export default function SelectorModificadores({ menuItem, onConfirmar, onCancela
             <span className="text-sm text-gray-600">Cantidad</span>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setCantidad(c => Math.max(1, c - 1))}
+                onClick={() => setCantidad(c => Math.max(cantidadMinima, c - 1))}
                 className="w-8 h-8 rounded-full border border-gray-300 text-gray-700 font-bold flex items-center justify-center hover:bg-gray-50"
               >−</button>
               <span className="text-base font-semibold text-gray-900 w-6 text-center">{cantidad}</span>
