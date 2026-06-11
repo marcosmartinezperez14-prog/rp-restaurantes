@@ -77,18 +77,18 @@ export default function BotonFichaje({ estadoInicial }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      const data: { ok: boolean; error?: string } = await res.json()
+      const json = await res.json()
 
-      if (!data.ok) {
-        setErrorMsg(data.error ?? 'Error desconocido. Inténtalo de nuevo.')
+      if (!res.ok) {
+        setErrorMsg(json.error ?? 'Error desconocido. Inténtalo de nuevo.')
         setCargando(false)
         return
       }
 
       // Refresh estado
       const estadoRes = await fetch('/api/fichajes/estado')
-      const nuevoEstado: EstadoFichaje = await estadoRes.json()
-      setEstado(nuevoEstado)
+      const estadoJson = await estadoRes.json()
+      setEstado(estadoJson.data as EstadoFichaje)
       setMostrarModal(false)
       setNotaInput('')
     } catch {
