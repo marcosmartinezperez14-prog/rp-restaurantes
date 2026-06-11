@@ -5,6 +5,7 @@ import { EstadoFichaje } from '@/types/fichajes'
 
 interface Props {
   estadoInicial: EstadoFichaje
+  onFichajeCompleto?: () => void
 }
 
 function formatReloj(d: Date): string {
@@ -19,7 +20,7 @@ function calcDuracion(entradaAt: string): string {
   return `${h} h ${m} min`
 }
 
-export default function BotonFichaje({ estadoInicial }: Props) {
+export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props) {
   const [estado, setEstado] = useState<EstadoFichaje>(estadoInicial)
   const [reloj, setReloj] = useState('')
   const [duracionLabel, setDuracionLabel] = useState('')
@@ -91,6 +92,7 @@ export default function BotonFichaje({ estadoInicial }: Props) {
       setEstado(estadoJson.data as EstadoFichaje)
       setMostrarModal(false)
       setNotaInput('')
+      onFichajeCompleto?.()
     } catch {
       setErrorMsg('Error de red. Comprueba tu conexión e inténtalo de nuevo.')
     } finally {

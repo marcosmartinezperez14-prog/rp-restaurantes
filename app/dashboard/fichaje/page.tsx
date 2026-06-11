@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/AppShell'
-import BotonFichaje from '@/components/fichajes/BotonFichaje'
-import HistorialFichajes from '@/components/fichajes/HistorialFichajes'
+import FichajeCliente from '@/components/fichajes/FichajeCliente'
 import type { EstadoFichaje } from '@/types/fichajes'
 import type { RolNombre } from '@/types/equipo'
 
@@ -29,12 +28,7 @@ export default async function FichajePage() {
 
   return (
     <AppShell title="Fichaje">
-      <div className="max-w-[430px] mx-auto">
-        <BotonFichaje estadoInicial={estadoInicial} />
-        <div className="mt-8">
-          <HistorialFichajes isAdmin={isAdmin} />
-        </div>
-      </div>
+      <FichajeCliente estadoInicial={estadoInicial} isAdmin={isAdmin} />
     </AppShell>
   )
 }

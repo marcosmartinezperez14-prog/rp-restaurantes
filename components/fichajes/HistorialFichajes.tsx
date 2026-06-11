@@ -5,6 +5,7 @@ import { FichajeHistorial } from '@/types/fichajes'
 
 interface Props {
   isAdmin: boolean
+  refreshKey?: number
 }
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ function SkeletonRow() {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function HistorialFichajes({ isAdmin }: Props) {
+export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
   const [fichajes, setFichajes] = useState<FichajeHistorial[]>([])
   const [loading, setLoading] = useState(true)
   const [desde, setDesde] = useState<string>(getDefaultDesde)
@@ -145,7 +146,7 @@ export default function HistorialFichajes({ isAdmin }: Props) {
     return () => {
       cancelled = true
     }
-  }, [desde, hasta, filtroUserId])
+  }, [desde, hasta, filtroUserId, refreshKey])
 
   const usuarios = getUniqueUsers(fichajes)
 
