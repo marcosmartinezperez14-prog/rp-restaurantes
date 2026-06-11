@@ -3,8 +3,19 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import type { CategoriaCarta, ItemCarta } from '@/app/api/cliente/[slug]/carta/route'
+import type { ItemConModificadores, ModifierSnapshot } from '@/types/modificadores'
+import SelectorModificadores from '@/components/shared/SelectorModificadores'
 
-type ItemCarrito = ItemCarta & { cantidad: number }
+type ItemCarrito = {
+  key: string
+  id: string
+  nombre: string
+  precio: number
+  cantidad: number
+  cantidad_minima: number
+  modifiers_snapshot: ModifierSnapshot[]
+  nota?: string
+}
 
 export default function MesaPage() {
   const params = useParams()
@@ -19,6 +30,7 @@ export default function MesaPage() {
   const [enviando, setEnviando] = useState(false)
   const [pedidoEnviado, setPedidoEnviado] = useState(false)
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null)
+  const [selectorItem, setSelectorItem] = useState<ItemCarta | null>(null)
 
   useEffect(() => {
     fetch(`/api/cliente/${slug}/mesa/${mesaId}`)
@@ -32,25 +44,45 @@ export default function MesaPage() {
       .finally(() => setCargando(false))
   }, [slug, mesaId])
 
-  function añadir(item: ItemCarta) {
+  function handleAñadir(item: ItemCarta) {
+    setSelectorItem(item)
+  }
+
+  function handleSelectorConfirmar(resultado: ItemConModificadores) {
+    setSelectorItem(null)
+    const itemCarta = carta.flatMap(c => c.items).find(i => i.id === resultado.menu_item_id)
+    if (!itemCarta) return
+
+    const key = `${resultado.menu_item_id}:${JSON.stringify(resultado.modifiers_snapshot)}`
     setCarrito(prev => {
-      const existe = prev.find(i => i.id === item.id)
-      if (existe) return prev.map(i => i.id === item.id ? { ...i, cantidad: i.cantidad + 1 } : i)
-      return [...prev, { ...item, cantidad: item.cantidad_minima }]
+      const existe = prev.find(i => i.key === key)
+      if (existe) {
+        return prev.map(i => i.key === key ? { ...i, cantidad: i.cantidad + resultado.cantidad } : i)
+      }
+      return [...prev, {
+        key,
+        id: resultado.menu_item_id,
+        nombre: itemCarta.nombre,
+        precio: resultado.precio_final,
+        cantidad: resultado.cantidad,
+        cantidad_minima: itemCarta.cantidad_minima,
+        modifiers_snapshot: resultado.modifiers_snapshot,
+        nota: resultado.nota,
+      }]
     })
   }
 
-  function quitar(itemId: string) {
+  function quitar(key: string) {
     setCarrito(prev => {
-      const item = prev.find(i => i.id === itemId)
+      const item = prev.find(i => i.key === key)
       if (!item) return prev
-      if (item.cantidad <= item.cantidad_minima) return prev.filter(i => i.id !== itemId)
-      return prev.map(i => i.id === itemId ? { ...i, cantidad: i.cantidad - 1 } : i)
+      if (item.cantidad <= item.cantidad_minima) return prev.filter(i => i.key !== key)
+      return prev.map(i => i.key === key ? { ...i, cantidad: i.cantidad - 1 } : i)
     })
   }
 
   function cantidadEnCarrito(itemId: string): number {
-    return carrito.find(i => i.id === itemId)?.cantidad ?? 0
+    return carrito.filter(i => i.id === itemId).reduce((sum, i) => sum + i.cantidad, 0)
   }
 
   const totalCarrito = carrito.reduce((sum, i) => sum + i.precio * i.cantidad, 0)
@@ -74,6 +106,8 @@ export default function MesaPage() {
             nombre: i.nombre,
             precio: i.precio,
             cantidad: i.cantidad,
+            modifiers_snapshot: i.modifiers_snapshot,
+            nota: i.nota ?? null,
           })),
         }),
       })
@@ -161,21 +195,11 @@ export default function MesaPage() {
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{item.descripcion}</p>
                         )}
                         <div className="flex items-center gap-3 mt-2">
-                          {cantidad > 0 ? (
-                            <>
-                              <button
-                                onClick={() => quitar(item.id)}
-                                className="w-7 h-7 rounded-full border border-gray-300 text-gray-700 font-bold flex items-center justify-center hover:bg-gray-50 text-sm"
-                              >
-                                −
-                              </button>
-                              <span className="text-sm font-semibold text-gray-900 min-w-[1rem] text-center">
-                                {cantidad}
-                              </span>
-                            </>
-                          ) : null}
+                          {cantidad > 0 && (
+                            <span className="text-sm font-semibold text-blue-600">{cantidad} en pedido</span>
+                          )}
                           <button
-                            onClick={() => añadir(item)}
+                            onClick={() => handleAñadir(item)}
                             className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center hover:bg-blue-700 text-sm"
                           >
                             +
@@ -194,6 +218,33 @@ export default function MesaPage() {
       {/* Carrito flotante */}
       {carrito.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 shadow-lg">
+          {/* Lista de items del carrito */}
+          <div className="max-w-2xl mx-auto max-h-40 overflow-y-auto mb-3 space-y-2">
+            {carrito.map(item => (
+              <div key={item.key} className="flex items-start justify-between gap-2 text-sm">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-gray-900">{item.nombre}</span>
+                  {item.modifiers_snapshot.length > 0 && (
+                    <p className="text-xs text-gray-500 truncate">
+                      {item.modifiers_snapshot.map(m => m.option_name).join(' · ')}
+                    </p>
+                  )}
+                  {item.nota && (
+                    <p className="text-xs text-gray-400 italic truncate">{item.nota}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => quitar(item.key)}
+                    className="w-6 h-6 rounded-full border border-gray-300 text-gray-600 text-xs font-bold flex items-center justify-center"
+                  >−</button>
+                  <span className="text-xs w-4 text-center font-semibold text-gray-900">{item.cantidad}</span>
+                  <span className="text-xs text-gray-600">{(item.precio * item.cantidad).toFixed(2)} €</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {errorEnvio && (
             <p className="text-xs text-red-600 mb-2 text-center">{errorEnvio}</p>
           )}
@@ -211,6 +262,15 @@ export default function MesaPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Selector de modificadores */}
+      {selectorItem && (
+        <SelectorModificadores
+          menuItem={{ id: selectorItem.id, name: selectorItem.nombre, price: selectorItem.precio }}
+          onConfirmar={handleSelectorConfirmar}
+          onCancelar={() => setSelectorItem(null)}
+        />
       )}
     </div>
   )

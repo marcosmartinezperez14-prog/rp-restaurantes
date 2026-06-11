@@ -6,6 +6,15 @@ type ItemPedido = {
   nombre: string
   precio: number
   cantidad: number
+  modifiers_snapshot?: Array<{
+    group_id: string
+    group_name: string
+    group_type: string
+    option_id: string
+    option_name: string
+    price_delta: number
+  }>
+  nota?: string | null
 }
 
 async function getRestauranteBySlug(slug: string) {
@@ -165,19 +174,27 @@ export async function POST(
     // Insertar items
     const orderItemsData = items.map(item => {
       const menuItem = menuItemsMap.get(item.menu_item_id)!
-      const precio = Number(menuItem.price)
+      const basePrice = Number(menuItem.price)
+      // Trust client-sent precio (includes modifier pricing calculated by SelectorModificadores)
+      const unitPrice = typeof item.precio === 'number' && item.precio > 0 ? item.precio : basePrice
+      const snapshot = item.modifiers_snapshot ?? []
       return {
         restaurant_id: restaurante.id,
         order_id: orderId,
         product_id: item.menu_item_id,
         product_name: menuItem.name,
-        product_price: precio,
+        product_price: basePrice,
         tax_rate: 0,
         quantity: item.cantidad,
-        unit_price: precio,
-        total_price: precio * item.cantidad,
-        modifiers: [],
-        notes: null,
+        unit_price: unitPrice,
+        total_price: unitPrice * item.cantidad,
+        modifiers: snapshot.map((s: { option_id: string; option_name: string; price_delta: number }) => ({
+          option_id: s.option_id,
+          name: s.option_name,
+          price_adjustment: s.price_delta,
+        })),
+        modifiers_snapshot: snapshot,
+        notes: item.nota ?? null,
         status: 'pending',
       }
     })
