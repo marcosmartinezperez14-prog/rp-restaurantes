@@ -18,24 +18,23 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
 
   const totalModifiers = product.modifierGroups
     .flatMap(g => g.options.filter(o => (selected[g.id] ?? []).includes(o.id)))
-    .reduce((sum, o) => sum + o.price_adjustment, 0)
+    .reduce((sum, o) => sum + o.price_delta, 0)
 
   const totalPrice = product.price + totalModifiers
 
   const allRequiredMet = product.modifierGroups
-    .filter(g => g.is_required)
-    .every(g => (selected[g.id] ?? []).length >= Math.max(g.min_selections, 1))
+    .filter(g => g.required)
+    .every(g => (selected[g.id] ?? []).length >= 1)
 
-  function toggleOption(groupId: string, optionId: string, maxSelections: number) {
+  function toggleOption(groupId: string, optionId: string, allowsMultiple: boolean) {
     setSelected(prev => {
       const current = prev[groupId] ?? []
       if (current.includes(optionId)) {
         return { ...prev, [groupId]: current.filter(id => id !== optionId) }
       }
-      if (maxSelections === 1) {
+      if (!allowsMultiple) {
         return { ...prev, [groupId]: [optionId] }
       }
-      if (current.length >= maxSelections) return prev
       return { ...prev, [groupId]: [...current, optionId] }
     })
   }
@@ -44,7 +43,7 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
     const modifiers: SelectedModifier[] = product.modifierGroups.flatMap(g =>
       g.options
         .filter(o => (selected[g.id] ?? []).includes(o.id))
-        .map(o => ({ option_id: o.id, name: o.name, price_adjustment: o.price_adjustment }))
+        .map(o => ({ option_id: o.id, name: o.name, price_adjustment: o.price_delta }))
     )
     onConfirm(modifiers)
   }
@@ -65,20 +64,20 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
             <div key={group.id}>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="font-semibold text-sm text-[#0f172a]">{group.name}</span>
-                {group.is_required ? (
+                {group.required ? (
                   <span className="text-[10px] uppercase px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-semibold">
-                    Obligatorio · {group.max_selections === 1 ? '1 opción' : `hasta ${group.max_selections}`}
+                    Obligatorio
                   </span>
                 ) : (
                   <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded font-semibold">
-                    Opcional · hasta {group.max_selections}
+                    Opcional
                   </span>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
                 {group.options.map(option => {
                   const isChecked = (selected[group.id] ?? []).includes(option.id)
-                  const isRadio = group.max_selections === 1
+                  const isRadio = !group.allows_multiple
                   return (
                     <label
                       key={option.id}
@@ -88,13 +87,13 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
                         type={isRadio ? 'radio' : 'checkbox'}
                         name={isRadio ? group.id : undefined}
                         checked={isChecked}
-                        onChange={() => toggleOption(group.id, option.id, group.max_selections)}
+                        onChange={() => toggleOption(group.id, option.id, group.allows_multiple)}
                         className="accent-[#2563eb]"
                       />
                       <span className="flex-1 text-sm text-[#0f172a]">{option.name}</span>
                       <span className="text-sm text-[#64748b]">
-                        {option.price_adjustment > 0
-                          ? `+${Number(option.price_adjustment).toFixed(2)} €`
+                        {option.price_delta > 0
+                          ? `+${Number(option.price_delta).toFixed(2)} €`
                           : '—'}
                       </span>
                     </label>

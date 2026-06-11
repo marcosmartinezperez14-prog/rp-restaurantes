@@ -283,31 +283,58 @@ export async function getMenuData(): Promise<{ categories: Category[]; products:
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('id, name')
-    .eq('restaurant_id', restaurantId)
-    .is('deleted_at', null)
-    .order('position')
+  const [catResult, itemResult, gruposResult] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('id, name')
+      .eq('restaurant_id', restaurantId)
+      .is('deleted_at', null)
+      .order('position'),
+    supabase
+      .from('menu_items')
+      .select('id, name, price, is_active, category_id')
+      .eq('restaurant_id', restaurantId)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .order('name'),
+    supabase
+      .from('product_modifier_groups')
+      .select('id, menu_item_id, name, type, required, allows_multiple, sort_order, options:product_modifier_options(id, name, price_delta, is_default, is_active, sort_order)')
+      .eq('restaurant_id', restaurantId)
+      .eq('is_active', true)
+      .order('sort_order'),
+  ])
 
-  const { data: items } = await supabase
-    .from('menu_items')
-    .select('id, name, price, is_active, category_id')
-    .eq('restaurant_id', restaurantId)
-    .eq('is_active', true)
-    .is('deleted_at', null)
-    .order('name')
+  const gruposPorItem = new Map<string, ModifierGroup[]>()
+  for (const g of (gruposResult.data ?? [])) {
+    const grupo: ModifierGroup = {
+      id: g.id,
+      restaurant_id: restaurantId,
+      menu_item_id: g.menu_item_id,
+      name: g.name,
+      type: g.type as 'variante' | 'modificador',
+      required: g.required,
+      allows_multiple: g.allows_multiple,
+      sort_order: g.sort_order,
+      is_active: true,
+      options: ((g.options as ModifierOption[]) ?? [])
+        .filter(o => o.is_active)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    }
+    const prev = gruposPorItem.get(g.menu_item_id) ?? []
+    gruposPorItem.set(g.menu_item_id, [...prev, grupo])
+  }
 
   return {
-    categories: categories ?? [],
-    products: (items ?? []).map(p => ({
+    categories: catResult.data ?? [],
+    products: (itemResult.data ?? []).map(p => ({
       id: p.id,
       name: p.name,
       price: Number(p.price),
       tax_rate: 0,
       is_available: p.is_active,
       category_id: p.category_id ?? '',
-      modifierGroups: [],
+      modifierGroups: gruposPorItem.get(p.id) ?? [],
     })),
   }
 }

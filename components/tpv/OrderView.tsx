@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import type { OrderWithItems, OrderItem, Category, ProductWithModifiers, SelectedModifier } from '@/app/actions/tpv'
+import type { OrderWithItems, OrderItem, Category, ProductWithModifiers } from '@/app/actions/tpv'
+import type { ItemConModificadores } from '@/types/modificadores'
 import { getOrderItemStatuses } from '@/app/actions/tpv'
 import { useOfflineFetch } from '@/lib/offline/useOfflineFetch'
 import ProductsPanel from './ProductsPanel'
@@ -68,33 +69,43 @@ export default function OrderView({ order, categories, products }: Props) {
     setToasts(prev => prev.filter(t => t.id !== id))
   }
 
-  async function handleAddProduct(productId: string, modifiers: SelectedModifier[], quantity: number) {
+  async function handleAddProduct(resultado: ItemConModificadores) {
     setIsPending(true)
     const result = await offlineFetch({
       type: 'add_item',
       endpoint: '/api/tpv/order-items',
       method: 'POST',
-      payload: { orderId: order.id, productId, quantity, modifiers },
+      payload: {
+        orderId: order.id,
+        productId: resultado.menu_item_id,
+        quantity: resultado.cantidad,
+        unit_price: resultado.precio_final,
+        modifiers_snapshot: resultado.modifiers_snapshot,
+        nota: resultado.nota,
+      },
     })
     setIsPending(false)
     if (!result.ok) {
       alert('Error al añadir: ' + (result.error ?? 'Error desconocido'))
       return
     }
-    const product = products.find(p => p.id === productId)
+    const product = products.find(p => p.id === resultado.menu_item_id)
     if (!product) return
-    const unitPrice = product.price + modifiers.reduce((s, m) => s + m.price_adjustment, 0)
     const newItem: OrderItem = {
       id: result.offline ? `offline-${Date.now()}` : (result.data as { itemId: string }).itemId,
       product_name: product.name,
       product_price: product.price,
       tax_rate: product.tax_rate,
-      quantity,
-      unit_price: unitPrice,
-      total_price: unitPrice * quantity,
-      modifiers,
-      modifiers_snapshot: [],
-      notes: null,
+      quantity: resultado.cantidad,
+      unit_price: resultado.precio_final,
+      total_price: resultado.precio_final * resultado.cantidad,
+      modifiers: resultado.modifiers_snapshot.map(s => ({
+        option_id: s.option_id,
+        name: s.option_name,
+        price_adjustment: s.price_delta,
+      })),
+      modifiers_snapshot: resultado.modifiers_snapshot,
+      notes: resultado.nota ?? null,
       status: 'pending',
     }
     setItems(prev => [...prev, newItem])

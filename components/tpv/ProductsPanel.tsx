@@ -1,20 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import type { Category, ProductWithModifiers, SelectedModifier } from '@/app/actions/tpv'
-import ModifierModal from './ModifierModal'
+import type { Category, ProductWithModifiers } from '@/app/actions/tpv'
+import type { ItemConModificadores } from '@/types/modificadores'
+import SelectorModificadores from '@/components/shared/SelectorModificadores'
 
 interface Props {
   categories: Category[]
   products: ProductWithModifiers[]
-  onAddProduct: (productId: string, modifiers: SelectedModifier[], quantity: number) => void
+  onAddProduct: (resultado: ItemConModificadores) => void
   disabled: boolean
 }
 
 export default function ProductsPanel({ categories, products, onAddProduct, disabled }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [search, setSearch] = useState('')
-  const [modalProduct, setModalProduct] = useState<ProductWithModifiers | null>(null)
+  const [selectorItem, setSelectorItem] = useState<{ id: string; name: string; price: number } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
   const filtered = products.filter(p => {
@@ -29,20 +30,14 @@ export default function ProductsPanel({ categories, products, onAddProduct, disa
   }
 
   function handleProductClick(product: ProductWithModifiers) {
-    if (!product.is_available) {
-      showToast(`${product.name} no está disponible`)
-    }
-    if (product.modifierGroups.length > 0) {
-      setModalProduct(product)
-    } else {
-      onAddProduct(product.id, [], 1)
-    }
-  }
+    if (!product.is_available) { showToast(`${product.name} no está disponible`); return }
+    if (disabled) return
 
-  function handleModalConfirm(modifiers: SelectedModifier[]) {
-    if (!modalProduct) return
-    onAddProduct(modalProduct.id, modifiers, 1)
-    setModalProduct(null)
+    if (product.modifierGroups.length > 0) {
+      setSelectorItem({ id: product.id, name: product.name, price: product.price })
+    } else {
+      onAddProduct({ menu_item_id: product.id, cantidad: 1, precio_final: product.price, modifiers_snapshot: [] })
+    }
   }
 
   return (
@@ -55,6 +50,7 @@ export default function ProductsPanel({ categories, products, onAddProduct, disa
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg outline-none focus:border-[#2563eb]"
+          style={{ color: 'black' }}
         />
       </div>
 
@@ -86,48 +82,43 @@ export default function ProductsPanel({ categories, products, onAddProduct, disa
       </div>
 
       {/* Product grid */}
-      <div className="flex-1 overflow-y-auto p-3">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {filtered.map(product => (
-            <button
-              key={product.id}
-              onClick={() => handleProductClick(product)}
-              disabled={disabled}
-              style={{ opacity: product.is_available ? 1 : 0.4 }}
-              className="bg-white border border-[#e2e8f0] rounded-xl p-3 text-left hover:shadow-md transition-shadow disabled:cursor-not-allowed relative"
-            >
-              {!product.is_available && (
-                <span className="absolute top-2 right-2 text-[9px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded uppercase font-semibold">
-                  No disponible
-                </span>
-              )}
-              <div className="font-medium text-sm text-[#0f172a] leading-tight mb-1 pr-2">
-                {product.name}
-              </div>
-              <div className="text-[#2563eb] font-bold text-sm">
-                {Number(product.price).toFixed(2)} €
-              </div>
-            </button>
-          ))}
-        </div>
+      <div className="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 content-start">
+        {filtered.map(product => (
+          <button
+            key={product.id}
+            onClick={() => handleProductClick(product)}
+            disabled={disabled || !product.is_available}
+            className={`text-left p-3 rounded-xl border transition-colors ${
+              !product.is_available
+                ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                : 'border-[#e2e8f0] bg-white hover:border-[#2563eb] hover:bg-blue-50'
+            }`}
+          >
+            <p className="font-semibold text-sm text-[#0f172a] leading-tight">{product.name}</p>
+            <p className="text-sm text-[#2563eb] font-bold mt-1">{Number(product.price).toFixed(2)} €</p>
+            {product.modifierGroups.length > 0 && (
+              <p className="text-[10px] text-[#64748b] mt-0.5">Personalizable</p>
+            )}
+          </button>
+        ))}
         {filtered.length === 0 && (
-          <p className="text-center text-[#94a3b8] text-sm py-8">Sin productos</p>
+          <p className="col-span-2 text-center text-[#64748b] text-sm py-8">Sin productos</p>
         )}
       </div>
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50 pointer-events-none">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-10">
           {toast}
         </div>
       )}
 
-      {/* Modifier modal */}
-      {modalProduct && (
-        <ModifierModal
-          product={modalProduct}
-          onConfirm={handleModalConfirm}
-          onClose={() => setModalProduct(null)}
+      {/* Selector de modificadores */}
+      {selectorItem && (
+        <SelectorModificadores
+          menuItem={selectorItem}
+          onConfirmar={resultado => { onAddProduct(resultado); setSelectorItem(null) }}
+          onCancelar={() => setSelectorItem(null)}
         />
       )}
     </div>
