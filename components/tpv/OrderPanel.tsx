@@ -136,9 +136,19 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm text-[var(--text-primary)] truncate">{item.product_name}</p>
-                {item.modifiers.length > 0 && (
+                {item.modifiers_snapshot.length > 0 && (
+                  <p className="text-xs text-[var(--text-secondary)] truncate">
+                    {item.modifiers_snapshot.map(m => m.option_name).join(' · ')}
+                  </p>
+                )}
+                {item.modifiers_snapshot.length === 0 && item.modifiers.length > 0 && (
                   <p className="text-xs text-[var(--text-secondary)] truncate">
                     {item.modifiers.map(m => m.name).join(', ')}
+                  </p>
+                )}
+                {item.notes && (
+                  <p className="text-xs text-[var(--text-secondary)] italic truncate">
+                    {item.notes}
                   </p>
                 )}
               </div>
