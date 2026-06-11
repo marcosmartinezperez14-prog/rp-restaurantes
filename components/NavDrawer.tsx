@@ -6,17 +6,26 @@ import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/app/actions/auth'
 import { getFailed } from '@/lib/offline/db'
 import FailedOperations from '@/components/offline/FailedOperations'
+import { usePermisos } from '@/lib/permisos/usePermisos'
+import { MODULOS_SIEMPRE_ACTIVOS } from '@/lib/permisos/modulos'
 
-const NAV_ITEMS = [
-  { href: '/dashboard',          label: 'Inicio',    icon: '🏠' },
-  { href: '/dashboard/negocio', label: 'Mi negocio', icon: '🏪' },
-  { href: '/tpv',                label: 'TPV',        icon: '🖥️' },
-  { href: '/reservas',           label: 'Reservas',   icon: '📅' },
-  { href: '/productos',          label: 'Productos',  icon: '📦' },
-  { href: '/dashboard/informes', label: 'Informes',   icon: '📊' },
-  { href: '/dashboard/personal', label: 'Personal',   icon: '🗓️' },
-  { href: '/dashboard/fichaje',  label: 'Fichaje',    icon: '⏱️' },
-  { href: '/dashboard/caja',     label: 'Caja',       icon: '🏦' },
+type NavItem = {
+  href: string
+  label: string
+  icon: string
+  moduloKey?: string
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/dashboard',          label: 'Inicio',     icon: '🏠' },
+  { href: '/dashboard/negocio',  label: 'Mi negocio', icon: '🏪', moduloKey: 'negocio' },
+  { href: '/tpv',                label: 'TPV',         icon: '🖥️', moduloKey: 'tpv' },
+  { href: '/reservas',           label: 'Reservas',    icon: '📅', moduloKey: 'reservas' },
+  { href: '/productos',          label: 'Carta',       icon: '📦', moduloKey: 'carta' },
+  { href: '/dashboard/informes', label: 'Informes',    icon: '📊', moduloKey: 'informes' },
+  { href: '/dashboard/personal', label: 'Personal',    icon: '🗓️', moduloKey: 'personal' },
+  { href: '/dashboard/fichaje',  label: 'Fichaje',     icon: '⏱️', moduloKey: 'fichaje' },
+  { href: '/dashboard/caja',     label: 'Caja',        icon: '🏦', moduloKey: 'caja' },
 ]
 
 export default function NavDrawer() {
@@ -24,10 +33,19 @@ export default function NavDrawer() {
   const [failedCount, setFailedCount] = useState(0)
   const [showFailed, setShowFailed] = useState(false)
   const pathname = usePathname()
+  const { tieneAcceso, rol } = usePermisos()
 
   useEffect(() => {
     getFailed().then(ops => setFailedCount(ops.length)).catch(() => {})
   }, [])
+
+  const itemsVisibles = NAV_ITEMS.filter(item => {
+    if (!item.moduloKey) return true
+    if (MODULOS_SIEMPRE_ACTIVOS.includes(item.moduloKey)) return true
+    return tieneAcceso(item.moduloKey)
+  })
+
+  const esAdminOGerente = rol === 'admin' || rol === 'gerente'
 
   return (
     <>
@@ -58,8 +76,8 @@ export default function NavDrawer() {
                 ✕
               </button>
             </div>
-            <nav className="flex-1 py-3 flex flex-col gap-0.5 px-2">
-              {NAV_ITEMS.map(item => {
+            <nav className="flex-1 py-3 flex flex-col gap-0.5 px-2 overflow-y-auto">
+              {itemsVisibles.map(item => {
                 const active = item.href === '/dashboard'
                   ? pathname === item.href
                   : pathname.startsWith(item.href)
@@ -80,6 +98,21 @@ export default function NavDrawer() {
                   </Link>
                 )
               })}
+              {esAdminOGerente && (
+                <Link
+                  href="/dashboard/permisos"
+                  onClick={() => setOpen(false)}
+                  aria-current={pathname.startsWith('/dashboard/permisos') ? 'page' : undefined}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                    pathname.startsWith('/dashboard/permisos')
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-[#64748b] hover:bg-slate-100 hover:text-[#0f172a]'
+                  }`}
+                >
+                  <span aria-hidden="true">🔐</span>
+                  Permisos
+                </Link>
+              )}
             </nav>
             <div className="px-3 py-3 border-t border-[#e2e8f0] flex flex-col gap-1">
               {failedCount > 0 && (
