@@ -33,11 +33,16 @@ export default function NavDrawer() {
   const [failedCount, setFailedCount] = useState(0)
   const [showFailed, setShowFailed] = useState(false)
   const pathname = usePathname()
-  const { tieneAcceso, rol } = usePermisos()
+  const { tieneAcceso, rol, loading } = usePermisos()
 
   useEffect(() => {
     getFailed().then(ops => setFailedCount(ops.length)).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+    getFailed().then(ops => setFailedCount(ops.length)).catch(() => {})
+  }, [open])
 
   const itemsVisibles = NAV_ITEMS.filter(item => {
     if (!item.moduloKey) return true
@@ -45,7 +50,7 @@ export default function NavDrawer() {
     return tieneAcceso(item.moduloKey)
   })
 
-  const esAdminOGerente = rol === 'admin' || rol === 'gerente'
+  const esAdminOGerente = loading || rol === 'admin' || rol === 'gerente'
 
   return (
     <>
