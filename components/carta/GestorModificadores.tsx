@@ -89,8 +89,17 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
 
   async function handleEliminarGrupo(grupoId: string) {
     if (!confirm('¿Eliminar este grupo y todas sus opciones?')) return
-    await fetch(`/api/modificadores/grupos/${grupoId}`, { method: 'DELETE' })
-    await cargar()
+    try {
+      const res = await fetch(`/api/modificadores/grupos/${grupoId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        alert(json.error ?? 'No se pudo eliminar el grupo')
+        return
+      }
+      await cargar()
+    } catch {
+      alert('Error de conexión al eliminar el grupo')
+    }
   }
 
   async function handleCrearOpcion() {
@@ -127,8 +136,18 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
   }
 
   async function handleEliminarOpcion(opcionId: string) {
-    await fetch(`/api/modificadores/opciones/${opcionId}`, { method: 'DELETE' })
-    await cargar()
+    if (!confirm('¿Eliminar esta opción?')) return
+    try {
+      const res = await fetch(`/api/modificadores/opciones/${opcionId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        alert(json.error ?? 'No se pudo eliminar la opción')
+        return
+      }
+      await cargar()
+    } catch {
+      alert('Error de conexión al eliminar la opción')
+    }
   }
 
   const inputClass = 'border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-blue-400 w-full'
@@ -232,7 +251,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
       {modalGrupo && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
-          onClick={e => { if (e.target === e.currentTarget) setModalGrupo(false) }}
+          onClick={e => { if (e.target === e.currentTarget && !guardandoGrupo) setModalGrupo(false) }}
         >
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 flex flex-col gap-4">
             <h3 className="font-bold text-[var(--text-primary)]">Nuevo grupo de variante / modificador</h3>
@@ -291,7 +310,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
       {modalOpcion && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
-          onClick={e => { if (e.target === e.currentTarget) setModalOpcion(null) }}
+          onClick={e => { if (e.target === e.currentTarget && !guardandoOpcion) setModalOpcion(null) }}
         >
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 flex flex-col gap-4">
             <h3 className="font-bold text-[var(--text-primary)]">
