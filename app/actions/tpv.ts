@@ -10,8 +10,6 @@ export type TableStatus = 'free' | 'occupied' | 'reserved' | 'billing'
 export type OrderItemStatus = 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
 export type PaymentMethod = 'cash' | 'card' | 'bizum' | 'mixed'
 
-export type { ModifierGroup, ModifierOption, ModifierSnapshot }
-
 export type ProductWithModifiers = {
   id: string
   name: string

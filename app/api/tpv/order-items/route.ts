@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { ModifierSnapshot, SelectedModifier } from '@/app/actions/tpv'
+import type { ModifierSnapshot } from '@/types/modificadores'
+import type { SelectedModifier } from '@/app/actions/tpv'
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
