@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { MatrizPermisos } from '@/types/permisos'
 import { MODULOS_SISTEMA, MODULOS_SIEMPRE_ACTIVOS, ROLES_PROTEGIDOS, SOLO_ADMIN_PUEDE_CONFIGURAR } from '@/lib/permisos/modulos'
+import { limpiarCachePermisos } from '@/lib/permisos/usePermisos'
 
 interface Props {
   rolUsuarioActual: 'admin' | 'gerente'
@@ -70,6 +71,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
         setErrorGuardado(data.error ?? 'Error al guardar')
         return
       }
+      limpiarCachePermisos()
       setMensajeGuardado('Guardado')
       setTimeout(() => setMensajeGuardado(null), 2000)
     } catch {
