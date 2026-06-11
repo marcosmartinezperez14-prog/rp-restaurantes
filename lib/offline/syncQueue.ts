@@ -48,7 +48,9 @@ export async function processQueue(): Promise<{ processed: number; failed: numbe
         await dequeue(op.id)
         processed++
       } else {
-        const errorMessage = `HTTP ${res.status}`
+        let body = ''
+        try { body = await res.text() } catch { /* ignorar */ }
+        const errorMessage = `HTTP ${res.status}${body ? ': ' + body.slice(0, 200) : ''}`
         if (op.attempts + 1 < op.maxAttempts) {
           await updateOperation(op.id, {
             attempts: op.attempts + 1,
