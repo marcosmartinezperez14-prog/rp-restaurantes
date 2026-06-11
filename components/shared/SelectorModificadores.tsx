@@ -16,6 +16,7 @@ function fmt(v: number) {
 export default function SelectorModificadores({ menuItem, onConfirmar, onCancelar }: Props) {
   const [grupos, setGrupos] = useState<ModifierGroup[]>([])
   const [cargando, setCargando] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [selecciones, setSelecciones] = useState<ModifierSelection[]>([])
   const [nota, setNota] = useState('')
   const [cantidad, setCantidad] = useState(1)
@@ -42,7 +43,10 @@ export default function SelectorModificadores({ menuItem, onConfirmar, onCancela
         })))
         setCargando(false)
       } catch {
-        if (!cancelled) setCargando(false)
+        if (!cancelled) {
+          setFetchError('No se pudieron cargar las opciones')
+          setCargando(false)
+        }
       }
     }
     cargar()
@@ -116,6 +120,20 @@ export default function SelectorModificadores({ menuItem, onConfirmar, onCancela
   }
 
   if (cargando) return null
+
+  if (fetchError) return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onCancelar}
+    >
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
+        <p className="text-sm text-red-600 mb-4">{fetchError}</p>
+        <button onClick={onCancelar} className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div
