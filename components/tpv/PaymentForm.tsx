@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { OrderWithItems, PaymentMethod, ProcessPaymentParams } from '@/app/actions/tpv'
-import { processPayment } from '@/app/actions/tpv'
+import { useOfflineFetch } from '@/lib/offline/useOfflineFetch'
 import TicketPreview from '@/components/tpv/TicketPreview'
 
 export default function PaymentForm({ order }: { order: OrderWithItems }) {
@@ -15,6 +15,7 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
   const [isPending, startTransition] = useTransition()
   const [ticketId, setTicketId] = useState<string | null>(null)
   const router = useRouter()
+  const { offlineFetch } = useOfflineFetch()
 
   const total = order.total
   const cashNum = parseFloat(cashAmount) || 0
@@ -38,10 +39,22 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
 
   function handleConfirm() {
     setError(null)
+    const params = buildParams()
     startTransition(async () => {
-      const result = await processPayment(order.id, buildParams())
-      if ('error' in result) { setError(result.error); return }
-      setTicketId(result.ticketId)
+      const result = await offlineFetch({
+        type: 'pay_order',
+        endpoint: '/api/tpv/pay',
+        method: 'POST',
+        payload: { orderId: order.id, ...params },
+      })
+      if (!result.ok) { setError(result.error ?? 'Error al procesar el cobro'); return }
+      if (result.offline) {
+        // Encolado offline — redirigir al TPV
+        router.push('/tpv')
+        return
+      }
+      const data = result.data as { ticketId: string }
+      setTicketId(data.ticketId)
     })
   }
 

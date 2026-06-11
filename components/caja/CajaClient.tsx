@@ -2,6 +2,7 @@
 
 import { useState, Fragment } from 'react'
 import type { TurnoCaja, CerrarTurnoPayload, ResumenActual } from '@/types/caja'
+import { useOfflineFetch } from '@/lib/offline/useOfflineFetch'
 
 interface Props {
   turnoActivo: TurnoCaja | null
@@ -47,6 +48,7 @@ export default function CajaClient({
   const [notasCierre, setNotasCierre] = useState('')
   const [pagina, setPagina] = useState(1)
   const [filaExpandida, setFilaExpandida] = useState<string | null>(null)
+  const { offlineFetch } = useOfflineFetch()
 
   const efectivoEsperado = turno
     ? Number(turno.fondo_inicial) + (resumenActual?.total_efectivo ?? 0)
@@ -59,17 +61,17 @@ export default function CajaClient({
     setError(null)
     setLoading(true)
     try {
-      const res = await fetch('/api/caja/abrir', {
+      const result = await offlineFetch({
+        type: 'close_shift',
+        endpoint: '/api/caja/abrir',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fondo_inicial: parseFloat(fondoInicial) || 0 }),
+        payload: { fondo_inicial: parseFloat(fondoInicial) || 0 },
       })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al abrir turno'); return }
+      if (!result.ok) { setError(result.error ?? 'Error al abrir turno'); return }
+      if (result.offline) { setError('Sin conexión: no se puede abrir turno offline'); return }
+      const data = result.data as { turno: TurnoCaja }
       setTurno(data.turno)
       setFondoInicial('0')
-    } catch {
-      setError('Error de conexión')
     } finally {
       setLoading(false)
     }
@@ -83,21 +85,21 @@ export default function CajaClient({
         efectivo_contado: parseFloat(efectivoContado) || 0,
         notas: notasCierre || undefined,
       }
-      const res = await fetch('/api/caja/cerrar', {
+      const result = await offlineFetch({
+        type: 'close_shift',
+        endpoint: '/api/caja/cerrar',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        payload: payload as unknown as Record<string, unknown>,
       })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al cerrar turno'); return }
+      if (!result.ok) { setError(result.error ?? 'Error al cerrar turno'); return }
+      if (result.offline) { setError('Sin conexión: no se puede cerrar turno offline'); return }
+      const data = result.data as { turno: TurnoCaja }
       setHistorial(prev => [data.turno, ...prev])
       setTotalH(prev => prev + 1)
       setTurno(null)
       setModalCierre(false)
       setEfectivoContado('')
       setNotasCierre('')
-    } catch {
-      setError('Error de conexión')
     } finally {
       setLoading(false)
     }

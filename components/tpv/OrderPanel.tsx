@@ -3,7 +3,8 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { OrderItem, OrderWithItems } from '@/app/actions/tpv'
-import { updateOrderItemQuantity, removeOrderItem, cancelOrder, updateOrderItemNote, markOrderItemServed } from '@/app/actions/tpv'
+import { updateOrderItemNote, markOrderItemServed } from '@/app/actions/tpv'
+import { useOfflineFetch } from '@/lib/offline/useOfflineFetch'
 
 interface Props {
   order: OrderWithItems
@@ -21,6 +22,7 @@ function formatElapsed(openedAt: string): string {
 export default function OrderPanel({ order, items, onItemsChange }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const { offlineFetch } = useOfflineFetch()
 
   const taxMap = new Map<number, { base: number; tax: number }>()
   let subtotal = 0
@@ -45,10 +47,20 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
     const newQty = item.quantity + delta
     startTransition(async () => {
       if (newQty <= 0) {
-        await removeOrderItem(item.id)
+        await offlineFetch({
+          type: 'change_table_status',
+          endpoint: `/api/tpv/order-items/${item.id}`,
+          method: 'PATCH',
+          payload: { quantity: 0 },
+        })
         onItemsChange(items.filter(i => i.id !== item.id))
       } else {
-        await updateOrderItemQuantity(item.id, newQty)
+        await offlineFetch({
+          type: 'change_table_status',
+          endpoint: `/api/tpv/order-items/${item.id}`,
+          method: 'PATCH',
+          payload: { quantity: newQty },
+        })
         onItemsChange(
           items.map(i =>
             i.id === item.id
@@ -62,8 +74,13 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
 
   function handleCancel() {
     startTransition(async () => {
-      const result = await cancelOrder(order.id)
-      if (!result.error) router.push('/tpv')
+      const result = await offlineFetch({
+        type: 'change_table_status',
+        endpoint: `/api/tpv/orders/${order.id}`,
+        method: 'DELETE',
+        payload: {},
+      })
+      if (result.ok) router.push('/tpv')
     })
   }
 

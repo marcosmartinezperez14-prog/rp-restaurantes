@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { ZoneWithTables, TableWithOrder, TableStatus } from '@/app/actions/tpv'
 import {
-  getZonesWithTables, createOrder, getOpenOrder,
+  getZonesWithTables, getOpenOrder,
   reserveTable, cancelReservation,
   deleteTable, deleteZone,
 } from '@/app/actions/tpv'
+import { useOfflineFetch } from '@/lib/offline/useOfflineFetch'
+import { OfflineIndicator } from '@/components/offline/OfflineIndicator'
 import Link from 'next/link'
 import TableCard from './TableCard'
 import AddTableModal from './AddTableModal'
@@ -33,6 +35,7 @@ export default function TableMap({
   const [isEditing, setIsEditing] = useState(false)
   const [editModal, setEditModal] = useState<EditModal | null>(null)
   const router = useRouter()
+  const { offlineFetch, isOnline, pendingCount } = useOfflineFetch()
 
   useEffect(() => {
     const supabase = createClient()
@@ -84,10 +87,25 @@ export default function TableMap({
   function handleOpenComanda() {
     if (!menu) return
     closeMenu()
+    const tableId = menu.table.id
     startTransition(async () => {
-      const result = await createOrder(menu.table.id)
-      if ('error' in result) { setError(`Error al abrir comanda: ${result.error}`); return }
-      router.push(`/tpv/comanda/${result.orderId}`)
+      const result = await offlineFetch({
+        type: 'create_order',
+        endpoint: '/api/tpv/orders',
+        method: 'POST',
+        payload: { tableId },
+      })
+      if (!result.ok) { setError(`Error al abrir comanda: ${result.error ?? 'Error desconocido'}`); return }
+      if (result.offline) {
+        // Operación encolada — actualización optimista: marcar mesa como ocupada
+        setZones(prev => prev.map(z => ({
+          ...z,
+          tables: z.tables.map(t => t.id === tableId ? { ...t, status: 'occupied' as TableStatus } : t),
+        })))
+        return
+      }
+      const data = result.data as { orderId: string }
+      router.push(`/tpv/comanda/${data.orderId}`)
     })
   }
 
@@ -156,6 +174,7 @@ export default function TableMap({
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)]" onClick={menu ? closeMenu : undefined}>
+      <OfflineIndicator isOnline={isOnline} pendingCount={pendingCount} />
       <nav className={`border-b px-4 h-[52px] flex items-center gap-3 flex-shrink-0 shadow-sm transition-colors ${
         isEditing ? 'bg-amber-50 border-amber-200' : 'bg-[var(--bg-surface)] border-[var(--border)]'
       }`}>

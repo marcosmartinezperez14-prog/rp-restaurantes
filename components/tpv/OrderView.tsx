@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { OrderWithItems, OrderItem, Category, ProductWithModifiers, SelectedModifier } from '@/app/actions/tpv'
-import { addOrderItem, getOrderItemStatuses } from '@/app/actions/tpv'
+import { getOrderItemStatuses } from '@/app/actions/tpv'
+import { useOfflineFetch } from '@/lib/offline/useOfflineFetch'
 import ProductsPanel from './ProductsPanel'
 import OrderPanel from './OrderPanel'
 
@@ -22,6 +23,7 @@ export default function OrderView({ order, categories, products }: Props) {
   const [isPending, setIsPending] = useState(false)
   const itemsRef = useRef<OrderItem[]>(order.items)
   const notifiedRef = useRef<Set<string>>(new Set())
+  const { offlineFetch } = useOfflineFetch()
 
   // Keep ref in sync with state
   useEffect(() => { itemsRef.current = items }, [items])
@@ -68,17 +70,22 @@ export default function OrderView({ order, categories, products }: Props) {
 
   async function handleAddProduct(productId: string, modifiers: SelectedModifier[], quantity: number) {
     setIsPending(true)
-    const result = await addOrderItem(order.id, productId, quantity, modifiers)
+    const result = await offlineFetch({
+      type: 'add_item',
+      endpoint: '/api/tpv/order-items',
+      method: 'POST',
+      payload: { orderId: order.id, productId, quantity, modifiers },
+    })
     setIsPending(false)
-    if ('error' in result) {
-      alert('Error al añadir: ' + result.error)
+    if (!result.ok) {
+      alert('Error al añadir: ' + (result.error ?? 'Error desconocido'))
       return
     }
     const product = products.find(p => p.id === productId)
     if (!product) return
     const unitPrice = product.price + modifiers.reduce((s, m) => s + m.price_adjustment, 0)
     const newItem: OrderItem = {
-      id: result.itemId,
+      id: result.offline ? `offline-${Date.now()}` : (result.data as { itemId: string }).itemId,
       product_name: product.name,
       product_price: product.price,
       tax_rate: product.tax_rate,
