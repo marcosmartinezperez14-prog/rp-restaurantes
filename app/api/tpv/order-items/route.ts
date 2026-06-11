@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { SelectedModifier } from '@/app/actions/tpv'
+import type { ModifierSnapshot, SelectedModifier } from '@/app/actions/tpv'
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -20,10 +20,13 @@ export async function POST(request: Request) {
       orderId?: unknown
       productId?: unknown
       quantity?: unknown
+      unit_price?: unknown
       modifiers?: unknown
+      modifiers_snapshot?: unknown
+      nota?: unknown
       notes?: unknown
     }
-    const { orderId, productId, quantity, modifiers, notes } = body
+    const { orderId, productId, quantity, unit_price, modifiers, modifiers_snapshot, nota, notes } = body
 
     if (!orderId || typeof orderId !== 'string') {
       return NextResponse.json({ error: 'orderId requerido' }, { status: 400 })
@@ -35,8 +38,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'quantity debe ser un número positivo' }, { status: 400 })
     }
 
-    const safeModifiers: SelectedModifier[] = Array.isArray(modifiers) ? modifiers as SelectedModifier[] : []
-    const safeNotes: string | undefined = typeof notes === 'string' ? notes : undefined
+    const safeSnapshot: ModifierSnapshot[] = Array.isArray(modifiers_snapshot) ? modifiers_snapshot as ModifierSnapshot[] : []
+
+    // Backwards compat: old clients send modifiers[], new clients send modifiers_snapshot
+    const safeModifiers: SelectedModifier[] = Array.isArray(modifiers)
+      ? modifiers as SelectedModifier[]
+      : safeSnapshot.map(s => ({ option_id: s.option_id, name: s.option_name, price_adjustment: s.price_delta }))
+
+    // nota (new) or notes (old) — accept either
+    const safeNotes: string | null = typeof nota === 'string' && nota.trim()
+      ? nota.trim()
+      : typeof notes === 'string' && notes.trim()
+        ? notes.trim()
+        : null
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -73,7 +87,11 @@ export async function POST(request: Request) {
     }
 
     const basePrice = Number(product.price)
-    const unitPrice = basePrice + safeModifiers.reduce((sum, m) => sum + m.price_adjustment, 0)
+    // unit_price from SelectorModificadores already includes variant/supplement pricing
+    // Fall back to base price + legacy modifiers sum if not provided
+    const unitPrice = typeof unit_price === 'number' && unit_price > 0
+      ? unit_price
+      : basePrice + safeModifiers.reduce((sum, m) => sum + m.price_adjustment, 0)
     const totalPrice = unitPrice * quantity
 
     const { data: item, error } = await supabase
@@ -89,7 +107,8 @@ export async function POST(request: Request) {
         unit_price: unitPrice,
         total_price: totalPrice,
         modifiers: safeModifiers,
-        notes: safeNotes ?? null,
+        modifiers_snapshot: safeSnapshot,
+        notes: safeNotes,
         status: 'pending',
       })
       .select('id')
