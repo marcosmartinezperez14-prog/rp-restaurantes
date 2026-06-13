@@ -16,7 +16,7 @@ export interface TicketVerifactu {
   issuer_nif: string | null
   verifactu_hash: string | null
   verifactu_status: string | null
-  verifactu_response: object | null
+  verifactu_response: VerifactiRespuesta | null
   verifactu_sent_at: string | null
   verifactu_prev_hash: string | null
 }
