@@ -2,6 +2,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import Link from 'next/link'
 import { crearRestauranteConAdmin, type SuperadminActionResult } from '@/app/actions/superadmin'
 
 export default function SuperadminForm() {
@@ -21,12 +22,12 @@ export default function SuperadminForm() {
               <strong>{state.restaurante}</strong> con admin <strong>{state.usuario}</strong>
             </p>
           </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors"
+          <Link
+            href="/dashboard/superadmin"
+            className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors text-center"
           >
             Crear otro restaurante
-          </button>
+          </Link>
         </div>
       </div>
     )
@@ -58,7 +59,7 @@ export default function SuperadminForm() {
               name="restaurant_name"
               type="text"
               placeholder="El Rincón de Madrid"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -71,7 +72,7 @@ export default function SuperadminForm() {
               name="nif"
               type="text"
               placeholder="B12345678"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -88,7 +89,7 @@ export default function SuperadminForm() {
               name="nombre"
               type="text"
               placeholder="Juan García"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -101,7 +102,8 @@ export default function SuperadminForm() {
               name="username"
               type="text"
               placeholder="juan_garcia"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              autoComplete="username"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">
               Se usará como <em>usuario@rp-internal.com</em>
@@ -118,7 +120,7 @@ export default function SuperadminForm() {
               type="password"
               placeholder="••••••••"
               autoComplete="new-password"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres</p>
           </div>
