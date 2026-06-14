@@ -31,11 +31,28 @@ function buildLineas(ticket: TicketVerifactu): VerifactiLinea[] {
           cuota_repercutida: taxTotal,
         }]
 
-  return breakdown.map(item => ({
+  const lineas = breakdown.map(item => ({
     base_imponible:    (Number(item.base_imponible) || 0).toFixed(2),
     tipo_impositivo:   String(Math.round(Number(item.tipo_impositivo) || 21)),
     cuota_repercutida: (Number(item.cuota_repercutida) || 0).toFixed(2),
   }))
+
+  // Reconciliar: la suma de las líneas redondeadas debe cuadrar con el total
+  // realmente cobrado (ticket.total). El residuo de redondeo se imputa a la
+  // cuota de la última línea para evitar descuadres frente a la AEAT.
+  if (total > 0 && lineas.length > 0) {
+    const sumaLineas = lineas.reduce(
+      (s, l) => s + parseFloat(l.base_imponible) + parseFloat(l.cuota_repercutida),
+      0,
+    )
+    const diff = parseFloat((total - sumaLineas).toFixed(2))
+    if (diff !== 0) {
+      const ultima = lineas[lineas.length - 1]
+      ultima.cuota_repercutida = (parseFloat(ultima.cuota_repercutida) + diff).toFixed(2)
+    }
+  }
+
+  return lineas
 }
 
 export function buildPayload(

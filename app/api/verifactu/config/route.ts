@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
 
-async function getRestaurantId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+// Devuelve restaurant_id y rol del usuario, o null si no hay restaurante.
+async function getRestauranteYRol(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
     .from('users')
-    .select('restaurant_id')
+    .select('restaurant_id, user_roles!user_id(roles(name))')
     .eq('auth_id', userId)
     .single()
-  return data?.restaurant_id as string | null
+  if (!data?.restaurant_id) return null
+  const roles = data.user_roles as unknown as { roles: { name: string } | null }[] | undefined
+  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
+  return { restaurantId: data.restaurant_id as string, rol }
+}
+
+// La gestión de la API key de Verifactu requiere permiso de administración.
+function esAdmin(rol: RolNombre | null): boolean {
+  return !rol || PERMISOS_POR_ROL[rol]?.modulos.includes('administracion')
 }
 
 export async function GET() {
@@ -15,8 +25,10 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
+  const ctx = await getRestauranteYRol(supabase, user.id)
+  if (!ctx) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
+  if (!esAdmin(ctx.rol)) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+  const restaurantId = ctx.restaurantId
 
   const { data } = await supabase
     .from('restaurants')
@@ -33,8 +45,10 @@ export async function PUT(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
+  const ctx = await getRestauranteYRol(supabase, user.id)
+  if (!ctx) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
+  if (!esAdmin(ctx.rol)) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+  const restaurantId = ctx.restaurantId
 
   const { apiKey } = await req.json() as { apiKey?: string }
   if (!apiKey?.trim()) return NextResponse.json({ error: 'La API key no puede estar vacía' }, { status: 400 })

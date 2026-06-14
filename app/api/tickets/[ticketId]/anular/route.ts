@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cancelVerifacti } from '@/lib/verifacti/client'
 import type { TicketVerifactu } from '@/types/verifactu'
+import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
 
 export async function POST(
   req: NextRequest,
@@ -14,10 +15,16 @@ export async function POST(
 
   const { data: userData } = await supabase
     .from('users')
-    .select('restaurant_id')
+    .select('restaurant_id, user_roles!user_id(roles(name))')
     .eq('auth_id', user.id)
     .single()
   if (!userData?.restaurant_id) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
+  // Anular tickets (con posible R5 a la AEAT) requiere permiso de facturas.
+  const roles = userData.user_roles as unknown as { roles: { name: string } | null }[] | undefined
+  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
+  const puedeAnular = !rol || PERMISOS_POR_ROL[rol]?.modulos.includes('facturas')
+  if (!puedeAnular) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
 
   const { ticketId } = await params
   const body = await req.json().catch(() => ({})) as { motivo?: string }
