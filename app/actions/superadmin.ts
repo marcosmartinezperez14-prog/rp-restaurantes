@@ -2,6 +2,7 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 export type SuperadminActionResult =
   | { success: true; restaurante: string; usuario: string }
@@ -15,6 +16,22 @@ export async function crearRestauranteConAdmin(
   _prevState: SuperadminActionResult | undefined,
   formData: FormData
 ): Promise<SuperadminActionResult> {
+  // Verificar que el caller tiene rol superadmin
+  const supabase = await createClient()
+  const { data: { user: caller } } = await supabase.auth.getUser()
+  if (!caller) return { error: 'No autenticado.' }
+
+  const { data: callerUser } = await supabase
+    .from('users')
+    .select('id, user_roles!user_id(roles(name))')
+    .eq('auth_id', caller.id)
+    .single()
+
+  const callerRoles = callerUser?.user_roles as unknown as { roles: { name: string } | null }[]
+  const isSuperadmin = callerRoles?.some(r => r.roles?.name === 'superadmin') ?? false
+
+  if (!isSuperadmin) return { error: 'No tienes permisos para realizar esta acción.' }
+
   const restaurant_name = ((formData.get('restaurant_name') as string) ?? '').trim()
   const nif = ((formData.get('nif') as string) ?? '').trim()
   const nombre = ((formData.get('nombre') as string) ?? '').trim()
