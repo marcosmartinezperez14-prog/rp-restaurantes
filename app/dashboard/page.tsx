@@ -161,7 +161,6 @@ export default async function DashboardPage() {
 
   const roles = usuarioActual?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
   const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
-  const isSuperadmin = roles?.some(r => r.roles?.name === 'superadmin' || r.roles?.name === 'admin') ?? false
   const modulosPermitidos = rol ? PERMISOS_POR_ROL[rol].modulos : []
 
   const cardsVisibles = rol
@@ -197,15 +196,6 @@ export default async function DashboardPage() {
             </Link>
           ))}
         </div>
-
-        {isSuperadmin && (
-          <Link
-            href="/dashboard/superadmin"
-            className="block w-full py-2.5 text-sm text-center text-gray-500 border border-dashed border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-700 transition-colors mb-3"
-          >
-            ⚙️ Superadmin — Nuevo restaurante
-          </Link>
-        )}
 
         <form action={logoutAction}>
           <button
