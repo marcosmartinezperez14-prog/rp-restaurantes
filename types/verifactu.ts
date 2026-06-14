@@ -31,7 +31,7 @@ export interface VerifactiPayload {
   serie: string
   numero: string
   fecha_expedicion: string   // "DD-MM-YYYY"
-  tipo_factura: 'F1' | 'F2'
+  tipo_factura: 'F1' | 'F2' | 'R5'
   descripcion: string
   nif?: string
   nombre?: string

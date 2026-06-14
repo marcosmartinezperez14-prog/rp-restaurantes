@@ -18,21 +18,23 @@ function formatFecha(iso: string): string {
 }
 
 function buildLineas(ticket: TicketVerifactu): VerifactiLinea[] {
+  const total    = Number(ticket.total) || 0
+  const subtotal = Number(ticket.subtotal) || parseFloat((total / 1.21).toFixed(2))
+  const taxTotal = Number(ticket.tax_total) || parseFloat((total - subtotal).toFixed(2))
+
   const breakdown: TaxBreakdownItem[] =
     Array.isArray(ticket.tax_breakdown) && ticket.tax_breakdown.length > 0
       ? ticket.tax_breakdown
       : [{
-          tipo_impositivo: ticket.tax_total > 0
-            ? Math.round((ticket.tax_total / ticket.subtotal) * 100)
-            : 21,
-          base_imponible: ticket.subtotal,
-          cuota_repercutida: ticket.tax_total,
+          tipo_impositivo: subtotal > 0 ? Math.round((taxTotal / subtotal) * 100) : 21,
+          base_imponible:  subtotal,
+          cuota_repercutida: taxTotal,
         }]
 
   return breakdown.map(item => ({
-    base_imponible:     String(Number(item.base_imponible).toFixed(2)),
-    tipo_impositivo:    String(item.tipo_impositivo),
-    cuota_repercutida:  String(Number(item.cuota_repercutida).toFixed(2)),
+    base_imponible:    (Number(item.base_imponible) || 0).toFixed(2),
+    tipo_impositivo:   String(Math.round(Number(item.tipo_impositivo) || 21)),
+    cuota_repercutida: (Number(item.cuota_repercutida) || 0).toFixed(2),
   }))
 }
 
@@ -42,14 +44,20 @@ export function buildPayload(
   clienteNif?: string,
   clienteNombre?: string,
 ): VerifactiPayload {
+  const lineas = buildLineas(ticket)
+  const importeTotal = lineas.reduce(
+    (sum, l) => sum + parseFloat(l.base_imponible) + parseFloat(l.cuota_repercutida),
+    0,
+  )
+
   const payload: VerifactiPayload = {
     serie:            ticket.series || 'A',
     numero:           String(ticket.sequential_number),
     fecha_expedicion: formatFecha(ticket.issued_at),
     tipo_factura:     tipoFactura,
     descripcion:      tipoFactura === 'F1' ? 'Factura normal' : 'Factura simplificada',
-    lineas:           buildLineas(ticket),
-    importe_total:    String(Number(ticket.total).toFixed(2)),
+    lineas,
+    importe_total:    importeTotal.toFixed(2),
   }
 
   if (tipoFactura === 'F1') {
@@ -60,9 +68,32 @@ export function buildPayload(
   return payload
 }
 
-export async function sendToVerifacti(payload: VerifactiPayload): Promise<VerifactiRespuesta> {
-  const apiKey = process.env.VERIFACTI_API_KEY
-  if (!apiKey) throw new Error('VERIFACTI_API_KEY no configurada')
+export async function cancelVerifacti(ticket: TicketVerifactu, apiKey: string): Promise<void> {
+  if (!apiKey) throw new Error('API key de Verifacti no configurada para este restaurante')
+
+  const body = {
+    serie:            ticket.series || '',
+    numero:           String(ticket.sequential_number),
+    fecha_expedicion: formatFecha(ticket.issued_at),
+  }
+
+  const res = await fetch(`${VERIFACTI_BASE_URL}/verifactu/cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Verifacti ${res.status}: ${text}`)
+  }
+}
+
+export async function sendToVerifacti(payload: VerifactiPayload, apiKey: string): Promise<VerifactiRespuesta> {
+  if (!apiKey) throw new Error('API key de Verifacti no configurada para este restaurante')
 
   const res = await fetch(`${VERIFACTI_BASE_URL}/verifactu/create`, {
     method: 'POST',

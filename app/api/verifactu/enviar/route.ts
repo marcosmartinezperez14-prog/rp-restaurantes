@@ -19,13 +19,27 @@ export async function POST(req: NextRequest) {
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')
     .select(
-      'id, series, sequential_number, total, subtotal, tax_total, tax_breakdown, issued_at, issuer_nif, verifactu_hash, verifactu_status, verifactu_response, verifactu_sent_at, verifactu_prev_hash'
+      'id, restaurant_id, series, sequential_number, total, subtotal, tax_total, tax_breakdown, issued_at, issuer_nif, verifactu_hash, verifactu_status, verifactu_response, verifactu_sent_at, verifactu_prev_hash'
     )
     .eq('id', ticketId)
     .single()
 
   if (ticketError || !ticket) {
     return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 })
+  }
+
+  const { data: restaurant } = await supabase
+    .from('restaurants')
+    .select('verifacti_api_key')
+    .eq('id', ticket.restaurant_id)
+    .single()
+
+  const apiKey = (restaurant as Record<string, unknown> | null)?.verifacti_api_key as string | null
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: 'API key de Verifactu no configurada. Ve a Configuración para añadirla.' },
+      { status: 422 },
+    )
   }
 
   try {
@@ -36,7 +50,7 @@ export async function POST(req: NextRequest) {
       clienteNombre,
     )
 
-    const respuesta = await sendToVerifacti(payload)
+    const respuesta = await sendToVerifacti(payload, apiKey)
     await updateTicketVerifactu(supabase, ticketId, respuesta)
 
     return NextResponse.json({ ok: true, data: respuesta })
