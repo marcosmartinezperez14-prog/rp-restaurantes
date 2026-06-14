@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { TicketCompleto } from '@/types/ticket'
+import BotonVerifactu from '@/components/verifactu/BotonVerifactu'
 
 const PRINTER_IP_KEY = 'rp_printer_ip'
 
@@ -21,6 +22,8 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
   const [showIpPanel, setShowIpPanel] = useState(false)
   const [printerIp, setPrinterIp] = useState('')
   const [printSuccess, setPrintSuccess] = useState(false)
+  const [verifactuStatus, setVerifactuStatus] = useState<string | null>(null)
+  const [verifactuUrl, setVerifactuUrl] = useState<string | null>(null)
 
   const fetchTicket = useCallback(async () => {
     setLoading(true)
@@ -89,6 +92,10 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
       }
 
       setTicket(built)
+      const rawT = ticket as unknown as Record<string, unknown>
+      setVerifactuStatus((rawT.verifactu_status as string | null) ?? null)
+      const resp = rawT.verifactu_response as { url?: string } | null
+      setVerifactuUrl(resp?.url ?? null)
     } catch {
       setError('Error al cargar el ticket')
     } finally {
@@ -367,6 +374,11 @@ export default function TicketPreview({ ticketId, onClose }: Props) {
         {/* Botones */}
         {ticket && !loading && (
           <div className="px-5 py-4 border-t border-[#e2e8f0] flex flex-col gap-2">
+            <BotonVerifactu
+              ticketId={ticketId}
+              verifactuStatus={verifactuStatus}
+              verifactuUrl={verifactuUrl}
+            />
             <div className="flex gap-2">
               <button
                 onClick={handleDownloadPdf}

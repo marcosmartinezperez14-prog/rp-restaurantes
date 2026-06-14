@@ -34,4 +34,8 @@ export interface TicketResumen {
   total: number
   metodo_pago: string
   mesa_nombre: string
+  verifactu_status: string | null
+  verifactu_url: string | null
+  anulado: boolean
+  anulado_at: string | null
 }

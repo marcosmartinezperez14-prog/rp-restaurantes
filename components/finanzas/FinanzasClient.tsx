@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
@@ -154,6 +154,14 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
   const [ticketModalId, setTicketModalId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [eliminandoId, setEliminandoId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [enviandoIds, setEnviandoIds] = useState<Set<string>>(new Set())
+  const [vfResults, setVfResults] = useState<Record<string, { status: string; url: string | null }>>({})
+  const [editModal, setEditModal] = useState<{ ticketId: string; numero: string; total: number } | null>(null)
+  const [batchConfirm, setBatchConfirm] = useState(false)
+  const [anularModal, setAnularModal] = useState<{ ticketId: string; numero: string; total: number; fecha: string; yaEnviado: boolean } | null>(null)
+  const [anulandoId, setAnulandoId] = useState<string | null>(null)
+  const [anuladoLocal, setAnuladoLocal] = useState<Set<string>>(new Set())
 
   const { desde, hasta } = useMemo(() => getPeriodoRange(periodo), [periodo])
 
@@ -177,6 +185,84 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
       return fecha >= desde && fecha <= hasta
     })
   }, [tickets, desde, hasta])
+
+  const ticketsPendientes = useMemo(() =>
+    ticketsFiltrados.filter(t => {
+      const s = vfResults[t.id]?.status ?? t.verifactu_status
+      return !s
+    }), [ticketsFiltrados, vfResults])
+
+  const ticketsEnviados = useMemo(() =>
+    ticketsFiltrados
+      .filter(t => {
+        const s = vfResults[t.id]?.status ?? t.verifactu_status
+        return !!s
+      })
+      .map(t => ({
+        ...t,
+        verifactu_status: vfResults[t.id]?.status ?? t.verifactu_status,
+        verifactu_url: vfResults[t.id]?.url ?? t.verifactu_url,
+      })), [ticketsFiltrados, vfResults])
+
+  const enviarTicket = useCallback(async (
+    ticketId: string,
+    tipoFactura: 'F1' | 'F2',
+    clienteNif?: string,
+    clienteNombre?: string,
+  ) => {
+    setEnviandoIds(prev => new Set([...prev, ticketId]))
+    try {
+      const res = await fetch('/api/verifactu/enviar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId, tipoFactura, clienteNif, clienteNombre }),
+      })
+      const data = await res.json() as { ok?: boolean; data?: { estado: string; url?: string }; error?: string }
+      if (res.ok && data.ok && data.data) {
+        setVfResults(prev => ({ ...prev, [ticketId]: { status: data.data!.estado, url: data.data!.url ?? null } }))
+        setSelectedIds(prev => { const s = new Set(prev); s.delete(ticketId); return s })
+      } else {
+        showToast('Error: ' + (data.error ?? 'Error desconocido'))
+      }
+    } catch {
+      showToast('Error de conexión')
+    } finally {
+      setEnviandoIds(prev => { const s = new Set(prev); s.delete(ticketId); return s })
+    }
+  }, [])
+
+  async function handleAnular(ticketId: string, motivo?: string) {
+    setAnulandoId(ticketId)
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/anular`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo }),
+      })
+      const data = await res.json() as { ok?: boolean; error?: string; warning?: string }
+      if (res.ok && data.ok) {
+        setAnuladoLocal(prev => new Set([...prev, ticketId]))
+        setSelectedIds(prev => { const s = new Set(prev); s.delete(ticketId); return s })
+        setAnularModal(null)
+        showToast(data.warning ? `Anulado (Verifactu: ${data.warning})` : 'Ticket anulado correctamente')
+      } else {
+        showToast('Error: ' + (data.error ?? 'Error al anular'))
+      }
+    } catch {
+      showToast('Error de conexión')
+    } finally {
+      setAnulandoId(null)
+    }
+  }
+
+  async function enviarSeleccionados() {
+    setBatchConfirm(false)
+    const ids = [...selectedIds]
+    for (const id of ids) {
+      await enviarTicket(id, 'F2')
+    }
+    setSelectedIds(new Set())
+  }
 
   function showToast(msg: string) {
     setToast(msg)
@@ -377,24 +463,55 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
 
       {tab === 'tickets' && (
         <>
-          {/* Tabla tickets */}
+          {/* ── Pendientes de envío ────────────────────────── */}
           <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#e2e8f0]">
+            <div className="px-4 py-3 border-b border-[#e2e8f0] flex items-center justify-between gap-3 flex-wrap">
               <h2 className="text-sm font-semibold text-[#0f172a]">
-                Tickets {ticketsFiltrados.length > 0 && `(${ticketsFiltrados.length})`}
+                Pendientes de envío a Verifactu
+                {ticketsPendientes.length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full font-medium">
+                    {ticketsPendientes.length}
+                  </span>
+                )}
               </h2>
+              {ticketsPendientes.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const elegibles = ticketsPendientes.filter(t => !t.anulado && !anuladoLocal.has(t.id))
+                      if (selectedIds.size === elegibles.length && elegibles.length > 0) {
+                        setSelectedIds(new Set())
+                      } else {
+                        setSelectedIds(new Set(elegibles.map(t => t.id)))
+                      }
+                    }}
+                    className="text-xs text-[#64748b] hover:text-[#0f172a] underline"
+                  >
+                    {selectedIds.size === ticketsPendientes.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                  </button>
+                  {selectedIds.size > 0 && (
+                    <button
+                      onClick={() => setBatchConfirm(true)}
+                      className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Enviar seleccionados ({selectedIds.size})
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
-            {ticketsFiltrados.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="text-4xl mb-3">🧾</div>
-                <p className="text-sm text-[#94a3b8]">No hay tickets en este período</p>
+            {ticketsPendientes.length === 0 ? (
+              <div className="py-10 text-center">
+                <div className="text-3xl mb-2">✓</div>
+                <p className="text-sm text-[#94a3b8]">Todos los tickets de este período están enviados</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                      <th className="px-4 py-3 w-8" />
                       {['Nº Ticket', 'Fecha', 'Mesa', 'Método', 'Total', ''].map(h => (
                         <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Total' || h === '' ? 'text-right' : 'text-left'}`}>
                           {h}
@@ -403,43 +520,189 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                     </tr>
                   </thead>
                   <tbody>
-                    {ticketsFiltrados.map(t => (
-                      <tr key={t.id} className="border-b border-[#f1f5f9] hover:bg-slate-50">
-                        <td className="px-4 py-3 text-sm font-mono text-[#0f172a]">{t.numero_ticket}</td>
-                        <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">
-                          {new Date(t.fecha).toLocaleString('es-ES', {
-                            day: '2-digit', month: '2-digit', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit',
-                          })}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-[#64748b]">{t.mesa_nombre}</td>
-                        <td className="px-4 py-3 text-sm text-[#64748b]">
-                          {METODO_LABEL[t.metodo_pago] ?? t.metodo_pago}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">
-                          {fmt(t.total)}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => setTicketModalId(t.id)}
-                            className="px-3 py-1.5 text-xs font-semibold bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-                          >
-                            Ver ticket
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {ticketsPendientes.map(t => {
+                      const enviando = enviandoIds.has(t.id)
+                      const seleccionado = selectedIds.has(t.id)
+                      const isAnulado = t.anulado || anuladoLocal.has(t.id)
+                      return (
+                        <tr key={t.id} className={`border-b border-[#f1f5f9] transition-colors ${isAnulado ? 'opacity-60 bg-red-50/40' : seleccionado ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
+                          <td className="px-4 py-3">
+                            {!isAnulado && (
+                              <input
+                                type="checkbox"
+                                checked={seleccionado}
+                                onChange={() => {
+                                  setSelectedIds(prev => {
+                                    const s = new Set(prev)
+                                    s.has(t.id) ? s.delete(t.id) : s.add(t.id)
+                                    return s
+                                  })
+                                }}
+                                className="w-4 h-4 accent-blue-600"
+                              />
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-mono text-[#0f172a]">{t.numero_ticket}</td>
+                          <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">
+                            {new Date(t.fecha).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[#64748b]">{t.mesa_nombre}</td>
+                          <td className="px-4 py-3 text-sm text-[#64748b]">{METODO_LABEL[t.metodo_pago] ?? t.metodo_pago}</td>
+                          <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">{fmt(t.total)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {isAnulado && (
+                                <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">ANULADO</span>
+                              )}
+                              <button
+                                onClick={() => setTicketModalId(t.id)}
+                                className="px-2.5 py-1.5 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 transition-colors"
+                              >
+                                Ver
+                              </button>
+                              {!isAnulado && (
+                                <button
+                                  onClick={() => setEditModal({ ticketId: t.id, numero: t.numero_ticket, total: t.total })}
+                                  disabled={enviando}
+                                  className="px-2.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                >
+                                  {enviando ? '...' : 'Enviar'}
+                                </button>
+                              )}
+                              {!isAnulado && (
+                                <button
+                                  onClick={() => setAnularModal({ ticketId: t.id, numero: t.numero_ticket, total: t.total, fecha: t.fecha, yaEnviado: false })}
+                                  className="px-2.5 py-1.5 text-xs border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                                >
+                                  Anular
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
 
-          {/* Modal TicketPreview */}
+          {/* ── Enviados a Verifactu ───────────────────────── */}
+          {ticketsEnviados.length > 0 && (
+            <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#e2e8f0]">
+                <h2 className="text-sm font-semibold text-[#0f172a]">
+                  Enviados a Verifactu
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">
+                    {ticketsEnviados.length}
+                  </span>
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                      {['Nº Ticket', 'Fecha', 'Mesa', 'Total', 'Estado', ''].map(h => (
+                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Total' || h === '' ? 'text-right' : 'text-left'}`}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ticketsEnviados.map(t => {
+                      const isAnulado = t.anulado || anuladoLocal.has(t.id)
+                      return (
+                        <tr key={t.id} className={`border-b border-[#f1f5f9] transition-colors ${isAnulado ? 'opacity-60 bg-red-50/40' : 'hover:bg-slate-50'}`}>
+                          <td className="px-4 py-3 text-sm font-mono text-[#0f172a]">{t.numero_ticket}</td>
+                          <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">
+                            {new Date(t.fecha).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[#64748b]">{t.mesa_nombre}</td>
+                          <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">{fmt(t.total)}</td>
+                          <td className="px-4 py-3">
+                            {isAnulado ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                ✕ ANULADO
+                              </span>
+                            ) : (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                t.verifactu_status === 'Correcto' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                {t.verifactu_status === 'Correcto' ? '✓' : '⏳'} {t.verifactu_status}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setTicketModalId(t.id)}
+                                className="px-2.5 py-1.5 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 transition-colors"
+                              >
+                                Ver
+                              </button>
+                              {!isAnulado && t.verifactu_url && (
+                                <button
+                                  onClick={() => window.open(t.verifactu_url!, '_blank', 'noopener,noreferrer')}
+                                  className="px-2.5 py-1.5 text-xs font-semibold border border-green-300 text-green-700 rounded-lg hover:bg-green-50 transition-colors"
+                                >
+                                  AEAT
+                                </button>
+                              )}
+                              {!isAnulado && (
+                                <button
+                                  onClick={() => setAnularModal({ ticketId: t.id, numero: t.numero_ticket, total: t.total, fecha: t.fecha, yaEnviado: true })}
+                                  disabled={anulandoId === t.id}
+                                  className="px-2.5 py-1.5 text-xs border border-red-200 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+                                >
+                                  {anulandoId === t.id ? '...' : 'Anular'}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Modales */}
           {ticketModalId && (
-            <TicketPreview
-              ticketId={ticketModalId}
-              onClose={() => setTicketModalId(null)}
+            <TicketPreview ticketId={ticketModalId} onClose={() => setTicketModalId(null)} />
+          )}
+          {editModal && (
+            <EditEnviarModal
+              ticketId={editModal.ticketId}
+              numero={editModal.numero}
+              total={editModal.total}
+              enviando={enviandoIds.has(editModal.ticketId)}
+              onClose={() => setEditModal(null)}
+              onConfirm={(tipo, nif, nombre) => {
+                enviarTicket(editModal.ticketId, tipo, nif, nombre)
+                setEditModal(null)
+              }}
+            />
+          )}
+          {batchConfirm && (
+            <BatchConfirmModal
+              count={selectedIds.size}
+              onClose={() => setBatchConfirm(false)}
+              onConfirm={enviarSeleccionados}
+            />
+          )}
+          {anularModal && (
+            <AnularModal
+              numero={anularModal.numero}
+              total={anularModal.total}
+              fecha={anularModal.fecha}
+              yaEnviado={anularModal.yaEnviado}
+              anulando={anulandoId === anularModal.ticketId}
+              onClose={() => setAnularModal(null)}
+              onConfirm={(motivo) => handleAnular(anularModal.ticketId, motivo)}
             />
           )}
         </>
@@ -609,6 +872,218 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
           <button onClick={handleGuardar} disabled={saving}
             className={`px-4 py-2 text-sm font-semibold rounded-xl text-white ${accentBtn} disabled:opacity-50`}>
             {saving ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Modal editar y enviar ticket a Verifactu ─────────────────────────────────
+
+function EditEnviarModal({ ticketId: _ticketId, numero, total, enviando, onClose, onConfirm }: {
+  ticketId: string
+  numero: string
+  total: number
+  enviando: boolean
+  onClose: () => void
+  onConfirm: (tipo: 'F1' | 'F2', nif?: string, nombre?: string) => void
+}) {
+  const [tipo, setTipo] = useState<'F1' | 'F2'>('F2')
+  const [nif, setNif] = useState('')
+  const [nombre, setNombre] = useState('')
+
+  function handleConfirm() {
+    onConfirm(tipo, tipo === 'F1' ? nif.trim() || undefined : undefined, tipo === 'F1' ? nombre.trim() || undefined : undefined)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e2e8f0]">
+          <div>
+            <h3 className="text-base font-bold text-[#0f172a]">Enviar a Verifactu</h3>
+            <p className="text-xs text-[#64748b] mt-0.5">Ticket {numero} · {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</p>
+          </div>
+          <button onClick={onClose} className="text-[#94a3b8] hover:text-[#0f172a] text-xl leading-none">×</button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#64748b] mb-2">Tipo de factura</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['F2', 'F1'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTipo(t)}
+                  className={`px-3 py-2.5 rounded-xl border text-sm font-medium text-left transition-colors ${
+                    tipo === t ? 'bg-blue-600 text-white border-blue-600' : 'border-[#e2e8f0] text-[#64748b] hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="font-semibold">{t}</div>
+                  <div className={`text-xs mt-0.5 ${tipo === t ? 'text-blue-100' : 'text-[#94a3b8]'}`}>
+                    {t === 'F2' ? 'Simplificada' : 'Factura completa'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {tipo === 'F1' && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-[#64748b] mb-1">NIF del cliente</label>
+                <input
+                  type="text"
+                  value={nif}
+                  onChange={e => setNif(e.target.value)}
+                  placeholder="12345678A"
+                  className="w-full border border-[#e2e8f0] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#64748b] mb-1">Nombre del cliente</label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={e => setNombre(e.target.value)}
+                  placeholder="Nombre o razón social"
+                  className="w-full border border-[#e2e8f0] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="px-5 pb-5 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e2e8f0] rounded-xl text-sm text-[#64748b] hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={enviando}
+            className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {enviando ? 'Enviando...' : 'Confirmar y enviar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Modal anulación de ticket ────────────────────────────────────────────────
+
+function AnularModal({ numero, total, fecha, yaEnviado, anulando, onClose, onConfirm }: {
+  numero: string
+  total: number
+  fecha: string
+  yaEnviado: boolean
+  anulando: boolean
+  onClose: () => void
+  onConfirm: (motivo?: string) => void
+}) {
+  const [motivo, setMotivo] = useState('')
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e2e8f0]">
+          <h3 className="text-base font-bold text-[#0f172a]">Anular ticket</h3>
+          <button onClick={onClose} className="text-[#94a3b8] hover:text-[#0f172a] text-xl leading-none">×</button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          <div className="bg-slate-50 rounded-xl p-3 text-sm space-y-1">
+            <div className="flex justify-between">
+              <span className="text-[#64748b]">Ticket</span>
+              <span className="font-mono font-semibold text-[#0f172a]">{numero}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#64748b]">Importe</span>
+              <span className="font-semibold text-[#0f172a]">{total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#64748b]">Fecha</span>
+              <span className="text-[#0f172a]">{new Date(fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+            </div>
+          </div>
+
+          {yaEnviado && (
+            <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+              <span className="mt-0.5 flex-shrink-0">⚠️</span>
+              <span>Este ticket fue enviado a Verifactu. La anulación notificará a la AEAT con tipo R5.</span>
+            </div>
+          )}
+
+          <div className="flex items-start gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800">
+            <span className="mt-0.5 flex-shrink-0">🚫</span>
+            <span>Esta acción es irreversible.</span>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[#64748b] mb-1">Motivo (opcional)</label>
+            <input
+              type="text"
+              value={motivo}
+              onChange={e => setMotivo(e.target.value)}
+              placeholder="Ej: error en artículos, duplicado..."
+              className="w-full border border-[#e2e8f0] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-red-300"
+            />
+          </div>
+        </div>
+
+        <div className="px-5 pb-5 flex gap-3">
+          <button onClick={onClose} disabled={anulando}
+            className="flex-1 py-2.5 border border-[#e2e8f0] rounded-xl text-sm text-[#64748b] hover:bg-slate-50 disabled:opacity-50">
+            Cancelar
+          </button>
+          <button
+            onClick={() => onConfirm(motivo.trim() || undefined)}
+            disabled={anulando}
+            className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            {anulando ? 'Anulando...' : 'Confirmar anulación'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Modal confirmación envío múltiple ────────────────────────────────────────
+
+function BatchConfirmModal({ count, onClose, onConfirm }: {
+  count: number
+  onClose: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="px-5 py-4 border-b border-[#e2e8f0]">
+          <h3 className="text-base font-bold text-[#0f172a]">Enviar {count} tickets</h3>
+        </div>
+        <div className="px-5 py-4">
+          <p className="text-sm text-[#64748b]">
+            Se enviarán <span className="font-semibold text-[#0f172a]">{count} tickets</span> a Verifactu como <span className="font-semibold">factura simplificada (F2)</span>.
+          </p>
+          <p className="text-xs text-[#94a3b8] mt-2">
+            Para facturas completas con NIF de cliente, envíalos uno a uno.
+          </p>
+        </div>
+        <div className="px-5 pb-5 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e2e8f0] rounded-xl text-sm text-[#64748b] hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Confirmar y enviar
           </button>
         </div>
       </div>

@@ -47,7 +47,7 @@ export default async function FinanzasPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('tickets')
-      .select('id, ticket_number, issued_at, total, payment_method, order_id')
+      .select('id, ticket_number, issued_at, total, payment_method, order_id, verifactu_status, verifactu_response, anulado, anulado_at')
       .eq('restaurant_id', restaurantId)
       .order('issued_at', { ascending: false }),
   ])
@@ -74,14 +74,21 @@ export default async function FinanzasPage() {
     }
   }
 
-  const tickets: TicketResumen[] = ticketsRaw.map(t => ({
-    id: t.id,
-    numero_ticket: t.ticket_number,
-    fecha: t.issued_at,
-    total: Number(t.total),
-    metodo_pago: t.payment_method,
-    mesa_nombre: mesaMap[t.order_id] ?? 'Mesa',
-  }))
+  const tickets: TicketResumen[] = ticketsRaw.map(t => {
+    const resp = t.verifactu_response as Record<string, unknown> | null
+    return {
+      id: t.id,
+      numero_ticket: t.ticket_number,
+      fecha: t.issued_at,
+      total: Number(t.total),
+      metodo_pago: t.payment_method,
+      mesa_nombre: mesaMap[t.order_id] ?? 'Mesa',
+      verifactu_status: (t.verifactu_status as string | null) ?? null,
+      verifactu_url: (resp?.url as string | null) ?? null,
+      anulado: !!(t.anulado as boolean | null),
+      anulado_at: (t.anulado_at as string | null) ?? null,
+    }
+  })
 
   return (
     <AppShell title="Finanzas">
