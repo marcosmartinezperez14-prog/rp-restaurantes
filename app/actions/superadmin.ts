@@ -84,6 +84,17 @@ export async function crearRestauranteConAdmin(
 
   const restaurantId = userRecord.restaurant_id
 
+  // Guardar el NIF en el restaurante (el trigger solo pone el nombre)
+  const { error: restaurantUpdateError } = await supabaseAdmin
+    .from('restaurants')
+    .update({ nif })
+    .eq('id', restaurantId)
+
+  if (restaurantUpdateError) {
+    await supabaseAdmin.auth.admin.deleteUser(authUserId)
+    return { error: `Error al guardar el NIF: ${restaurantUpdateError.message}` }
+  }
+
   // Actualizar el users record con datos completos (el trigger solo pone id y restaurant_id)
   const { error: updateError } = await supabaseAdmin
     .from('users')
