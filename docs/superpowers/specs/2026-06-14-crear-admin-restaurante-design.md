@@ -24,17 +24,21 @@ Proporcionar una página dentro del dashboard desde la que el operador de la pla
 
 ### Archivos modificados
 
-| Archivo | Cambio |
-|---|---|
-| `proxy.ts` | Añadir la ruta `/dashboard/superadmin` a la lista de rutas protegidas por rol `superadmin` |
+Ninguno — la protección y la lógica son autocontenidas en los archivos nuevos.
 
 ---
 
 ## Protección de acceso
 
-- El middleware (`proxy.ts`) ya controla el acceso por roles. Se añade una entrada que exige rol `superadmin` para `/dashboard/superadmin`.
-- Si el usuario autenticado no tiene ese rol, se redirige a `/dashboard`.
-- El rol `superadmin` debe existir en la tabla `roles` y asignarse manualmente al usuario operador en `user_roles`.
+- `proxy.ts` no hace control de roles — solo verifica autenticación y onboarding. La protección va en `app/dashboard/superadmin/page.tsx` como Server Component.
+- Al cargar la página se consulta `user_roles` para verificar que el usuario tiene rol `superadmin`. Si no, se hace `redirect('/dashboard')`.
+- El rol `superadmin` no existe aún en la tabla `roles`. Hay que añadirlo con SQL antes de implementar:
+  ```sql
+  INSERT INTO roles (id, name, description)
+  VALUES (gen_random_uuid(), 'superadmin', 'Operador de la plataforma RP Restaurantes')
+  ON CONFLICT (name) DO NOTHING;
+  ```
+- Asignar manualmente el rol `superadmin` al usuario operador en `user_roles`.
 
 ---
 
@@ -65,17 +69,27 @@ Proporcionar una página dentro del dashboard desde la que el operador de la pla
 
 **Parámetros (vía FormData):** `restaurant_name`, `nif`, `nombre`, `username`, `password`
 
+### Nota sobre el trigger de Supabase
+
+El trigger `handle_new_user` (migration `002`) se dispara automáticamente al crear un usuario en `auth.users`. Hace:
+- `INSERT INTO restaurants (name) VALUES (user_metadata.restaurant_name)` → crea el restaurante
+- `INSERT INTO users (id, restaurant_id) VALUES (NEW.id, restaurant_id)` → crea el registro básico de usuario
+
+Por tanto, el Server Action **no hace INSERT en `restaurants` ni en `users`**. En su lugar hace un UPDATE al registro que ya creó el trigger.
+
 **Flujo de creación (en orden, con rollback):**
 
 1. Validar todos los campos en servidor (mismas reglas que el formulario).
-2. Verificar que el `username` no exista ya como `email` en `users`.
-3. `supabaseAdmin.auth.admin.createUser({ email: username@rp-internal.com, password, email_confirm: true })` → obtener `authUser.id`.
-4. `supabaseAdmin.from('restaurants').insert({ name, nif })` → obtener `restaurantId`.
-5. `supabaseAdmin.from('users').insert({ id: authUser.id, auth_id: authUser.id, nombre, email, restaurant_id: restaurantId })`.
+2. Verificar que el `username` no exista ya en `auth.users` consultando si hay un `users` con ese `email`.
+3. `supabaseAdmin.auth.admin.createUser({ email: username@rp-internal.com, password, email_confirm: true, user_metadata: { restaurant_name, username, name: nombre, nif } })` → el trigger crea `restaurants` y `users` automáticamente.
+4. Leer el `restaurant_id` del registro `users` recién creado (`users.id = authUser.id`).
+5. `supabaseAdmin.from('users').update({ auth_id: authUser.id, nombre, email }).eq('id', authUser.id)`.
 6. Buscar el `id` del rol `admin` en `roles`.
-7. `supabaseAdmin.from('user_roles').insert({ user_id, role_id, restaurant_id })`.
+7. `supabaseAdmin.from('user_roles').insert({ user_id: authUser.id, role_id, restaurant_id })`.
 
-**Rollback:** Si el paso 4 o superior falla, se llama a `supabaseAdmin.auth.admin.deleteUser(authUser.id)` antes de devolver el error.
+**NIF:** No hay columna `nif` en `restaurants`. Se almacena en `user_metadata` del auth user (paso 3) y estará disponible para completar en el panel de negocio tras el onboarding.
+
+**Rollback:** Si el paso 4 o superior falla, se llama a `supabaseAdmin.auth.admin.deleteUser(authUser.id)` antes de devolver el error (esto también eliminará el registro en `users` y `restaurants` creados por el trigger si se configuró cascade, o quedarán huérfanos — aceptable en un flujo de error interno).
 
 **Retorno:** `{ success: true, restaurante: string, usuario: string } | { error: string }`
 
