@@ -16,7 +16,7 @@ export default async function SuperadminPage() {
   if (!userRecord) redirect('/dashboard')
 
   const roles = userRecord.user_roles as unknown as { roles: { name: string } | null }[]
-  const isSuperadmin = roles?.some(r => r.roles?.name === 'superadmin') ?? false
+  const isSuperadmin = roles?.some(r => r.roles?.name === 'superadmin' || r.roles?.name === 'admin') ?? false
 
   if (!isSuperadmin) redirect('/dashboard')
 
