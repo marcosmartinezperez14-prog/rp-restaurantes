@@ -1,7 +1,12 @@
+// Formato REAL almacenado en tickets.tax_breakdown (jsonb), tal como lo escribe
+// el TPV en app/api/tpv/pay/route.ts: { rate, base, amount }.
+//   rate   = tipo impositivo (%)
+//   base   = base imponible
+//   amount = cuota repercutida (IVA)
 export interface TaxBreakdownItem {
-  tipo_impositivo: number
-  base_imponible: number
-  cuota_repercutida: number
+  rate: number
+  base: number
+  amount: number
 }
 
 export interface TicketVerifactu {

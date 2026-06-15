@@ -22,19 +22,20 @@ function buildLineas(ticket: TicketVerifactu): VerifactiLinea[] {
   const subtotal = Number(ticket.subtotal) || parseFloat((total / 1.21).toFixed(2))
   const taxTotal = Number(ticket.tax_total) || parseFloat((total - subtotal).toFixed(2))
 
+  // tax_breakdown se almacena como { rate, base, amount } (ver TaxBreakdownItem).
   const breakdown: TaxBreakdownItem[] =
     Array.isArray(ticket.tax_breakdown) && ticket.tax_breakdown.length > 0
       ? ticket.tax_breakdown
       : [{
-          tipo_impositivo: subtotal > 0 ? Math.round((taxTotal / subtotal) * 100) : 21,
-          base_imponible:  subtotal,
-          cuota_repercutida: taxTotal,
+          rate:   subtotal > 0 ? Math.round((taxTotal / subtotal) * 100) : 21,
+          base:   subtotal,
+          amount: taxTotal,
         }]
 
   const lineas = breakdown.map(item => ({
-    base_imponible:    (Number(item.base_imponible) || 0).toFixed(2),
-    tipo_impositivo:   String(Math.round(Number(item.tipo_impositivo) || 21)),
-    cuota_repercutida: (Number(item.cuota_repercutida) || 0).toFixed(2),
+    base_imponible:    (Number(item.base) || 0).toFixed(2),
+    tipo_impositivo:   String(Math.round(Number(item.rate) || 21)),
+    cuota_repercutida: (Number(item.amount) || 0).toFixed(2),
   }))
 
   // Reconciliar: la suma de las líneas redondeadas debe cuadrar con el total
@@ -129,6 +130,11 @@ export async function sendToVerifacti(payload: VerifactiPayload, apiKey: string)
   return res.json() as Promise<VerifactiRespuesta>
 }
 
+/**
+ * @deprecated Sustituida por la RPC `fiscal_persistir_emision` (migración 008),
+ * que persiste la emisión con bloqueo de fila y calcula `verifactu_prev_hash`
+ * (encadenado). Las rutas API ya no la usan. Conservada por compatibilidad.
+ */
 export async function updateTicketVerifactu(
   supabase: SupabaseClient,
   ticketId: string,

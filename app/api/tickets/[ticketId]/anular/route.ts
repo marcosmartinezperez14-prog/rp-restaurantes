@@ -68,14 +68,12 @@ export async function POST(
     }
   }
 
+  // Anulación atómica vía RPC (bloqueo de fila + rechaza doble anulación).
   const { error: updateError } = await supabase
-    .from('tickets')
-    .update({
-      anulado:          true,
-      anulado_at:       new Date().toISOString(),
-      motivo_anulacion: motivo ?? null,
+    .rpc('fiscal_anular_ticket', {
+      p_ticket_id: ticketId,
+      p_motivo: motivo ?? null,
     })
-    .eq('id', ticketId)
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
