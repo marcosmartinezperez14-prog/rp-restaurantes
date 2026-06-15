@@ -128,11 +128,11 @@ BEGIN
     WHERE c.conrelid = 'public.tickets'::regclass
       AND c.contype = 'u'
       AND (
-        SELECT array_agg(att.attname ORDER BY att.attname)
+        SELECT array_agg(att.attname::text ORDER BY att.attname::text)
         FROM unnest(c.conkey) AS k(attnum)
         JOIN pg_attribute att
           ON att.attrelid = c.conrelid AND att.attnum = k.attnum
-      ) = ARRAY['restaurant_id', 'sequential_number', 'series']  -- ordenado alfabéticamente
+      ) = ARRAY['restaurant_id', 'sequential_number', 'series']::text[]  -- ordenado alfabéticamente
   ) THEN
     ALTER TABLE public.tickets
       ADD CONSTRAINT tickets_restaurant_series_seq_unique
