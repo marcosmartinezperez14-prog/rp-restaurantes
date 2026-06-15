@@ -72,6 +72,7 @@ export async function POST(
   const { error: updateError } = await supabase
     .rpc('fiscal_anular_ticket', {
       p_ticket_id: ticketId,
+      p_restaurant_id: userData.restaurant_id,
       p_motivo: motivo ?? null,
     })
 

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   // Reclama el ticket para emisión (bloqueo de fila + marca 'enviando').
   // Rechaza si ya está emitido o si hay otra emisión en curso → evita doble envío.
   const { data: claimed, error: claimError } = await supabase
-    .rpc('fiscal_claim_emision', { p_ticket_id: ticketId })
+    .rpc('fiscal_claim_emision', { p_ticket_id: ticketId, p_restaurant_id: userData.restaurant_id })
 
   if (claimError || !claimed) {
     // El RPC lanza EXCEPTION si ya emitido / en curso / no encontrado.
@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
     // Liberamos el estado 'enviando' para permitir reintento tras configurar la key.
     await supabase.rpc('fiscal_marcar_error_emision', {
       p_ticket_id: ticketId,
+      p_restaurant_id: userData.restaurant_id,
       p_error: 'API key de Verifactu no configurada',
     })
     return NextResponse.json(
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
     // Persiste la emisión: huella, prev_hash (encadenado), estado, sent_at, respuesta.
     const { error: persistError } = await supabase.rpc('fiscal_persistir_emision', {
       p_ticket_id: ticketId,
+      p_restaurant_id: userData.restaurant_id,
       p_huella: respuesta.huella,
       p_estado: respuesta.estado,
       p_respuesta: respuesta,
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
     // Marca error (permite reintento: no fija verifactu_hash).
     await supabase.rpc('fiscal_marcar_error_emision', {
       p_ticket_id: ticketId,
+      p_restaurant_id: userData.restaurant_id,
       p_error: mensaje,
     })
     return NextResponse.json({ error: mensaje }, { status: 502 })
