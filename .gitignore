@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .worktrees/
+
+# superpowers brainstorm scratch
+.superpowers/
+
+# editor workspace files
+*.code-workspace
