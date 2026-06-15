@@ -3,6 +3,14 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import type { MatrizPermisos } from '@/types/permisos'
 import { MODULOS_SISTEMA, MODULOS_SIEMPRE_ACTIVOS, ROLES_PROTEGIDOS, SOLO_ADMIN_PUEDE_CONFIGURAR } from '@/lib/permisos/modulos'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const postSchema = z.object({
+  role_id: z.string().uuid('Datos inválidos'),
+  modulo_key: z.string().min(1, 'Datos inválidos').max(100),
+  activo: z.boolean({ message: 'Datos inválidos' }),
+})
 
 async function getCallerInfo(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -33,14 +41,14 @@ export async function GET() {
     .select('id, name')
     .order('name')
 
-  if (rolesError) return NextResponse.json({ error: rolesError.message }, { status: 500 })
+  if (rolesError) return jsonError('No se pudieron cargar los roles', 500, rolesError)
 
   const { data: permisos, error: permisosError } = await supabaseAdmin
     .from('permisos_rol')
     .select('role_id, modulo_key, activo')
     .eq('restaurant_id', caller.restaurantId)
 
-  if (permisosError) return NextResponse.json({ error: permisosError.message }, { status: 500 })
+  if (permisosError) return jsonError('No se pudieron cargar los permisos', 500, permisosError)
 
   const permisosMap = new Map<string, boolean>()
   for (const p of (permisos ?? [])) {
@@ -74,12 +82,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
   }
 
-  const body = await req.json() as { role_id: string; modulo_key: string; activo: boolean }
-  const { role_id, modulo_key, activo } = body
-
-  if (!role_id || !modulo_key || typeof activo !== 'boolean') {
-    return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
+  const parsed = postSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 })
   }
+  const { role_id, modulo_key, activo } = parsed.data
 
   const esModuloProtegible = MODULOS_SISTEMA.some(m => m.key === modulo_key && m.protegible)
   if (!esModuloProtegible) {
@@ -115,6 +122,6 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'restaurant_id,role_id,modulo_key' })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudo guardar el permiso', 500, error)
   return NextResponse.json({ ok: true })
 }

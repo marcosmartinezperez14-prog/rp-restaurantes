@@ -2,7 +2,21 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 import type { Schedule } from '@/types/administracion'
+
+const RESERVATION_STATUSES = ['confirmed', 'seated', 'completed', 'cancelled', 'no_show', 'pending'] as const
+
+const createReservationSchema = z.object({
+  customerName: z.string().trim().min(1, 'El nombre es obligatorio').max(120),
+  customerPhone: z.string().trim().min(1, 'El teléfono es obligatorio').max(30),
+  customerEmail: z.string().email().max(160).optional().or(z.literal('')),
+  partySize: z.number().int().min(1, 'El número de comensales debe ser al menos 1').max(50),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha no válida'),
+  time: z.string().regex(/^\d{2}:\d{2}/, 'Hora no válida'),
+  zoneId: z.string().uuid().optional(),
+  notes: z.string().max(500).optional(),
+})
 
 const DIA_MAP: Record<number, keyof Schedule> = {
   0: 'domingo', 1: 'lunes', 2: 'martes', 3: 'miercoles',
@@ -106,9 +120,9 @@ export async function createReservation(params: {
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
-  if (!params.customerName.trim()) return { error: 'El nombre es obligatorio' }
-  if (!params.customerPhone.trim()) return { error: 'El teléfono es obligatorio' }
-  if (params.partySize < 1) return { error: 'El número de comensales debe ser al menos 1' }
+  const validated = createReservationSchema.safeParse(params)
+  if (!validated.success) return { error: validated.error.issues[0]?.message ?? 'Datos no válidos' }
+  params = validated.data
 
   const { data: settings } = await supabase
     .from('reservation_settings')
@@ -170,7 +184,10 @@ export async function createReservation(params: {
     .select('id')
     .single()
 
-  if (error || !data) return { error: error?.message ?? 'No se pudo crear la reserva' }
+  if (error || !data) {
+    console.error('[createReservation] error:', error?.message)
+    return { error: 'No se pudo crear la reserva' }
+  }
   return { id: data.id }
 }
 
@@ -185,13 +202,22 @@ export async function updateReservationStatus(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
+  const v = z.object({
+    reservationId: z.string().uuid(),
+    status: z.enum(RESERVATION_STATUSES),
+  }).safeParse({ reservationId, status })
+  if (!v.success) return { error: 'Datos no válidos' }
+
   const { error } = await supabase
     .from('reservations')
     .update({ status, updated_at: new Date().toISOString() })
     .eq('id', reservationId)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[updateReservationStatus] error:', error.message)
+    return { error: 'No se pudo actualizar la reserva' }
+  }
   return {}
 }
 
@@ -203,13 +229,18 @@ export async function deleteReservation(reservationId: string): Promise<{ error?
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
+  if (!z.string().uuid().safeParse(reservationId).success) return { error: 'Datos no válidos' }
+
   const { error } = await supabase
     .from('reservations')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', reservationId)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[deleteReservation] error:', error.message)
+    return { error: 'No se pudo eliminar la reserva' }
+  }
   return {}
 }
 

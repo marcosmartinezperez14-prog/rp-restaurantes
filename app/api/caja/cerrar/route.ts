@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
     })
     .eq('id', turno.id)
 
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+  if (updateError) return jsonError('No se pudo cerrar el turno', 500, updateError)
 
   const { data: turnoActualizado } = await supabase
     .from('turnos_caja')

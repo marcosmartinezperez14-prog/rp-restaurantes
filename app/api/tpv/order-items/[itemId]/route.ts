@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
+
+const schema = z.object({ quantity: z.number().int('quantity debe ser un número').min(0).max(999) })
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -24,12 +27,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'itemId requerido' }, { status: 400 })
     }
 
-    const body = await request.json() as { quantity?: unknown }
-    const { quantity } = body
-
-    if (typeof quantity !== 'number') {
-      return NextResponse.json({ error: 'quantity debe ser un número' }, { status: 400 })
+    const parsed = schema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
+    const { quantity } = parsed.data
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

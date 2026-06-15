@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     .order('fecha_apertura', { ascending: false })
     .range(offset, offset + limite - 1)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudo cargar el historial', 500, error)
 
   // Batch user lookup
   const userIds = [...new Set([

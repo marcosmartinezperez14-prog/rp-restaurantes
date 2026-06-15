@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const HORA = z.string().regex(/^\d{2}:\d{2}/, 'Hora no válida')
+const postSchema = z.object({
+  empleado_id: z.string().uuid('Datos no válidos'),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha no válida'),
+  hora_inicio: HORA,
+  hora_fin: HORA,
+  tipo: z.string().min(1, 'Faltan campos obligatorios').max(50),
+  notas: z.string().max(500).nullish(),
+})
 
 async function getCallerInfo(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -49,7 +61,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { data, error } = await query
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudieron cargar los turnos', 500, error)
 
     return NextResponse.json({ turnos: data ?? [] })
   } catch {
@@ -66,12 +78,11 @@ export async function POST(req: NextRequest) {
     const esGestor = caller.rol === 'admin' || caller.rol === 'gerente'
     if (!esGestor) return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
 
-    const body = await req.json()
-    const { empleado_id, fecha, hora_inicio, hora_fin, tipo, notas } = body
-
-    if (!empleado_id || !fecha || !hora_inicio || !hora_fin || !tipo) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
+    const parsed = postSchema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
+    const { empleado_id, fecha, hora_inicio, hora_fin, tipo, notas } = parsed.data
 
     const { data, error } = await supabase
       .from('turnos')
@@ -88,7 +99,7 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudo crear el turno', 500, error)
 
     return NextResponse.json({ turno: data })
   } catch {

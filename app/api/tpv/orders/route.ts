@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const schema = z.object({ tableId: z.string().uuid('tableId requerido') })
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -15,12 +19,11 @@ async function getRestaurantId(
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { tableId?: unknown }
-    const { tableId } = body
-
-    if (!tableId || typeof tableId !== 'string') {
-      return NextResponse.json({ error: 'tableId requerido' }, { status: 400 })
+    const parsed = schema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
+    const { tableId } = parsed.data
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -48,10 +51,7 @@ export async function POST(request: Request) {
       .rpc('get_next_order_number', { p_restaurant_id: restaurantId })
 
     if (rpcError || orderNumber === null) {
-      return NextResponse.json(
-        { error: `No se pudo obtener el número de comanda: ${rpcError?.message ?? 'sin respuesta'}` },
-        { status: 500 }
-      )
+      return jsonError('No se pudo obtener el número de comanda', 500, rpcError)
     }
 
     const today = new Date().toISOString().split('T')[0]
@@ -72,10 +72,7 @@ export async function POST(request: Request) {
       .single()
 
     if (error || !order) {
-      return NextResponse.json(
-        { error: error?.message ?? 'No se pudo crear la comanda' },
-        { status: 500 }
-      )
+      return jsonError('No se pudo crear la comanda', 500, error)
     }
 
     await supabase.from('tables').update({ status: 'occupied' }).eq('id', tableId)

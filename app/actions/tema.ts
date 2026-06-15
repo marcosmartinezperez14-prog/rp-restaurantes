@@ -23,7 +23,10 @@ export async function guardarTema(tema: string): Promise<{ error?: string }> {
     .update({ theme: tema })
     .eq('auth_id', user.id)
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[guardarTema] error:', error.message)
+    return { error: 'No se pudo guardar el tema' }
+  }
 
   return {}
 }

@@ -3,14 +3,20 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 
 export type SuperadminActionResult =
   | { success: true; restaurante: string; usuario: string }
   | { error: string }
 
-function isValidUsername(username: string): boolean {
-  return /^[a-z0-9_-]+$/i.test(username)
-}
+const schema = z.object({
+  restaurant_name: z.string().trim().min(1, 'El nombre del restaurante es obligatorio.').max(160),
+  nif: z.string().trim().min(1, 'El NIF es obligatorio.').max(20),
+  nombre: z.string().trim().min(1, 'El nombre del admin es obligatorio.').max(120),
+  username: z.string().trim().toLowerCase().min(1, 'El usuario es obligatorio.').max(50)
+    .regex(/^[a-z0-9_-]+$/i, 'El usuario solo puede contener letras, números, guiones y guiones bajos.'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres.').max(72),
+})
 
 export async function crearRestauranteConAdmin(
   _prevState: SuperadminActionResult | undefined,
@@ -32,18 +38,15 @@ export async function crearRestauranteConAdmin(
 
   if (!isSuperadmin) return { error: 'No tienes permisos para realizar esta acción.' }
 
-  const restaurant_name = ((formData.get('restaurant_name') as string) ?? '').trim()
-  const nif = ((formData.get('nif') as string) ?? '').trim()
-  const nombre = ((formData.get('nombre') as string) ?? '').trim()
-  const username = ((formData.get('username') as string) ?? '').trim().toLowerCase()
-  const password = (formData.get('password') as string) ?? ''
-
-  if (!restaurant_name) return { error: 'El nombre del restaurante es obligatorio.' }
-  if (!nif) return { error: 'El NIF es obligatorio.' }
-  if (!nombre) return { error: 'El nombre del admin es obligatorio.' }
-  if (!username) return { error: 'El usuario es obligatorio.' }
-  if (!isValidUsername(username)) return { error: 'El usuario solo puede contener letras, números, guiones y guiones bajos.' }
-  if (password.length < 8) return { error: 'La contraseña debe tener al menos 8 caracteres.' }
+  const parsed = schema.safeParse({
+    restaurant_name: formData.get('restaurant_name') ?? '',
+    nif: formData.get('nif') ?? '',
+    nombre: formData.get('nombre') ?? '',
+    username: formData.get('username') ?? '',
+    password: formData.get('password') ?? '',
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }
+  const { restaurant_name, nif, nombre, username, password } = parsed.data
 
   const email = `${username}@rp-internal.com`
 
@@ -65,7 +68,8 @@ export async function crearRestauranteConAdmin(
   })
 
   if (authError || !authData.user) {
-    return { error: authError?.message ?? 'Error al crear el usuario en autenticación.' }
+    console.error('[crearRestauranteConAdmin] auth error:', authError?.message)
+    return { error: 'No se pudo crear el usuario.' }
   }
 
   const authUserId = authData.user.id
@@ -92,7 +96,8 @@ export async function crearRestauranteConAdmin(
 
   if (restaurantUpdateError) {
     await supabaseAdmin.auth.admin.deleteUser(authUserId)
-    return { error: `Error al guardar el NIF: ${restaurantUpdateError.message}` }
+    console.error('[crearRestauranteConAdmin] nif error:', restaurantUpdateError.message)
+    return { error: 'No se pudo crear el restaurante.' }
   }
 
   // Actualizar el users record con datos completos (el trigger solo pone id y restaurant_id)
@@ -103,7 +108,8 @@ export async function crearRestauranteConAdmin(
 
   if (updateError) {
     await supabaseAdmin.auth.admin.deleteUser(authUserId)
-    return { error: `Error al actualizar el perfil: ${updateError.message}` }
+    console.error('[crearRestauranteConAdmin] profile error:', updateError.message)
+    return { error: 'No se pudo crear el restaurante.' }
   }
 
   // Asignar rol admin al nuevo usuario
@@ -124,7 +130,8 @@ export async function crearRestauranteConAdmin(
 
   if (userRoleError) {
     await supabaseAdmin.auth.admin.deleteUser(authUserId)
-    return { error: `Error al asignar el rol: ${userRoleError.message}` }
+    console.error('[crearRestauranteConAdmin] role error:', userRoleError.message)
+    return { error: 'No se pudo asignar el rol.' }
   }
 
   return { success: true, restaurante: restaurant_name, usuario: username }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
 
 const RPC_MAP = {
   resumen:   'get_resumen_hoy',
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase.rpc(RPC_MAP[tipo as TipoNegocio])
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudieron cargar los datos', 500, error)
 
   return NextResponse.json({ data })
 }

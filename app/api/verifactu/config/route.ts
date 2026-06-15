@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const putSchema = z.object({
+  apiKey: z.string().trim().min(1, 'La API key no puede estar vacía').max(200),
+})
 
 // Devuelve restaurant_id y rol del usuario, o null si no hay restaurante.
 async function getRestauranteYRol(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
@@ -50,14 +56,17 @@ export async function PUT(req: NextRequest) {
   if (!esAdmin(ctx.rol)) return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
   const restaurantId = ctx.restaurantId
 
-  const { apiKey } = await req.json() as { apiKey?: string }
-  if (!apiKey?.trim()) return NextResponse.json({ error: 'La API key no puede estar vacía' }, { status: 400 })
+  const parsed = putSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
+  }
+  const apiKey = parsed.data.apiKey
 
   const { error } = await supabase
     .from('restaurants')
-    .update({ verifacti_api_key: apiKey.trim() })
+    .update({ verifacti_api_key: apiKey })
     .eq('id', restaurantId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudo guardar la configuración', 500, error)
   return NextResponse.json({ ok: true })
 }

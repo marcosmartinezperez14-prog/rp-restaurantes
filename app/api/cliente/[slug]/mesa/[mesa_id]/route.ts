@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { jsonError } from '@/lib/api/errors'
+import { checkRateLimit, clientIp } from '@/lib/api/rate-limit'
+import { parseBody } from '@/lib/api/validate'
+import { z } from 'zod'
 
-type ItemPedido = {
-  menu_item_id: string
-  nombre: string
-  cantidad: number
-  modifiers_snapshot?: Array<{
-    group_id: string
-    group_name: string
-    group_type: string
-    option_id: string
-    option_name: string
-    price_delta: number
-  }>
-  nota?: string | null
-}
+const modifierSnapshotSchema = z.object({
+  group_id: z.string(),
+  group_name: z.string(),
+  group_type: z.string(),
+  option_id: z.string(),
+  option_name: z.string(),
+  price_delta: z.number(),
+})
+
+const itemPedidoSchema = z.object({
+  menu_item_id: z.string().uuid('Producto no válido'),
+  nombre: z.string(),
+  cantidad: z.number().int().min(1, 'Cantidad no válida').max(99, 'Cantidad no válida'),
+  modifiers_snapshot: z.array(modifierSnapshotSchema).optional(),
+  nota: z.string().max(500, 'Nota demasiado larga').nullish(),
+})
+
+const pedidoSchema = z.object({
+  items: z.array(itemPedidoSchema).min(1, 'El pedido está vacío').max(100, 'El pedido tiene demasiados productos'),
+})
+
+type ItemPedido = z.infer<typeof itemPedidoSchema>
 
 async function getRestauranteBySlug(slug: string) {
   const { data } = await supabaseAdmin
@@ -83,10 +95,16 @@ export async function POST(
 ) {
   try {
     const { slug, mesa_id } = await params
-    const body = await req.json()
-    const items: ItemPedido[] = body.items ?? []
 
-    if (!items.length) return NextResponse.json({ error: 'El pedido está vacío' }, { status: 400 })
+    // Rate-limit por IP+mesa: máx 20 pedidos / 5 min (#9)
+    const allowed = await checkRateLimit(`pedido:${slug}:${mesa_id}:${clientIp(req)}`, 20, 300)
+    if (!allowed) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 })
+    }
+
+    const parsed = parseBody(pedidoSchema, await req.json().catch(() => null))
+    if (!parsed.ok) return parsed.response
+    const items: ItemPedido[] = parsed.data.items
 
     const restaurante = await getRestauranteBySlug(slug)
     if (!restaurante) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
@@ -203,7 +221,7 @@ export async function POST(
       .insert(orderItemsData)
 
     if (itemsError) {
-      return NextResponse.json({ error: itemsError.message }, { status: 500 })
+      return jsonError('No se pudo registrar el pedido', 500, itemsError)
     }
 
     return NextResponse.json({ ok: true, order_id: orderId })

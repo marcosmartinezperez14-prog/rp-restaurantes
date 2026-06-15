@@ -79,14 +79,14 @@ try {
   ticketB = tB.id
 
   // ── 4. claim emisión A ────────────────────────────────────────────────────
-  const { data: claimA, error: cErr } = await sb.rpc('fiscal_claim_emision', { p_ticket_id: ticketA })
+  const { data: claimA, error: cErr } = await sb.rpc('fiscal_claim_emision', { p_ticket_id: ticketA, p_restaurant_id: restaurantId })
   ok('fiscal_claim_emision(A) sin error', !cErr, cErr?.message)
   ok("claim deja verifactu_status='enviando'", claimA?.verifactu_status === 'enviando', `status=${claimA?.verifactu_status}`)
 
   // ── 5. persistir emisión A (huella dummy) ─────────────────────────────────
   const HASH_A = 'DUMMY_HASH_A_' + Date.now()
   const { data: persA, error: pErr } = await sb.rpc('fiscal_persistir_emision', {
-    p_ticket_id: ticketA, p_huella: HASH_A, p_estado: 'Correcto', p_respuesta: { uuid: 'u-A', estado: 'Correcto', huella: HASH_A },
+    p_ticket_id: ticketA, p_restaurant_id: restaurantId, p_huella: HASH_A, p_estado: 'Correcto', p_respuesta: { uuid: 'u-A', estado: 'Correcto', huella: HASH_A },
   })
   ok('fiscal_persistir_emision(A) sin error', !pErr, pErr?.message)
   ok('A: verifactu_hash escrito', persA?.verifactu_hash === HASH_A)
@@ -95,27 +95,27 @@ try {
   ok('A: verifactu_prev_hash NULL (primer ticket)', persA?.verifactu_prev_hash === null, `prev=${persA?.verifactu_prev_hash}`)
 
   // ── 6. emisión B → prev_hash debe ser la huella de A ──────────────────────
-  await sb.rpc('fiscal_claim_emision', { p_ticket_id: ticketB })
+  await sb.rpc('fiscal_claim_emision', { p_ticket_id: ticketB, p_restaurant_id: restaurantId })
   const HASH_B = 'DUMMY_HASH_B_' + Date.now()
   const { data: persB, error: pErrB } = await sb.rpc('fiscal_persistir_emision', {
-    p_ticket_id: ticketB, p_huella: HASH_B, p_estado: 'Correcto', p_respuesta: { uuid: 'u-B', estado: 'Correcto', huella: HASH_B },
+    p_ticket_id: ticketB, p_restaurant_id: restaurantId, p_huella: HASH_B, p_estado: 'Correcto', p_respuesta: { uuid: 'u-B', estado: 'Correcto', huella: HASH_B },
   })
   ok('fiscal_persistir_emision(B) sin error', !pErrB, pErrB?.message)
   ok('B: prev_hash == huella de A (encadenado)', persB?.verifactu_prev_hash === HASH_A, `prev=${persB?.verifactu_prev_hash} esperado=${HASH_A}`)
 
   // ── 7. re-emisión de A ya emitida → debe RECHAZARSE ───────────────────────
-  const { error: reErr } = await sb.rpc('fiscal_claim_emision', { p_ticket_id: ticketA })
+  const { error: reErr } = await sb.rpc('fiscal_claim_emision', { p_ticket_id: ticketA, p_restaurant_id: restaurantId })
   ok('re-claim de ticket ya emitido RECHAZADO', !!reErr, reErr?.message ?? '(no lanzó error!)')
 
   // ── 8. anular A ───────────────────────────────────────────────────────────
-  const { data: anulA, error: anErr } = await sb.rpc('fiscal_anular_ticket', { p_ticket_id: ticketA, p_motivo: 'prueba' })
+  const { data: anulA, error: anErr } = await sb.rpc('fiscal_anular_ticket', { p_ticket_id: ticketA, p_restaurant_id: restaurantId, p_motivo: 'prueba' })
   ok('fiscal_anular_ticket(A) sin error', !anErr, anErr?.message)
   ok('A: anulado=true', anulA?.anulado === true)
   ok('A: anulado_at fijado', !!anulA?.anulado_at)
   ok('A: motivo_anulacion guardado', anulA?.motivo_anulacion === 'prueba', `motivo=${anulA?.motivo_anulacion}`)
 
   // ── 9. doble anulación → debe RECHAZARSE ──────────────────────────────────
-  const { error: an2Err } = await sb.rpc('fiscal_anular_ticket', { p_ticket_id: ticketA, p_motivo: 'otra' })
+  const { error: an2Err } = await sb.rpc('fiscal_anular_ticket', { p_ticket_id: ticketA, p_restaurant_id: restaurantId, p_motivo: 'otra' })
   ok('doble anulación RECHAZADA', !!an2Err, an2Err?.message ?? '(no lanzó error!)')
 
   // ── 10. trigger inmutabilidad: UPDATE directo de columna congelada ────────

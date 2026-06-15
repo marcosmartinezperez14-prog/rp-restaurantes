@@ -1,7 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 import type { ModifierSnapshot } from '@/types/modificadores'
 import type { SelectedModifier } from '@/app/actions/tpv'
+
+const schema = z.object({
+  orderId: z.string().uuid('orderId requerido'),
+  productId: z.string().uuid('productId requerido'),
+  quantity: z.number().int('quantity debe ser un número positivo').positive('quantity debe ser un número positivo').max(999),
+  unit_price: z.number().nonnegative().optional(),
+  modifiers: z.array(z.unknown()).optional(),
+  modifiers_snapshot: z.array(z.unknown()).optional(),
+  nota: z.string().max(500).nullish(),
+  notes: z.string().max(500).nullish(),
+})
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -17,27 +29,11 @@ async function getRestaurantId(
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as {
-      orderId?: unknown
-      productId?: unknown
-      quantity?: unknown
-      unit_price?: unknown
-      modifiers?: unknown
-      modifiers_snapshot?: unknown
-      nota?: unknown
-      notes?: unknown
+    const parsed = schema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
-    const { orderId, productId, quantity, unit_price, modifiers, modifiers_snapshot, nota, notes } = body
-
-    if (!orderId || typeof orderId !== 'string') {
-      return NextResponse.json({ error: 'orderId requerido' }, { status: 400 })
-    }
-    if (!productId || typeof productId !== 'string') {
-      return NextResponse.json({ error: 'productId requerido' }, { status: 400 })
-    }
-    if (typeof quantity !== 'number' || quantity <= 0) {
-      return NextResponse.json({ error: 'quantity debe ser un número positivo' }, { status: 400 })
-    }
+    const { orderId, productId, quantity, unit_price, modifiers, modifiers_snapshot, nota, notes } = parsed.data
 
     const safeSnapshot: ModifierSnapshot[] = Array.isArray(modifiers_snapshot) ? modifiers_snapshot as ModifierSnapshot[] : []
 

@@ -1,5 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const schema = z.object({
+  group_id: z.string().uuid('group_id requerido'),
+  name: z.string().trim().min(1, 'name requerido').max(120),
+  price_delta: z.number().optional().default(0),
+  is_default: z.boolean().optional().default(false),
+  sort_order: z.number().int().optional().default(0),
+})
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -15,22 +25,11 @@ async function getRestaurantId(
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as {
-      group_id?: unknown
-      name?: unknown
-      price_delta?: unknown
-      is_default?: unknown
-      sort_order?: unknown
+    const parsed = schema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
-
-    const { group_id, name, price_delta, is_default, sort_order } = body
-
-    if (!group_id || typeof group_id !== 'string') {
-      return NextResponse.json({ error: 'group_id requerido' }, { status: 400 })
-    }
-    if (!name || typeof name !== 'string' || !name.trim()) {
-      return NextResponse.json({ error: 'name requerido' }, { status: 400 })
-    }
+    const { group_id, name, price_delta, is_default, sort_order } = parsed.data
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -59,16 +58,16 @@ export async function POST(request: Request) {
       .from('product_modifier_options')
       .insert({
         group_id,
-        name: name.trim(),
-        price_delta: typeof price_delta === 'number' ? price_delta : 0,
-        is_default: typeof is_default === 'boolean' ? is_default : false,
-        sort_order: typeof sort_order === 'number' ? sort_order : 0,
+        name,
+        price_delta,
+        is_default,
+        sort_order,
       })
       .select()
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return jsonError('No se pudo crear la opción', 500, error)
     }
 
     return NextResponse.json({ data })

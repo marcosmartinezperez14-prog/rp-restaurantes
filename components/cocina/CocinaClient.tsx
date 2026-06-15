@@ -63,7 +63,7 @@ export default function CocinaClient({ initialItems, restaurantId }: Props) {
       .channel(`cocina_${restaurantId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'order_items' },
+        { event: '*', schema: 'public', table: 'order_items', filter: `restaurant_id=eq.${restaurantId}` },
         () => {
           startTransition(async () => {
             const fresh = await getKitchenItems()

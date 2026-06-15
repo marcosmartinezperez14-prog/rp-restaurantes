@@ -2,7 +2,16 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 import type { ModifierGroup, ModifierOption, ModifierSnapshot } from '@/types/modificadores'
+
+const uuid = z.string().uuid()
+
+// Loguea el detalle real en servidor y devuelve un mensaje genérico (#11).
+function dbError(ctx: string, e: { message?: string } | null, publicMsg: string): { error: string } {
+  console.error(`[tpv:${ctx}]`, e?.message)
+  return { error: publicMsg }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -191,7 +200,7 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
     .rpc('get_next_order_number', { p_restaurant_id: restaurantId })
 
   if (rpcError || orderNumber === null) {
-    return { error: `No se pudo obtener el número de comanda: ${rpcError?.message ?? 'sin respuesta'}` }
+    return dbError('createOrder.rpc', rpcError, 'No se pudo crear la comanda')
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -211,7 +220,7 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
     .select('id')
     .single()
 
-  if (error || !order) return { error: error?.message ?? 'No se pudo crear la comanda' }
+  if (error || !order) return dbError('createOrder', error, 'No se pudo crear la comanda')
 
   await supabase.from('tables').update({ status: 'occupied' }).eq('id', tableId)
 
@@ -351,6 +360,14 @@ export async function addOrderItem(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
+  const v = z.object({
+    orderId: uuid,
+    productId: uuid,
+    quantity: z.number().int().min(1).max(999),
+    notes: z.string().max(500).optional(),
+  }).safeParse({ orderId, productId, quantity, notes })
+  if (!v.success) return { error: 'Datos no válidos' }
+
   const { data: orderCheck } = await supabase
     .from('orders')
     .select('id')
@@ -412,7 +429,7 @@ export async function markOrderItemServed(itemId: string): Promise<{ error?: str
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('markOrderItemServed', error, 'No se pudo marcar como servido')
   return {}
 }
 
@@ -446,6 +463,9 @@ export async function updateOrderItemQuantity(
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
+
+  const v = z.object({ itemId: uuid, quantity: z.number().int().max(999) }).safeParse({ itemId, quantity })
+  if (!v.success) return { error: 'Datos no válidos' }
 
   if (quantity <= 0) return removeOrderItem(itemId)
 
@@ -630,6 +650,18 @@ export async function processPayment(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
+  const money = z.number().nonnegative().max(1_000_000)
+  const v = z.intersection(
+    z.object({ orderId: uuid }),
+    z.discriminatedUnion('method', [
+      z.object({ method: z.literal('cash'), cashAmount: money, changeGiven: money }),
+      z.object({ method: z.literal('card'), amount: money }),
+      z.object({ method: z.literal('bizum'), amount: money }),
+      z.object({ method: z.literal('mixed'), cashAmount: money, cardAmount: money }),
+    ]),
+  ).safeParse({ orderId, ...params })
+  if (!v.success) return { error: 'Datos de pago no válidos' }
+
   const { data: order } = await supabase
     .from('orders')
     .select('id, table_id, subtotal, tax_amount, total')
@@ -739,6 +771,9 @@ export async function updateOrderItemNote(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
+  const v = z.object({ itemId: uuid, notes: z.string().max(500) }).safeParse({ itemId, notes })
+  if (!v.success) return { error: 'Datos no válidos' }
+
   const { error } = await supabase
     .from('order_items')
     .update({ notes: notes || null })
@@ -772,7 +807,7 @@ export async function reserveTable(tableId: string): Promise<{ error?: string }>
     .update({ status: 'reserved' })
     .eq('id', tableId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('reserveTable', error, 'No se pudo reservar la mesa')
   return {}
 }
 
@@ -799,7 +834,7 @@ export async function cancelReservation(tableId: string): Promise<{ error?: stri
     .update({ status: 'free' })
     .eq('id', tableId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('cancelReservation', error, 'No se pudo cancelar la reserva')
   return {}
 }
 
@@ -815,8 +850,12 @@ export async function addTable(params: {
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
-  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
-  if (params.capacity < 1) return { error: 'La capacidad debe ser al menos 1' }
+  const v = z.object({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(60),
+    capacity: z.number().int().min(1, 'La capacidad debe ser al menos 1').max(100),
+    zoneId: uuid,
+  }).safeParse(params)
+  if (!v.success) return { error: v.error.issues[0]?.message ?? 'Datos no válidos' }
 
   const { data: existing } = await supabase
     .from('tables')
@@ -853,7 +892,7 @@ export async function addTable(params: {
     .select('id, name, capacity, status')
     .single()
 
-  if (error || !data) return { error: error?.message ?? 'No se pudo crear la mesa' }
+  if (error || !data) return dbError('addTable', error, 'No se pudo crear la mesa')
 
   return {
     table: {
@@ -889,7 +928,7 @@ export async function deleteTable(tableId: string): Promise<{ error?: string }> 
     .eq('id', tableId)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('deleteTable', error, 'No se pudo eliminar la mesa')
   return {}
 }
 
@@ -904,7 +943,11 @@ export async function addZone(params: {
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
 
-  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
+  const v = z.object({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(60),
+    color: z.string().max(20),
+  }).safeParse(params)
+  if (!v.success) return { error: v.error.issues[0]?.message ?? 'Datos no válidos' }
 
   const { data: posData } = await supabase
     .from('zones')
@@ -928,7 +971,7 @@ export async function addZone(params: {
     .select('id, name, color')
     .single()
 
-  if (error || !data) return { error: error?.message ?? 'No se pudo crear la zona' }
+  if (error || !data) return dbError('addZone', error, 'No se pudo crear la zona')
 
   return { zone: { id: data.id, name: data.name, color: data.color, tables: [] } }
 }
@@ -958,6 +1001,6 @@ export async function deleteZone(zoneId: string): Promise<{ error?: string }> {
     .eq('id', zoneId)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('deleteZone', error, 'No se pudo eliminar la zona')
   return {}
 }

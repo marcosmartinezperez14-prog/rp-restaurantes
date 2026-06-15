@@ -1,5 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const schema = z.object({
+  menu_item_id: z.string().uuid('menu_item_id requerido'),
+  name: z.string().trim().min(1, 'name requerido').max(120),
+  type: z.enum(['variante', 'modificador'], { message: "type debe ser 'variante' o 'modificador'" }),
+  required: z.boolean().optional().default(false),
+  allows_multiple: z.boolean().optional().default(false),
+  sort_order: z.number().int().optional().default(0),
+})
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -15,26 +26,11 @@ async function getRestaurantId(
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as {
-      menu_item_id?: unknown
-      name?: unknown
-      type?: unknown
-      required?: unknown
-      allows_multiple?: unknown
-      sort_order?: unknown
+    const parsed = schema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
-
-    const { menu_item_id, name, type, required, allows_multiple, sort_order } = body
-
-    if (!menu_item_id || typeof menu_item_id !== 'string') {
-      return NextResponse.json({ error: 'menu_item_id requerido' }, { status: 400 })
-    }
-    if (!name || typeof name !== 'string' || !name.trim()) {
-      return NextResponse.json({ error: 'name requerido' }, { status: 400 })
-    }
-    if (!type || (type !== 'variante' && type !== 'modificador')) {
-      return NextResponse.json({ error: "type debe ser 'variante' o 'modificador'" }, { status: 400 })
-    }
+    const { menu_item_id, name, type, required, allows_multiple, sort_order } = parsed.data
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -52,17 +48,17 @@ export async function POST(request: Request) {
       .insert({
         restaurant_id: restaurantId,
         menu_item_id,
-        name: name.trim(),
+        name,
         type,
-        required: typeof required === 'boolean' ? required : false,
-        allows_multiple: typeof allows_multiple === 'boolean' ? allows_multiple : false,
-        sort_order: typeof sort_order === 'number' ? sort_order : 0,
+        required,
+        allows_multiple,
+        sort_order,
       })
       .select()
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return jsonError('No se pudo crear el grupo de modificadores', 500, error)
     }
 
     return NextResponse.json({ data })

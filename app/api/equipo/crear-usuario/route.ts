@@ -1,27 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
+import { PERMISOS_POR_ROL } from '@/types/equipo'
+import { z } from 'zod'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const ROLES_VALIDOS = Object.keys(PERMISOS_POR_ROL)
+
+const schema = z.object({
+  username: z.string().trim().min(1).max(50).regex(/^[a-z0-9_-]+$/i, 'El usuario solo puede contener letras, números, guiones y guiones bajos'),
+  nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'El nombre es demasiado largo'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(72, 'La contraseña es demasiado larga'),
+  role_name: z.string().refine(r => ROLES_VALIDOS.includes(r), 'Rol no válido'),
+})
+
 export async function POST(req: NextRequest) {
   try {
-    const { username, nombre, password, role_name } = await req.json()
-
-    if (!username || !nombre || !password || !role_name) {
-      return NextResponse.json({ success: false, error: 'Faltan campos obligatorios' }, { status: 400 })
+    const parsed = schema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
-
-    if (!/^[a-z0-9_-]+$/i.test(username)) {
-      return NextResponse.json({ success: false, error: 'El usuario solo puede contener letras, números, guiones y guiones bajos' }, { status: 400 })
-    }
-
-    if (password.length < 8) {
-      return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
-    }
+    const { username, nombre, password, role_name } = parsed.data
 
     const email = `${username.trim().toLowerCase()}@rp-internal.com`
 
@@ -48,6 +51,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No tienes permisos para crear usuarios' }, { status: 403 })
     }
 
+    // Lista blanca de roles + escalada: un gerente no puede crear administradores.
+    if (!ROLES_VALIDOS.includes(role_name)) {
+      return NextResponse.json({ success: false, error: 'Rol no válido' }, { status: 400 })
+    }
+    if (callerRoleName === 'gerente' && role_name === 'admin') {
+      return NextResponse.json({ success: false, error: 'Un gerente no puede crear administradores' }, { status: 403 })
+    }
+
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -56,7 +67,9 @@ export async function POST(req: NextRequest) {
     })
 
     if (authError || !authData.user) {
-      return NextResponse.json({ success: false, error: authError?.message ?? 'Error al crear el usuario en autenticación' }, { status: 500 })
+      // Mensaje genérico para no permitir enumeración de usuarios existentes (#10).
+      console.error('[crear-usuario] auth error:', authError?.message)
+      return NextResponse.json({ success: false, error: 'No se pudo crear el usuario' }, { status: 400 })
     }
 
     const { data: newUser, error: userError } = await supabaseAdmin
@@ -67,7 +80,8 @@ export async function POST(req: NextRequest) {
 
     if (userError || !newUser) {
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      return NextResponse.json({ success: false, error: userError?.message ?? 'Error al crear el perfil de usuario' }, { status: 500 })
+      console.error('[crear-usuario] profile error:', userError?.message)
+      return NextResponse.json({ success: false, error: 'No se pudo crear el perfil de usuario' }, { status: 500 })
     }
 
     const { data: rol, error: rolError } = await supabaseAdmin
@@ -85,12 +99,13 @@ export async function POST(req: NextRequest) {
       .insert({ user_id: newUser.id, role_id: rol.id, restaurant_id: callerUser.restaurant_id })
 
     if (userRoleError) {
-      return NextResponse.json({ success: false, error: userRoleError.message }, { status: 500 })
+      console.error('[crear-usuario] role error:', userRoleError.message)
+      return NextResponse.json({ success: false, error: 'No se pudo asignar el rol' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, usuario: { ...newUser, rol: role_name } })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error inesperado'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    console.error('[crear-usuario] error:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ success: false, error: 'Error inesperado' }, { status: 500 })
   }
 }
