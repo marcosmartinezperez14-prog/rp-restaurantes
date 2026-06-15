@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { PERMISOS_POR_ROL } from '@/types/equipo'
+import { z } from 'zod'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,18 +11,19 @@ const supabaseAdmin = createClient(
 
 const ROLES_VALIDOS = Object.keys(PERMISOS_POR_ROL)
 
+const schema = z.object({
+  user_role_id: z.string().uuid('Datos no válidos'),
+  // Lista blanca: solo se pueden asignar roles válidos del sistema.
+  nuevo_rol: z.string().refine(r => ROLES_VALIDOS.includes(r), 'Rol no válido'),
+})
+
 export async function POST(req: NextRequest) {
   try {
-    const { user_role_id, nuevo_rol } = await req.json()
-
-    if (!user_role_id || !nuevo_rol) {
-      return NextResponse.json({ success: false, error: 'Faltan campos obligatorios' }, { status: 400 })
+    const parsed = schema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
-
-    // Lista blanca: solo se pueden asignar roles válidos del sistema.
-    if (!ROLES_VALIDOS.includes(nuevo_rol)) {
-      return NextResponse.json({ success: false, error: 'Rol no válido' }, { status: 400 })
-    }
+    const { user_role_id, nuevo_rol } = parsed.data
 
     const supabase = await createServerClient()
     const { data: { user: caller } } = await supabase.auth.getUser()
@@ -74,12 +76,13 @@ export async function POST(req: NextRequest) {
       .eq('id', user_role_id)
 
     if (updateError) {
-      return NextResponse.json({ success: false, error: updateError.message }, { status: 500 })
+      console.error('[cambiar-rol] update error:', updateError.message)
+      return NextResponse.json({ success: false, error: 'No se pudo cambiar el rol' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error inesperado'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    console.error('[cambiar-rol] error:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ success: false, error: 'Error inesperado' }, { status: 500 })
   }
 }

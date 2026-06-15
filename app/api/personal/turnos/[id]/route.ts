@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const HORA = z.string().regex(/^\d{2}:\d{2}/, 'Hora no válida')
+const patchSchema = z.object({
+  hora_inicio: HORA,
+  hora_fin: HORA,
+  tipo: z.string().min(1).max(50),
+  notas: z.string().max(500).nullish(),
+})
 
 async function getCallerInfo(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -40,8 +50,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const ok = await verificarTurno(supabase, id, caller.restaurantId)
     if (!ok) return NextResponse.json({ error: 'Turno no encontrado' }, { status: 404 })
 
-    const body = await req.json()
-    const { hora_inicio, hora_fin, tipo, notas } = body
+    const parsed = patchSchema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
+    }
+    const { hora_inicio, hora_fin, tipo, notas } = parsed.data
 
     const { data, error } = await supabase
       .from('turnos')
@@ -50,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudo actualizar el turno', 500, error)
 
     return NextResponse.json({ turno: data })
   } catch {
@@ -72,7 +85,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (!ok) return NextResponse.json({ error: 'Turno no encontrado' }, { status: 404 })
 
     const { error } = await supabase.from('turnos').delete().eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudo eliminar el turno', 500, error)
 
     return NextResponse.json({ ok: true })
   } catch {

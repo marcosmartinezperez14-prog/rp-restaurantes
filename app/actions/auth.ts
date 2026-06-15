@@ -2,26 +2,38 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 
 type AuthState = { error?: string; success?: boolean } | undefined
-
-function isValidUsername(username: string): boolean {
-  return /^[a-z0-9_-]+$/i.test(username)
-}
 
 function usernameToEmail(username: string): string {
   return `${username.trim().toLowerCase()}@rp-internal.com`
 }
 
+const loginSchema = z.object({
+  username: z.string().trim().min(1, 'El campo usuario es obligatorio.').max(160),
+  password: z.string().min(1, 'El campo contraseña es obligatorio.').max(72),
+})
+
+const registerSchema = z.object({
+  restaurant_name: z.string().trim().min(1, 'El nombre del restaurante es obligatorio.').max(160),
+  nif: z.string().trim().min(1, 'El NIF es obligatorio.').max(20),
+  name: z.string().trim().min(1, 'Tu nombre es obligatorio.').max(120),
+  username: z.string().trim().min(1, 'El campo usuario es obligatorio.').max(50)
+    .regex(/^[a-z0-9_-]+$/i, 'El usuario solo puede contener letras, números, guiones y guiones bajos.'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.').max(72),
+})
+
 export async function loginAction(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const username = (formData.get('username') as string) ?? ''
-  const password = (formData.get('password') as string) ?? ''
-
-  if (!username.trim()) return { error: 'El campo usuario es obligatorio.' }
-  if (!password) return { error: 'El campo contraseña es obligatorio.' }
+  const parsed = loginSchema.safeParse({
+    username: formData.get('username') ?? '',
+    password: formData.get('password') ?? '',
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }
+  const { username, password } = parsed.data
 
   // Si contiene @ se trata como email real; si no, se mapea al dominio interno
   const email = username.trim().includes('@')
@@ -42,18 +54,15 @@ export async function registerAction(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const restaurant_name = (formData.get('restaurant_name') as string) ?? ''
-  const nif = (formData.get('nif') as string) ?? ''
-  const name = (formData.get('name') as string) ?? ''
-  const username = (formData.get('username') as string) ?? ''
-  const password = (formData.get('password') as string) ?? ''
-
-  if (!restaurant_name.trim()) return { error: 'El nombre del restaurante es obligatorio.' }
-  if (!nif.trim()) return { error: 'El NIF es obligatorio.' }
-  if (!name.trim()) return { error: 'Tu nombre es obligatorio.' }
-  if (!username.trim()) return { error: 'El campo usuario es obligatorio.' }
-  if (!isValidUsername(username.trim())) return { error: 'El usuario solo puede contener letras, números, guiones y guiones bajos.' }
-  if (password.length < 6) return { error: 'La contraseña debe tener al menos 6 caracteres.' }
+  const parsed = registerSchema.safeParse({
+    restaurant_name: formData.get('restaurant_name') ?? '',
+    nif: formData.get('nif') ?? '',
+    name: formData.get('name') ?? '',
+    username: formData.get('username') ?? '',
+    password: formData.get('password') ?? '',
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }
+  const { restaurant_name, nif, name, username, password } = parsed.data
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signUp({

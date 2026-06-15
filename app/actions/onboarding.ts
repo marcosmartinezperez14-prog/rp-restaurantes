@@ -3,6 +3,33 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
+
+const zoneInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1).max(120),
+  tables: z.array(z.object({
+    id: z.string().uuid().optional(),
+    name: z.string().trim().min(1).max(120),
+  })),
+})
+
+const categoryInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1).max(120),
+  products: z.array(z.object({
+    id: z.string().uuid().optional(),
+    name: z.string().trim().min(1).max(160),
+    price: z.number().min(0).max(1_000_000),
+  })),
+})
+
+const restaurantDataSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre del restaurante es obligatorio.').max(160),
+  address: z.string().max(300),
+  phone: z.string().max(30),
+  schedule: z.string().max(2000),
+})
 
 export type ZoneInput = {
   id?: string
@@ -116,7 +143,9 @@ export async function saveRestaurantData(data: {
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) return { error: 'Ha ocurrido un error inesperado.' }
 
-  if (!data.name.trim()) return { error: 'El nombre del restaurante es obligatorio.' }
+  const validated = restaurantDataSchema.safeParse(data)
+  if (!validated.success) return { error: validated.error.issues[0]?.message ?? 'Datos no válidos' }
+  data = validated.data
 
   const { error } = await supabase
     .from('restaurants')
@@ -139,6 +168,10 @@ export async function saveZonesAndTables(zones: ZoneInput[]): Promise<ActionResu
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) return { error: 'Ha ocurrido un error inesperado.' }
+
+  const validated = z.array(zoneInputSchema).safeParse(zones)
+  if (!validated.success) return { error: 'Datos no válidos' }
+  zones = validated.data
 
   if (zones.length === 0 || zones.some(z => z.tables.length === 0)) {
     return { error: 'Debe haber al menos 1 zona con 1 mesa.' }
@@ -220,6 +253,10 @@ export async function saveMenuData(categories: CategoryInput[]): Promise<ActionR
 
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) return { error: 'Ha ocurrido un error inesperado.' }
+
+  const validated = z.array(categoryInputSchema).safeParse(categories)
+  if (!validated.success) return { error: 'Datos no válidos' }
+  categories = validated.data
 
   const totalProducts = categories.reduce((sum, c) => sum + c.products.length, 0)
   if (totalProducts === 0) return { error: 'Añade al menos 1 producto a tu carta.' }
@@ -429,7 +466,10 @@ export async function repairExistingData(): Promise<{ fixed: number; error?: str
           is_active: true,
           position: n - 1,
         })
-        if (insertErr) return { fixed, error: `Error al crear mesa: ${insertErr.message} (code: ${insertErr.code})` }
+        if (insertErr) {
+          console.error('[repairExistingData] insert error:', insertErr.message, insertErr.code)
+          return { fixed, error: 'No se pudo reparar los datos.' }
+        }
         fixed++
       }
     }

@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const schema = z.object({ user_id: z.string().uuid('Datos no válidos') })
+
 export async function POST(req: NextRequest) {
   try {
-    const { user_id } = await req.json()
-
-    if (!user_id) {
-      return NextResponse.json({ success: false, error: 'Falta el ID de usuario' }, { status: 400 })
+    const parsed = schema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
+    const { user_id } = parsed.data
 
     const supabase = await createServerClient()
     const { data: { user: caller } } = await supabase.auth.getUser()
@@ -60,12 +63,13 @@ export async function POST(req: NextRequest) {
       .eq('id', user_id)
 
     if (updateError) {
-      return NextResponse.json({ success: false, error: updateError.message }, { status: 500 })
+      console.error('[desactivar-usuario] error:', updateError.message)
+      return NextResponse.json({ success: false, error: 'No se pudo desactivar el usuario' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error inesperado'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    console.error('[desactivar-usuario] error:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ success: false, error: 'Error inesperado' }, { status: 500 })
   }
 }

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { jsonError } from '@/lib/api/errors'
+import { checkRateLimit, clientIp } from '@/lib/api/rate-limit'
+import { parseBody } from '@/lib/api/validate'
+import { z } from 'zod'
 import type { Schedule } from '@/types/administracion'
 
 const DIA_MAP: Record<number, keyof Schedule> = {
@@ -12,20 +16,31 @@ const DIA_MAP: Record<number, keyof Schedule> = {
   6: 'sabado',
 }
 
+const reservaSchema = z.object({
+  nombre_cliente: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'El nombre es demasiado largo'),
+  telefono: z.string().trim().min(1, 'El teléfono es obligatorio').max(30, 'El teléfono no es válido'),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha no es válida'),
+  hora: z.string().regex(/^\d{2}:\d{2}/, 'La hora no es válida'),
+  num_personas: z.coerce.number().int().min(1, 'El número de personas debe ser al menos 1').max(50, 'El número de personas no es válido'),
+  notas: z.string().max(500, 'Las notas son demasiado largas').nullish(),
+})
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const { slug } = await params
-    const body = await req.json()
-    const { nombre_cliente, telefono, fecha, hora, num_personas, notas } = body
 
-    if (!nombre_cliente?.trim()) return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
-    if (!telefono?.trim()) return NextResponse.json({ error: 'El teléfono es obligatorio' }, { status: 400 })
-    if (!fecha) return NextResponse.json({ error: 'La fecha es obligatoria' }, { status: 400 })
-    if (!hora) return NextResponse.json({ error: 'La hora es obligatoria' }, { status: 400 })
-    if (!num_personas || num_personas < 1) return NextResponse.json({ error: 'El número de personas debe ser al menos 1' }, { status: 400 })
+    // Rate-limit por IP+restaurante: máx 5 reservas / 10 min (#8)
+    const allowed = await checkRateLimit(`reservas:${slug}:${clientIp(req)}`, 5, 600)
+    if (!allowed) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 })
+    }
+
+    const parsed = parseBody(reservaSchema, await req.json().catch(() => null))
+    if (!parsed.ok) return parsed.response
+    const { nombre_cliente, telefono, fecha, hora, num_personas, notas } = parsed.data
 
     const today = new Date().toISOString().split('T')[0]
     if (fecha < today) return NextResponse.json({ error: 'La fecha no puede ser en el pasado' }, { status: 400 })
@@ -45,7 +60,7 @@ export async function POST(
       .maybeSingle()
 
     if (settingsError) {
-      return NextResponse.json({ error: `Error al leer configuración: ${settingsError.message}` }, { status: 500 })
+      return jsonError('No se pudo procesar la reserva', 500, settingsError)
     }
 
     let autoConfirm = true
@@ -86,7 +101,7 @@ export async function POST(
       .select('id')
       .single()
 
-    if (error || !data) return NextResponse.json({ error: error?.message ?? 'No se pudo crear la reserva' }, { status: 500 })
+    if (error || !data) return jsonError('No se pudo crear la reserva', 500, error)
 
     return NextResponse.json({ ok: true, id: data.id, auto_confirm: autoConfirm })
   } catch {

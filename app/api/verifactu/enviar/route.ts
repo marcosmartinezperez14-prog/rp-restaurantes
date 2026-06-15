@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { buildPayload, sendToVerifacti } from '@/lib/verifacti/client'
-import type { TicketVerifactu, EnviarFacturaOpciones } from '@/types/verifactu'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+import type { TicketVerifactu } from '@/types/verifactu'
+
+const schema = z.object({
+  ticketId: z.string().uuid('ticketId no válido'),
+  tipoFactura: z.enum(['F1', 'F2']).default('F2'),
+  clienteNif: z.string().max(20).optional(),
+  clienteNombre: z.string().max(120).optional(),
+})
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -9,12 +18,11 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-  const body = await req.json() as { ticketId?: string } & Partial<EnviarFacturaOpciones>
-  const { ticketId, tipoFactura = 'F2', clienteNif, clienteNombre } = body
-
-  if (!ticketId) {
-    return NextResponse.json({ error: 'ticketId es obligatorio' }, { status: 400 })
+  const parsed = schema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
   }
+  const { ticketId, tipoFactura, clienteNif, clienteNombre } = parsed.data
 
   // ─── Ownership gate (CRÍTICO multi-tenant) ────────────────────────────────
   // Las RPCs fiscal_* son SECURITY DEFINER y saltan RLS, así que validamos AQUÍ
@@ -88,7 +96,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (persistError) {
-      return NextResponse.json({ error: persistError.message }, { status: 500 })
+      return jsonError('No se pudo registrar la emisión', 500, persistError)
     }
 
     return NextResponse.json({ ok: true, data: respuesta })

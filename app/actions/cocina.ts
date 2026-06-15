@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 
 export type KitchenStatus = 'pending' | 'preparing' | 'ready'
 
@@ -85,12 +86,21 @@ export async function updateKitchenItemStatus(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) return { error: 'Sin restaurante' }
 
+  const v = z.object({
+    itemId: z.string().uuid(),
+    status: z.enum(['pending', 'preparing', 'ready']),
+  }).safeParse({ itemId, status })
+  if (!v.success) return { error: 'Datos no válidos' }
+
   const { error } = await supabase
     .from('order_items')
     .update({ status })
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[updateKitchenItemStatus] error:', error.message)
+    return { error: 'No se pudo actualizar el estado' }
+  }
   return {}
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
 import type { FichajeHistorial } from '@/types/fichajes'
 
 export async function GET(req: NextRequest) {
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   params.p_user_id = user_id ?? null
 
   const { data, error } = await supabase.rpc('get_fichajes_rango', params)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudo cargar el historial', 500, error)
 
   return NextResponse.json({ data: (data ?? []) as FichajeHistorial[] })
 }

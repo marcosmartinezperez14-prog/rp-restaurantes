@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 import type { ProcessPaymentParams } from '@/app/actions/tpv'
+
+const money = z.number().nonnegative().max(1_000_000)
+const schema = z.intersection(
+  z.object({ orderId: z.string().uuid('orderId requerido') }),
+  z.discriminatedUnion('method', [
+    z.object({ method: z.literal('cash'), cashAmount: money, changeGiven: money }),
+    z.object({ method: z.literal('card'), amount: money.optional() }),
+    z.object({ method: z.literal('bizum'), amount: money.optional() }),
+    z.object({ method: z.literal('mixed'), cashAmount: money, cardAmount: money }),
+  ]),
+)
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -16,20 +28,12 @@ async function getRestaurantId(
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { orderId?: unknown } & Partial<ProcessPaymentParams>
-    const { orderId, ...paramsRaw } = body
-
-    if (!orderId || typeof orderId !== 'string') {
-      return NextResponse.json({ error: 'orderId requerido' }, { status: 400 })
+    const parsed = schema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
-
-    // Validate method
-    const method = (paramsRaw as { method?: unknown }).method
-    if (!method || !['cash', 'card', 'bizum', 'mixed'].includes(method as string)) {
-      return NextResponse.json({ error: 'Método de pago inválido' }, { status: 400 })
-    }
-
-    const params = paramsRaw as ProcessPaymentParams
+    const { orderId, ...paramsRest } = parsed.data
+    const params = paramsRest as ProcessPaymentParams
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

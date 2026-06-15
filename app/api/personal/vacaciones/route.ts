@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha no válida')
+const postSchema = z.object({
+  empleado_id: z.string().uuid('Datos no válidos'),
+  fecha_inicio: DATE,
+  fecha_fin: DATE,
+  motivo: z.string().max(500).nullish(),
+})
 
 async function getCallerInfo(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -42,10 +52,10 @@ export async function GET(req: NextRequest) {
     if (estado) query = query.eq('estado', estado)
 
     const { data, error } = await query
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudieron cargar las solicitudes', 500, error)
 
     return NextResponse.json({ solicitudes: data ?? [] })
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Error inesperado' }, { status: 500 })
   }
 }
@@ -56,12 +66,11 @@ export async function POST(req: NextRequest) {
     const caller = await getCallerInfo(supabase)
     if (!caller) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 
-    const body = await req.json()
-    const { empleado_id, fecha_inicio, fecha_fin, motivo } = body
-
-    if (!empleado_id || !fecha_inicio || !fecha_fin) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
+    const parsed = postSchema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
+    const { empleado_id, fecha_inicio, fecha_fin, motivo } = parsed.data
 
     // Empleado solo puede crear solicitudes para sí mismo
     if (caller.rol !== 'admin' && caller.rol !== 'gerente' && empleado_id !== caller.userId) {
@@ -85,7 +94,7 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudo crear la solicitud', 500, error)
 
     return NextResponse.json({ solicitud: data })
   } catch {

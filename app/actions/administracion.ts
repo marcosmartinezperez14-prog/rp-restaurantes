@@ -2,8 +2,27 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 import type { Schedule, ReservasConfig } from '@/types/administracion'
 import { DEFAULT_CONFIG } from '@/types/administracion'
+
+const franjaSchema = z.object({
+  apertura: z.string(),
+  cierre: z.string(),
+})
+const diaSchema = z.object({
+  activo: z.boolean(),
+  franjas: z.array(franjaSchema),
+})
+const scheduleSchema = z.object({
+  lunes: diaSchema, martes: diaSchema, miercoles: diaSchema, jueves: diaSchema,
+  viernes: diaSchema, sabado: diaSchema, domingo: diaSchema,
+})
+const reservasConfigSchema = z.object({
+  auto_confirm: z.boolean(),
+  duration_minutes: z.number().int(),
+  schedule: scheduleSchema,
+})
 
 export type { Franja, DiaSchedule, Schedule, ReservasConfig } from '@/types/administracion'
 
@@ -51,6 +70,10 @@ export async function guardarReservasConfig(config: ReservasConfig): Promise<{ o
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) return { error: 'Restaurante no encontrado' }
 
+  const validated = reservasConfigSchema.safeParse(config)
+  if (!validated.success) return { error: 'Configuración no válida' }
+  config = validated.data
+
   if (config.duration_minutes < 15 || config.duration_minutes > 480) {
     return { error: 'La duración debe estar entre 15 y 480 minutos' }
   }
@@ -86,7 +109,10 @@ export async function guardarReservasConfig(config: ReservasConfig): Promise<{ o
       { onConflict: 'restaurant_id' }
     )
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[guardarReservasConfig] error:', error.message)
+    return { error: 'No se pudo guardar la configuración' }
+  }
   return { ok: true }
 }
 
@@ -110,11 +136,16 @@ export async function guardarAforoOnline(max: number | null): Promise<{ ok?: boo
   if (!user) return { error: 'No autenticado' }
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) return { error: 'Restaurante no encontrado' }
-  const value = max !== null && max > 0 ? max : null
+  const parsedMax = z.number().int().max(100000).nullable().safeParse(max)
+  if (!parsedMax.success) return { error: 'Valor no válido' }
+  const value = parsedMax.data !== null && parsedMax.data > 0 ? parsedMax.data : null
   const { error } = await supabase
     .from('restaurants')
     .update({ max_online_comensales: value })
     .eq('id', restaurantId)
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[guardarAforoOnline] error:', error.message)
+    return { error: 'No se pudo guardar el aforo' }
+  }
   return { ok: true }
 }

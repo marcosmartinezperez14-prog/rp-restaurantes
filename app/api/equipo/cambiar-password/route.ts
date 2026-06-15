@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const schema = z.object({
+  auth_id: z.string().uuid('Datos no válidos'),
+  nueva_password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(72, 'La contraseña es demasiado larga'),
+})
+
 export async function POST(req: NextRequest) {
   try {
-    const { auth_id, nueva_password } = await req.json()
-
-    if (!auth_id || !nueva_password) {
-      return NextResponse.json({ success: false, error: 'Faltan campos obligatorios' }, { status: 400 })
+    const parsed = schema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
-
-    if (nueva_password.length < 8) {
-      return NextResponse.json({ success: false, error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
-    }
+    const { auth_id, nueva_password } = parsed.data
 
     const supabase = await createServerClient()
     const { data: { user: caller } } = await supabase.auth.getUser()
@@ -54,12 +56,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      console.error('[cambiar-password] error:', error.message)
+      return NextResponse.json({ success: false, error: 'No se pudo cambiar la contraseña' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error inesperado'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    console.error('[cambiar-password] error:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ success: false, error: 'Error inesperado' }, { status: 500 })
   }
 }

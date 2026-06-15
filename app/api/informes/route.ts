@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
 
 const RPC_MAP = {
   franja:    'get_ventas_por_franja',
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
   const rpcName = RPC_MAP[tipo as TipoInforme]
   const { data, error } = await supabase.rpc(rpcName, { p_desde: desde, p_hasta: hasta })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudo generar el informe', 500, error)
 
   return NextResponse.json({ data })
 }

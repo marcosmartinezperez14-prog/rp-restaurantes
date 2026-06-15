@@ -2,6 +2,21 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
+
+// Loguea el detalle real en servidor y devuelve un mensaje genérico al cliente (#11).
+function dbError(ctx: string, e: { message?: string } | null, publicMsg: string): { error: string } {
+  console.error(`[productos:${ctx}]`, e?.message)
+  return { error: publicMsg }
+}
+
+const UNITS = ['kg', 'g', 'l', 'ml', 'unit', 'dozen'] as const
+const uuid = z.string().uuid()
+const ingredientSchema = z.object({
+  productId: uuid,
+  quantity: z.number().min(0).max(1_000_000),
+  unit: z.string().max(20),
+})
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -188,6 +203,22 @@ export async function updateProducto(
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
+  const v = z.object({
+    productId: uuid,
+    data: z.object({
+      price: z.number().min(0).max(1_000_000).optional(),
+      cost_price: z.number().min(0).max(1_000_000).nullable().optional(),
+      stock_min: z.number().min(0).max(1_000_000).nullable().optional(),
+      supplier: z.string().max(160).nullable().optional(),
+      track_stock: z.boolean().optional(),
+      is_available: z.boolean().optional(),
+      is_visible: z.boolean().optional(),
+      unit: z.enum(UNITS).optional(),
+      categoryIds: z.array(uuid).optional(),
+    }),
+  }).safeParse({ productId, data })
+  if (!v.success) return { error: 'Datos no válidos' }
+
   const { categoryIds, ...productData } = data
 
   if (Object.keys(productData).length > 0) {
@@ -196,7 +227,7 @@ export async function updateProducto(
       .update({ ...productData, updated_at: new Date().toISOString() })
       .eq('id', productId)
       .eq('restaurant_id', restaurantId)
-    if (error) return { error: error.message }
+    if (error) return dbError('updateProducto', error, 'No se pudo actualizar el producto')
   }
 
   if (categoryIds !== undefined) {
@@ -205,7 +236,7 @@ export async function updateProducto(
       .delete()
       .eq('product_id', productId)
       .eq('restaurant_id', restaurantId)
-    if (delErr) return { error: delErr.message }
+    if (delErr) return dbError('updateProducto.delCat', delErr, 'No se pudo actualizar el producto')
 
     if (categoryIds.length > 0) {
       const { error: insErr } = await supabase
@@ -215,7 +246,7 @@ export async function updateProducto(
           category_id: cid,
           restaurant_id: restaurantId,
         })))
-      if (insErr) return { error: insErr.message }
+      if (insErr) return dbError('updateProducto.insCat', insErr, 'No se pudo actualizar el producto')
     }
   }
 
@@ -237,6 +268,15 @@ export async function registrarCompra(params: {
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
+  const v = z.object({
+    productId: uuid,
+    quantity: z.number().max(1_000_000),
+    costPrice: z.number().max(1_000_000),
+    purchaseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    notes: z.string().max(500).optional(),
+  }).safeParse(params)
+  if (!v.success) return { error: 'Datos no válidos' }
+
   if (params.quantity <= 0) return { error: 'La cantidad debe ser mayor que 0' }
   if (params.costPrice < 0) return { error: 'El precio no puede ser negativo' }
 
@@ -251,7 +291,7 @@ export async function registrarCompra(params: {
     created_by: user.id,
   })
 
-  if (movErr) return { error: movErr.message }
+  if (movErr) return dbError('registrarCompra.mov', movErr, 'No se pudo registrar la compra')
 
   const { data: current } = await supabase
     .from('products')
@@ -272,7 +312,7 @@ export async function registrarCompra(params: {
     .eq('id', params.productId)
     .eq('restaurant_id', restaurantId)
 
-  if (updErr) return { error: updErr.message }
+  if (updErr) return dbError('registrarCompra.upd', updErr, 'No se pudo registrar la compra')
   return {}
 }
 
@@ -289,6 +329,14 @@ export async function ajustarStock(params: {
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+
+  const v = z.object({
+    productId: uuid,
+    type: z.enum(['ajuste', 'merma']),
+    quantity: z.number().max(1_000_000),
+    notes: z.string().max(500).optional(),
+  }).safeParse(params)
+  if (!v.success) return { error: 'Datos no válidos' }
 
   const { data: current } = await supabase
     .from('products')
@@ -313,7 +361,7 @@ export async function ajustarStock(params: {
     created_by: user.id,
   })
 
-  if (movErr) return { error: movErr.message }
+  if (movErr) return dbError('ajustarStock.mov', movErr, 'No se pudo ajustar el stock')
 
   const { error: updErr } = await supabase
     .from('products')
@@ -321,7 +369,7 @@ export async function ajustarStock(params: {
     .eq('id', params.productId)
     .eq('restaurant_id', restaurantId)
 
-  if (updErr) return { error: updErr.message }
+  if (updErr) return dbError('ajustarStock.upd', updErr, 'No se pudo ajustar el stock')
   return {}
 }
 
@@ -400,10 +448,23 @@ export async function createProduct(params: {
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
-  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
-  if (params.costPrice !== undefined && params.costPrice < 0) {
-    return { error: 'El precio de compra no puede ser negativo' }
-  }
+  const v = z.object({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
+    categoryIds: z.array(uuid),
+    description: z.string().max(1000).optional(),
+    price: z.number().min(0).max(1_000_000).optional(),
+    costPrice: z.number().min(0).max(1_000_000).optional(),
+    taxRate: z.number().min(0).max(100),
+    stock: z.number().max(1_000_000),
+    stockMin: z.number().max(1_000_000),
+    trackStock: z.boolean(),
+    supplier: z.string().max(160).optional(),
+    sku: z.string().max(60).optional(),
+    isAvailable: z.boolean(),
+    isVisible: z.boolean(),
+    unit: z.enum(UNITS).optional(),
+  }).safeParse(params)
+  if (!v.success) return { error: v.error.issues[0]?.message ?? 'Datos no válidos' }
 
   const { data: product, error: insertErr } = await supabase
     .from('products')
@@ -427,7 +488,7 @@ export async function createProduct(params: {
     .single()
 
   if (insertErr || !product) {
-    return { error: insertErr?.message ?? 'No se pudo crear el producto' }
+    return dbError('createProduct', insertErr, 'No se pudo crear el producto')
   }
 
   if (params.categoryIds.length > 0) {
@@ -438,7 +499,7 @@ export async function createProduct(params: {
         category_id: cid,
         restaurant_id: restaurantId,
       })))
-    if (catErr) return { error: catErr.message }
+    if (catErr) return dbError('createProduct.cat', catErr, 'No se pudo crear el producto')
   }
 
   if (params.trackStock && params.stock > 0) {
@@ -452,7 +513,7 @@ export async function createProduct(params: {
       notes: 'Stock inicial',
       created_by: user.id,
     })
-    if (movErr) return { error: `Producto creado pero error al registrar stock: ${movErr.message}` }
+    if (movErr) return dbError('createProduct.stock', movErr, 'Producto creado pero no se pudo registrar el stock inicial')
   }
 
   return { success: true }
@@ -469,7 +530,7 @@ export async function createCategoria(
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
-  if (!name.trim()) return { error: 'El nombre es obligatorio' }
+  if (!z.string().trim().min(1).max(120).safeParse(name).success) return { error: 'El nombre es obligatorio' }
 
   const { data: maxPosRow } = await supabase
     .from('categories')
@@ -488,7 +549,7 @@ export async function createCategoria(
     .select('id, name')
     .single()
 
-  if (error || !newCat) return { error: error?.message ?? 'No se pudo crear la categoría' }
+  if (error || !newCat) return dbError('createCategoria', error, 'No se pudo crear la categoría')
   return { id: newCat.id, name: newCat.name }
 }
 
@@ -504,7 +565,8 @@ export async function updateCategoria(
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
-  if (!name.trim()) return { error: 'El nombre es obligatorio' }
+  if (!uuid.safeParse(id).success) return { error: 'Datos no válidos' }
+  if (!z.string().trim().min(1).max(120).safeParse(name).success) return { error: 'El nombre es obligatorio' }
 
   const { error } = await supabase
     .from('categories')
@@ -512,7 +574,7 @@ export async function updateCategoria(
     .eq('id', id)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('updateCategoria', error, 'No se pudo actualizar la categoría')
   return {}
 }
 
@@ -527,6 +589,9 @@ export async function editarStock(
   const restaurantId = await getRestaurantId(supabase, user.id)
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+
+  const v = z.object({ productId: uuid, newStock: z.number().max(1_000_000) }).safeParse({ productId, newStock })
+  if (!v.success) return { error: 'Datos no válidos' }
 
   const { data: current } = await supabase
     .from('products')
@@ -545,7 +610,7 @@ export async function editarStock(
     .eq('id', productId)
     .eq('restaurant_id', restaurantId)
 
-  if (updErr) return { error: updErr.message }
+  if (updErr) return dbError('editarStock', updErr, 'No se pudo editar el stock')
 
   if (delta !== 0) {
     await supabase.from('stock_movements').insert({
@@ -592,7 +657,7 @@ export async function deleteCategoria(
     .eq('id', id)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('deleteCategoria', error, 'No se pudo eliminar la categoría')
   return {}
 }
 
@@ -767,8 +832,17 @@ export async function createMenuItem(params: {
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
-  if (!params.name.trim()) return { error: 'El nombre es obligatorio' }
-  if (params.price < 0) return { error: 'El precio no puede ser negativo' }
+  const v = z.object({
+    name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
+    description: z.string().max(1000).optional(),
+    categoryId: uuid.optional(),
+    price: z.number().min(0, 'El precio no puede ser negativo').max(1_000_000),
+    imageUrl: z.string().max(2000).optional(),
+    isActive: z.boolean(),
+    cantidadMinima: z.number().min(1).max(1000).optional(),
+    ingredients: z.array(ingredientSchema),
+  }).safeParse(params)
+  if (!v.success) return { error: v.error.issues[0]?.message ?? 'Datos no válidos' }
 
   const { data: item, error: insertErr } = await supabase
     .from('menu_items')
@@ -785,7 +859,7 @@ export async function createMenuItem(params: {
     .select('id')
     .single()
 
-  if (insertErr || !item) return { error: insertErr?.message ?? 'No se pudo crear el plato' }
+  if (insertErr || !item) return dbError('createMenuItem', insertErr, 'No se pudo crear el plato')
 
   if (params.ingredients.length > 0) {
     const { error: ingErr } = await supabase
@@ -797,7 +871,7 @@ export async function createMenuItem(params: {
         quantity: ing.quantity,
         unit: ing.unit,
       })))
-    if (ingErr) return { error: `Plato creado pero error en ingredientes: ${ingErr.message}` }
+    if (ingErr) return dbError('createMenuItem.ing', ingErr, 'Plato creado pero no se pudieron guardar los ingredientes')
   }
 
   return { success: true }
@@ -824,6 +898,21 @@ export async function updateMenuItem(
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
+  const v = z.object({
+    itemId: uuid,
+    params: z.object({
+      name: z.string().trim().min(1).max(160).optional(),
+      description: z.string().max(1000).nullable().optional(),
+      categoryId: uuid.nullable().optional(),
+      price: z.number().min(0).max(1_000_000).optional(),
+      imageUrl: z.string().max(2000).nullable().optional(),
+      isActive: z.boolean().optional(),
+      cantidadMinima: z.number().min(1).max(1000).optional(),
+      ingredients: z.array(ingredientSchema).optional(),
+    }),
+  }).safeParse({ itemId, params })
+  if (!v.success) return { error: 'Datos no válidos' }
+
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (params.name !== undefined) updateData.name = params.name.trim()
   if (params.description !== undefined) updateData.description = params.description?.trim() || null
@@ -838,7 +927,7 @@ export async function updateMenuItem(
     .update(updateData)
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
-  if (updateErr) return { error: updateErr.message }
+  if (updateErr) return dbError('updateMenuItem', updateErr, 'No se pudo actualizar el plato')
 
   if (params.ingredients !== undefined) {
     const { error: delErr } = await supabase
@@ -846,7 +935,7 @@ export async function updateMenuItem(
       .delete()
       .eq('menu_item_id', itemId)
       .eq('restaurant_id', restaurantId)
-    if (delErr) return { error: delErr.message }
+    if (delErr) return dbError('updateMenuItem.delIng', delErr, 'No se pudo actualizar el plato')
 
     if (params.ingredients.length > 0) {
       const { error: ingErr } = await supabase
@@ -858,7 +947,7 @@ export async function updateMenuItem(
           quantity: ing.quantity,
           unit: ing.unit,
         })))
-      if (ingErr) return { error: ingErr.message }
+      if (ingErr) return dbError('updateMenuItem.insIng', ingErr, 'No se pudo actualizar el plato')
     }
   }
 
@@ -874,12 +963,14 @@ export async function deleteMenuItem(itemId: string): Promise<{ error?: string }
   if (!restaurantId) redirect('/login')
   if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
 
+  if (!uuid.safeParse(itemId).success) return { error: 'Datos no válidos' }
+
   const { error } = await supabase
     .from('menu_items')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
 
-  if (error) return { error: error.message }
+  if (error) return dbError('deleteMenuItem', error, 'No se pudo eliminar el plato')
   return {}
 }

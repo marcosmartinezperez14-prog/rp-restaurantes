@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const putSchema = z.object({
+  name: z.string().trim().min(1).max(120).optional(),
+  price_delta: z.number().optional(),
+  is_default: z.boolean().optional(),
+  sort_order: z.number().int().optional(),
+  is_active: z.boolean().optional(),
+})
 
 async function getRestaurantId(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -20,13 +30,11 @@ export async function PUT(
   try {
     const { opcion_id } = await params
 
-    const body = await request.json() as {
-      name?: unknown
-      price_delta?: unknown
-      is_default?: unknown
-      sort_order?: unknown
-      is_active?: unknown
+    const parsed = putSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
+    const body = parsed.data
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -85,7 +93,7 @@ export async function PUT(
       if (error.code === 'PGRST116') {
         return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
       }
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return jsonError('No se pudo actualizar la opción', 500, error)
     }
     if (!data) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
     return NextResponse.json({ data })
@@ -136,7 +144,7 @@ export async function DELETE(
       .select('id')
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return jsonError('No se pudo eliminar la opción', 500, error)
     }
     if (!data || data.length === 0) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
     return NextResponse.json({ ok: true })

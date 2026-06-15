@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { jsonError } from '@/lib/api/errors'
 import type { ModifierGroup } from '@/types/modificadores'
 
 export async function GET(
@@ -15,7 +16,7 @@ export async function GET(
     .eq('is_active', true)
     .order('sort_order')
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudieron cargar los modificadores', 500, error)
 
   const sorted = (groups ?? []).map(g => ({
     ...g,

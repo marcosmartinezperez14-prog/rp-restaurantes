@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
+import { z } from 'zod'
+
+const patchSchema = z.object({
+  estado: z.enum(['aprobada', 'denegada'], { message: 'Estado inválido' }),
+  comentario_respuesta: z.string().max(500).nullish(),
+})
 
 async function getCallerInfo(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -27,12 +34,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!esGestor) return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
 
     const { id } = await params
-    const body = await req.json()
-    const { estado, comentario_respuesta } = body
-
-    if (!estado || !['aprobada', 'denegada'].includes(estado)) {
-      return NextResponse.json({ error: 'Estado inválido' }, { status: 400 })
+    const parsed = patchSchema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos no válidos' }, { status: 400 })
     }
+    const { estado, comentario_respuesta } = parsed.data
 
     // Verify solicitud belongs to same restaurant
     const { data: solicitud } = await supabase
@@ -55,7 +61,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       })
       .eq('id', id)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudo actualizar la solicitud', 500, error)
 
     return NextResponse.json({ ok: true })
   } catch {
@@ -96,7 +102,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
 
     const { error } = await supabase.from('solicitudes_vacaciones').delete().eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return jsonError('No se pudo cancelar la solicitud', 500, error)
 
     return NextResponse.json({ ok: true })
   } catch {

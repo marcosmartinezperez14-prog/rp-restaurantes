@@ -38,7 +38,10 @@ export async function clearAllData(): Promise<{ deleted: Record<string, number>;
       .from('order_items')
       .delete({ count: 'exact' })
       .in('order_id', ids)
-    if (error) return { deleted, error: `Error en order_items: ${error.message}` }
+    if (error) {
+      console.error('[clearAllData] order_items error:', error.message)
+      return { deleted, error: 'No se pudieron borrar los datos' }
+    }
     deleted['order_items'] = count ?? 0
   } else {
     deleted['order_items'] = 0
@@ -51,7 +54,10 @@ export async function clearAllData(): Promise<{ deleted: Record<string, number>;
       .from(table)
       .delete({ count: 'exact' })
       .eq('restaurant_id', restaurantId)
-    if (error) return { deleted, error: `Error en ${table}: ${error.message}` }
+    if (error) {
+      console.error(`[clearAllData] ${table} error:`, error.message)
+      return { deleted, error: 'No se pudieron borrar los datos' }
+    }
     deleted[table] = count ?? 0
   }
 

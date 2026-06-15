@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { jsonError } from '@/lib/api/errors'
 import type { RespuestaMios } from '@/types/permisos'
 import { MODULOS_SISTEMA } from '@/lib/permisos/modulos'
 
@@ -17,7 +18,7 @@ export async function GET() {
     supabase.rpc('get_permisos_usuario_actual'),
   ])
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return jsonError('No se pudieron cargar los permisos', 500, error)
 
   const rolesData = userData?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
   const rol = rolesData?.[0]?.roles?.name ?? null

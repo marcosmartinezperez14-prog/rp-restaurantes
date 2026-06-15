@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cancelVerifacti } from '@/lib/verifacti/client'
 import type { TicketVerifactu } from '@/types/verifactu'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
+import { jsonError } from '@/lib/api/errors'
 
 export async function POST(
   req: NextRequest,
@@ -77,7 +78,7 @@ export async function POST(
     })
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 })
+    return jsonError('No se pudo anular el ticket', 500, updateError)
   }
 
   return NextResponse.json({ ok: true, ...(verifactuWarning ? { warning: verifactuWarning } : {}) })
