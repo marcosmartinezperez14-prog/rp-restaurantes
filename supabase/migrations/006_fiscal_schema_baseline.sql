@@ -115,10 +115,25 @@ END
 $$;
 
 -- UNIQUE (restaurant_id, series, sequential_number): garantiza numeración
--- correlativa única por restaurante y serie. Idempotente.
+-- correlativa única por restaurante y serie.
+-- Idempotente y robusto: detecta CUALQUIER constraint UNIQUE existente sobre
+-- exactamente esas 3 columnas (sin importar su nombre). En prod ya existe con
+-- el nombre autogenerado 'tickets_restaurant_id_series_sequential_number_key',
+-- así que esto debe ser no-op (no crear una constraint duplicada).
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'tickets_restaurant_series_seq_unique') THEN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    WHERE c.conrelid = 'public.tickets'::regclass
+      AND c.contype = 'u'
+      AND (
+        SELECT array_agg(att.attname ORDER BY att.attname)
+        FROM unnest(c.conkey) AS k(attnum)
+        JOIN pg_attribute att
+          ON att.attrelid = c.conrelid AND att.attnum = k.attnum
+      ) = ARRAY['restaurant_id', 'sequential_number', 'series']  -- ordenado alfabéticamente
+  ) THEN
     ALTER TABLE public.tickets
       ADD CONSTRAINT tickets_restaurant_series_seq_unique
       UNIQUE (restaurant_id, series, sequential_number);
