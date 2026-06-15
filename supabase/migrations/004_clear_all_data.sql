@@ -2,6 +2,14 @@
 -- Limpia todos los datos transaccionales visibles en la web
 -- Ejecutar en: Supabase Dashboard → SQL Editor
 -- ============================================================
+--
+-- ⚠️ OBSOLETO desde la migración 007 (inmutabilidad fiscal):
+-- los `DELETE FROM payments` y `DELETE FROM tickets` de abajo AHORA FALLAN
+-- (RAISE EXCEPTION por los triggers de 007). Este archivo se conserva solo
+-- como histórico de la migración ya aplicada; NO lo reejecutes como utilidad
+-- de limpieza. Para datos de prueba usa un restaurante desechable o anula
+-- tickets con la RPC fiscal_anular_ticket (008).
+-- ============================================================
 
 -- 1. Movimientos de stock (página Productos → Movimientos)
 DELETE FROM stock_movements;

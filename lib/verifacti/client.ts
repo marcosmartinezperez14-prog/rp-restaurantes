@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
   TicketVerifactu,
   VerifactiLinea,
@@ -128,27 +127,4 @@ export async function sendToVerifacti(payload: VerifactiPayload, apiKey: string)
   }
 
   return res.json() as Promise<VerifactiRespuesta>
-}
-
-/**
- * @deprecated Sustituida por la RPC `fiscal_persistir_emision` (migración 008),
- * que persiste la emisión con bloqueo de fila y calcula `verifactu_prev_hash`
- * (encadenado). Las rutas API ya no la usan. Conservada por compatibilidad.
- */
-export async function updateTicketVerifactu(
-  supabase: SupabaseClient,
-  ticketId: string,
-  respuesta: VerifactiRespuesta,
-): Promise<void> {
-  const { error } = await supabase
-    .from('tickets')
-    .update({
-      verifactu_hash:     respuesta.huella,
-      verifactu_status:   respuesta.estado,
-      verifactu_response: respuesta,
-      verifactu_sent_at:  new Date().toISOString(),
-    })
-    .eq('id', ticketId)
-
-  if (error) throw new Error(`Error al actualizar ticket: ${error.message}`)
 }
