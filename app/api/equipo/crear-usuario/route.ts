@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
+import { PERMISOS_POR_ROL } from '@/types/equipo'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+const ROLES_VALIDOS = Object.keys(PERMISOS_POR_ROL)
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,6 +49,14 @@ export async function POST(req: NextRequest) {
 
     if (callerRoleName !== 'admin' && callerRoleName !== 'gerente') {
       return NextResponse.json({ success: false, error: 'No tienes permisos para crear usuarios' }, { status: 403 })
+    }
+
+    // Lista blanca de roles + escalada: un gerente no puede crear administradores.
+    if (!ROLES_VALIDOS.includes(role_name)) {
+      return NextResponse.json({ success: false, error: 'Rol no válido' }, { status: 400 })
+    }
+    if (callerRoleName === 'gerente' && role_name === 'admin') {
+      return NextResponse.json({ success: false, error: 'Un gerente no puede crear administradores' }, { status: 403 })
     }
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({

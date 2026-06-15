@@ -16,6 +16,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'ticketId es obligatorio' }, { status: 400 })
   }
 
+  // ─── Ownership gate (CRÍTICO multi-tenant) ────────────────────────────────
+  // Las RPCs fiscal_* son SECURITY DEFINER y saltan RLS, así que validamos AQUÍ
+  // que el ticket pertenece al restaurante del usuario antes de operar sobre él.
+  // El pre-check va con el cliente sujeto a RLS + filtro explícito por restaurante.
+  const { data: userData } = await supabase
+    .from('users')
+    .select('restaurant_id')
+    .eq('auth_id', user.id)
+    .single()
+  if (!userData?.restaurant_id) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
+  const { data: owned } = await supabase
+    .from('tickets')
+    .select('id')
+    .eq('id', ticketId)
+    .eq('restaurant_id', userData.restaurant_id)
+    .maybeSingle()
+  if (!owned) {
+    return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 })
+  }
+
   // Reclama el ticket para emisión (bloqueo de fila + marca 'enviando').
   // Rechaza si ya está emitido o si hay otra emisión en curso → evita doble envío.
   const { data: claimed, error: claimError } = await supabase

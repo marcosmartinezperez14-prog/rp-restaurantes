@@ -23,11 +23,11 @@ export async function POST(req: NextRequest) {
 
     const { data: callerUser } = await supabase
       .from('users')
-      .select('id, user_roles!user_id(roles(name))')
+      .select('id, restaurant_id, user_roles!user_id(roles(name))')
       .eq('auth_id', caller.id)
       .single()
 
-    if (!callerUser) {
+    if (!callerUser?.restaurant_id) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
     }
 
@@ -40,6 +40,18 @@ export async function POST(req: NextRequest) {
 
     if (callerUser.id === user_id) {
       return NextResponse.json({ success: false, error: 'No puedes desactivarte a ti mismo' }, { status: 400 })
+    }
+
+    // Ownership: el usuario destino debe pertenecer al mismo restaurante
+    // (update con service_role salta RLS).
+    const { data: targetUser } = await supabaseAdmin
+      .from('users')
+      .select('id, restaurant_id')
+      .eq('id', user_id)
+      .single()
+
+    if (!targetUser || targetUser.restaurant_id !== callerUser.restaurant_id) {
+      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
     }
 
     const { error: updateError } = await supabaseAdmin
