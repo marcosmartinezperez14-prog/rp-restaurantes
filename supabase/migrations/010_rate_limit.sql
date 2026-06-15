@@ -34,12 +34,12 @@ begin
   -- Limpieza acotada a este bucket (usa el índice, sin barrido global).
   delete from public.rate_limit_hits
    where bucket = p_bucket
-     and hit_at < now() - make_interval(secs => p_window_seconds);
+     and hit_at < now() - (p_window_seconds * interval '1 second');
 
   select count(*) into v_count
     from public.rate_limit_hits
    where bucket = p_bucket
-     and hit_at > now() - make_interval(secs => p_window_seconds);
+     and hit_at > now() - (p_window_seconds * interval '1 second');
 
   if v_count >= p_max then
     return false;
@@ -50,4 +50,6 @@ begin
 end;
 $$;
 
-revoke all on function public.check_rate_limit(text, int, int) from public, anon, authenticated;
+-- La RPC se llama desde el cliente admin (service_role). Restringimos el resto.
+revoke all on function public.check_rate_limit(text, int, int) from public;
+grant execute on function public.check_rate_limit(text, int, int) to service_role;
