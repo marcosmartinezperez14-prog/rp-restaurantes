@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import { CONSENTIMIENTO_TEXTO_VERSION } from '@/types/legal'
 
 export default function ReservasPage() {
   const params = useParams()
@@ -13,6 +14,7 @@ export default function ReservasPage() {
   const [hora, setHora] = useState('')
   const [numPersonas, setNumPersonas] = useState(2)
   const [notas, setNotas] = useState('')
+  const [consentimiento, setConsentimiento] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -43,6 +45,7 @@ export default function ReservasPage() {
       setError(`Para grupos de ${maxOnlineComensales} o más personas, contacta con nosotros por teléfono.`)
       return
     }
+    if (!consentimiento) { setError('Debes aceptar la política de privacidad para reservar'); return }
 
     setEnviando(true)
     try {
@@ -56,6 +59,8 @@ export default function ReservasPage() {
           hora,
           num_personas: numPersonas,
           notas: notas || null,
+          consentimiento_rgpd: consentimiento,
+          consentimiento_texto_version: CONSENTIMIENTO_TEXTO_VERSION,
         }),
       })
       const data = await res.json()
@@ -177,13 +182,35 @@ export default function ReservasPage() {
           />
         </div>
 
+        <div className="flex items-start gap-3 pt-1">
+          <input
+            id="consentimiento"
+            type="checkbox"
+            checked={consentimiento}
+            onChange={e => setConsentimiento(e.target.checked)}
+            className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="consentimiento" className="text-xs text-gray-600 leading-relaxed">
+            He leído y acepto la{' '}
+            <a
+              href={`/cliente/${slug}/privacidad`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              política de privacidad
+            </a>
+            .
+          </label>
+        </div>
+
         {error && (
           <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
         )}
 
         <button
           onClick={handleEnviar}
-          disabled={enviando}
+          disabled={enviando || !consentimiento}
           className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {enviando ? 'Enviando...' : 'Confirmar reserva'}

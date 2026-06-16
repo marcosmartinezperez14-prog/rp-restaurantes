@@ -23,6 +23,9 @@ const reservaSchema = z.object({
   hora: z.string().regex(/^\d{2}:\d{2}/, 'La hora no es válida'),
   num_personas: z.coerce.number().int().min(1, 'El número de personas debe ser al menos 1').max(50, 'El número de personas no es válido'),
   notas: z.string().max(500, 'Las notas son demasiado largas').nullish(),
+  // Consentimiento RGPD obligatorio: debe ser exactamente true.
+  consentimiento_rgpd: z.literal(true, { message: 'Debes aceptar la política de privacidad' }),
+  consentimiento_texto_version: z.string().trim().min(1).max(20),
 })
 
 export async function POST(
@@ -40,7 +43,7 @@ export async function POST(
 
     const parsed = parseBody(reservaSchema, await req.json().catch(() => null))
     if (!parsed.ok) return parsed.response
-    const { nombre_cliente, telefono, fecha, hora, num_personas, notas } = parsed.data
+    const { nombre_cliente, telefono, fecha, hora, num_personas, notas, consentimiento_texto_version } = parsed.data
 
     const today = new Date().toISOString().split('T')[0]
     if (fecha < today) return NextResponse.json({ error: 'La fecha no puede ser en el pasado' }, { status: 400 })
@@ -97,6 +100,9 @@ export async function POST(
         reservation_time: hora,
         status: autoConfirm ? 'confirmed' : 'pending',
         notes: notas?.trim() || null,
+        consentimiento_rgpd: true,
+        consentimiento_timestamp: new Date().toISOString(),
+        consentimiento_texto_version,
       })
       .select('id')
       .single()
