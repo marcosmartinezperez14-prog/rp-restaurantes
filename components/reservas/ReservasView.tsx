@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { Reserva } from '@/types/reservas'
 
 interface Props {
@@ -22,7 +22,7 @@ const ESTADO_BADGE: Record<string, string> = {
 }
 
 function hoyISO() {
-  return new Date().toISOString().slice(0, 10)
+  return new Intl.DateTimeFormat('sv').format(new Date())
 }
 
 export default function ReservasView({ reservas: reservasIniciales }: Props) {
@@ -39,6 +39,10 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
   const [editNotas, setEditNotas] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [errorModal, setErrorModal] = useState<string | null>(null)
+
+  useEffect(() => {
+    setReservas(reservasIniciales)
+  }, [reservasIniciales])
 
   const reservasFiltradas = useMemo(() => {
     return reservas
