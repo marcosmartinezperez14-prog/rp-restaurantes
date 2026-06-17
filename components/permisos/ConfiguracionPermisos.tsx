@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { MatrizPermisos } from '@/types/permisos'
-import { MODULOS_SISTEMA, MODULOS_SIEMPRE_ACTIVOS, ROLES_PROTEGIDOS, SOLO_ADMIN_PUEDE_CONFIGURAR } from '@/lib/permisos/modulos'
+import { MODULOS_SISTEMA, MODULOS_SIEMPRE_ACTIVOS, ROLES_PROTEGIDOS, SOLO_ADMIN_PUEDE_CONFIGURAR, ROLES_OCULTOS, ROLES_NO_ELIMINABLES } from '@/lib/permisos/modulos'
 import { limpiarCachePermisos } from '@/lib/permisos/usePermisos'
 
 interface Props {
@@ -65,6 +65,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
   function getRolesConfigurables(m: MatrizPermisos[], rolActual: 'admin' | 'gerente'): MatrizPermisos[] {
     return m.filter(r => {
       if (ROLES_PROTEGIDOS.includes(r.role_name)) return false
+      if (ROLES_OCULTOS.includes(r.role_name)) return false
       if (rolActual === 'gerente' && SOLO_ADMIN_PUEDE_CONFIGURAR.includes(r.role_name)) return false
       return true
     })
@@ -231,18 +232,20 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
       {/* Panel de permisos del rol activo */}
       {rolActivo && (
         <div className="flex flex-col gap-2">
-          {/* Botón eliminar — disponible en todos los roles configurables */}
+          {/* Cabecera del rol */}
           <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)]">
             <span className="text-xs text-[var(--text-secondary)]">
               {esRolPersonalizado(rolActivo) ? 'Rol personalizado' : 'Rol del sistema'}
             </span>
-            <button
-              onClick={() => handleEliminarRol(rolActivo.role_id, rolActivo.role_name)}
-              disabled={eliminando === rolActivo.role_id}
-              className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50 transition-colors"
-            >
-              {eliminando === rolActivo.role_id ? 'Eliminando...' : 'Eliminar rol'}
-            </button>
+            {!ROLES_NO_ELIMINABLES.includes(rolActivo.role_name) && (
+              <button
+                onClick={() => handleEliminarRol(rolActivo.role_id, rolActivo.role_name)}
+                disabled={eliminando === rolActivo.role_id}
+                className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50 transition-colors"
+              >
+                {eliminando === rolActivo.role_id ? 'Eliminando...' : 'Eliminar rol'}
+              </button>
+            )}
           </div>
 
           {modulosProtegibles.map(modulo => {

@@ -25,3 +25,7 @@ export const MODULOS_SISTEMA: ModuloSistema[] = [
 export const MODULOS_SIEMPRE_ACTIVOS = ['fichaje']
 export const ROLES_PROTEGIDOS = ['admin']
 export const SOLO_ADMIN_PUEDE_CONFIGURAR = ['gerente']
+// Roles que nunca aparecen en la UI de permisos
+export const ROLES_OCULTOS = ['superadmin']
+// Roles que no se pueden eliminar aunque no sean admin
+export const ROLES_NO_ELIMINABLES = ['admin', 'gerente']

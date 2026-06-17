@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
+import { ROLES_NO_ELIMINABLES } from '@/lib/permisos/modulos'
 
 async function getCaller(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,6 +38,11 @@ export async function DELETE(
     .maybeSingle()
 
   if (!rol) return NextResponse.json({ error: 'Rol no encontrado' }, { status: 404 })
+
+  // Roles protegidos: nunca eliminables
+  if (ROLES_NO_ELIMINABLES.includes(rol.name)) {
+    return NextResponse.json({ error: `El rol "${rol.name}" no se puede eliminar` }, { status: 403 })
+  }
 
   // Si es un rol personalizado de otro restaurante, rechazar
   if (rol.restaurant_id && rol.restaurant_id !== caller.restaurantId) {

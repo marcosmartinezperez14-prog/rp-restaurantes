@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import type { MatrizPermisos } from '@/types/permisos'
-import { MODULOS_SISTEMA, MODULOS_SIEMPRE_ACTIVOS, ROLES_PROTEGIDOS, SOLO_ADMIN_PUEDE_CONFIGURAR } from '@/lib/permisos/modulos'
+import { MODULOS_SISTEMA, MODULOS_SIEMPRE_ACTIVOS, ROLES_PROTEGIDOS, SOLO_ADMIN_PUEDE_CONFIGURAR, ROLES_OCULTOS } from '@/lib/permisos/modulos'
 import { jsonError } from '@/lib/api/errors'
 import { z } from 'zod'
 
@@ -58,7 +58,7 @@ export async function GET() {
 
   const modulosProtegibles = MODULOS_SISTEMA.filter(m => m.protegible)
 
-  const matriz: MatrizPermisos[] = (roles ?? []).map(role => {
+  const matriz: MatrizPermisos[] = (roles ?? []).filter(role => !ROLES_OCULTOS.includes(role.name)).map(role => {
     const permisosPorModulo: Record<string, boolean> = {}
     for (const modulo of modulosProtegibles) {
       const key = `${role.id}:${modulo.key}`
