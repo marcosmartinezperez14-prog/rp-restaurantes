@@ -5,9 +5,10 @@ import { useState } from 'react'
 interface Props {
   open: boolean
   onClose: () => void
+  planSeleccionado?: string
 }
 
-export default function CheckoutModal({ open, onClose }: Props) {
+export default function CheckoutModal({ open, onClose, planSeleccionado }: Props) {
   const [nombre, setNombre] = useState('')
   const [nombreRestaurante, setNombreRestaurante] = useState('')
   const [email, setEmail] = useState('')
@@ -17,7 +18,7 @@ export default function CheckoutModal({ open, onClose }: Props) {
 
   if (!open) return null
 
-  async function handlePagar() {
+  async function handleEnviar() {
     setError(null)
     if (!nombre.trim() || !nombreRestaurante.trim() || !email.trim() || !telefono.trim()) {
       setError('Por favor, rellena todos los campos')
@@ -25,14 +26,20 @@ export default function CheckoutModal({ open, onClose }: Props) {
     }
     setCargando(true)
     try {
-      const res = await fetch('/api/stripe/checkout', {
+      const res = await fetch('/api/contacto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, nombre_restaurante: nombreRestaurante, email, telefono }),
+        body: JSON.stringify({
+          nombre,
+          nombre_restaurante: nombreRestaurante,
+          email,
+          telefono,
+          mensaje: planSeleccionado ? `Plan interesado: ${planSeleccionado}` : null,
+        }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al procesar el pago'); setCargando(false); return }
-      window.location.href = data.url
+      if (!res.ok) { setError(data.error ?? 'Error al enviar'); setCargando(false); return }
+      window.location.href = '/pago-completado'
     } catch {
       setError('Error de conexión. Inténtalo de nuevo.')
       setCargando(false)
@@ -42,11 +49,19 @@ export default function CheckoutModal({ open, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-slate-900">Empezar ahora</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-slate-900">Solicitar información</h2>
+          <div onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none cursor-pointer">&times;</div>
         </div>
-        <p className="text-sm text-slate-500 mb-6">Rellena tus datos y te redirigimos a la pasarela de pago segura de Stripe.</p>
+
+        {planSeleccionado && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mb-4 text-sm text-amber-800 font-medium">
+            {planSeleccionado} seleccionado
+          </div>
+        )}
+
+        <p className="text-sm text-slate-500 mb-6">Déjanos tus datos y te contactamos para explicarte todo sin compromiso.</p>
+
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre completo</label>
@@ -89,15 +104,17 @@ export default function CheckoutModal({ open, onClose }: Props) {
             />
           </div>
         </div>
+
         {error && <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
+
         <button
-          onClick={handlePagar}
+          onClick={handleEnviar}
           disabled={cargando}
           className="w-full mt-6 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-slate-900 font-bold py-4 rounded-2xl text-lg transition-colors"
         >
-          {cargando ? 'Redirigiendo...' : 'Ir al pago seguro →'}
+          {cargando ? 'Enviando...' : 'Quiero que me contacten →'}
         </button>
-        <p className="text-xs text-slate-400 text-center mt-3">Pago procesado por Stripe. Tus datos están seguros.</p>
+        <p className="text-xs text-slate-400 text-center mt-3">Sin compromiso. Te respondemos en menos de 24h.</p>
       </div>
     </div>
   )

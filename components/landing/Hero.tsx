@@ -1,5 +1,3 @@
-import { PRECIO_MENSUAL } from '@/lib/config/landing'
-
 export default function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
   return (
     <section className="bg-slate-900 text-white px-4 py-20 text-center">
@@ -19,7 +17,7 @@ export default function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
             onClick={onCtaClick}
             className="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-8 py-4 rounded-2xl text-lg transition-colors"
           >
-            Empieza ahora — {PRECIO_MENSUAL}€/mes
+            Empieza ahora — desde 47€/mes
           </button>
           <a
             href="#contacto"

@@ -11,13 +11,19 @@ import CheckoutModal from '@/components/landing/CheckoutModal'
 
 export default function LandingPage() {
   const [modalOpen, setModalOpen] = useState(false)
+  const [planSeleccionado, setPlanSeleccionado] = useState<string | undefined>()
+
+  function abrirModal(plan?: string) {
+    setPlanSeleccionado(plan)
+    setModalOpen(true)
+  }
 
   return (
     <>
-      <Hero onCtaClick={() => setModalOpen(true)} />
+      <Hero onCtaClick={() => abrirModal()} />
       <ComoFunciona />
       <Funcionalidades />
-      <Pricing onCtaClick={() => setModalOpen(true)} />
+      <Pricing onCtaClick={(plan) => abrirModal(plan)} />
       <section className="py-20 px-4 bg-slate-50" id="contacto">
         <div className="max-w-xl mx-auto">
           <h2 className="text-3xl font-bold text-slate-900 text-center mb-4">¿Hablamos?</h2>
@@ -26,7 +32,7 @@ export default function LandingPage() {
         </div>
       </section>
       <Footer />
-      <CheckoutModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <CheckoutModal open={modalOpen} onClose={() => setModalOpen(false)} planSeleccionado={planSeleccionado} />
     </>
   )
 }
