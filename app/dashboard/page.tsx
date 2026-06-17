@@ -127,6 +127,16 @@ const NAV_CARDS = [
     modulo: 'administracion',
   },
   {
+    href: '/dashboard/mesas',
+    icon: '📱',
+    label: 'Mesas y QR',
+    description: 'Genera y descarga los QR de cada mesa',
+    color: 'bg-[var(--bg-surface)] border-sky-500/40 hover:bg-[var(--bg-surface-hover)]',
+    iconBg: 'bg-sky-500/15',
+    labelColor: 'text-sky-600',
+    modulo: 'administracion',
+  },
+  {
     href: '/dashboard/administracion',
     icon: '🔧',
     label: 'Administración',
