@@ -37,7 +37,7 @@ export default function LandingPage() {
               href="#contacto"
               className="bg-[#1E4080] hover:bg-[#163260] text-white font-semibold px-4 py-2 rounded-lg transition-colors"
             >
-              Demo gratuita
+              Contacto
             </a>
           </div>
         </div>
@@ -60,7 +60,7 @@ export default function LandingPage() {
             ¿Hablamos?
           </h2>
           <p className="text-gray-500 text-center mb-12 text-base">
-            Solicita una demo gratuita y te lo explicamos todo sin compromiso.
+            Cuéntanos sobre tu negocio y te explicamos todo sin compromiso.
           </p>
           <ContactoForm />
         </div>

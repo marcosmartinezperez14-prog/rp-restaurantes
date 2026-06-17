@@ -92,7 +92,7 @@ export default function ContactoForm() {
         disabled={estado === 'enviando'}
         className="w-full bg-[#1E4080] hover:bg-[#163260] disabled:opacity-50 text-white font-semibold py-3.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#1E4080] focus:ring-offset-2"
       >
-        {estado === 'enviando' ? 'Enviando...' : 'Solicitar demo gratuita'}
+        {estado === 'enviando' ? 'Enviando...' : 'Enviar mensaje'}
       </button>
       <p className="text-xs text-gray-400 text-center pt-1">Sin compromiso. Respondemos en menos de 24 horas.</p>
     </div>

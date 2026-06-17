@@ -30,7 +30,7 @@ export default function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
             className="border border-gray-300 hover:border-gray-500 text-[#1A2B4A] font-semibold px-8 py-4 rounded-lg text-base transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             style={{ fontFamily: 'var(--font-inter)' }}
           >
-            Solicitar demo gratuita
+            Contactar
           </a>
         </div>
       </div>
