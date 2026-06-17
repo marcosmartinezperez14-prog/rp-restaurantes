@@ -21,7 +21,7 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
   async function handleEnviar() {
     setError(null)
     if (!nombre.trim() || !nombreRestaurante.trim() || !email.trim() || !telefono.trim()) {
-      setError('Por favor, rellena todos los campos')
+      setError('Por favor, rellena todos los campos.')
       return
     }
     setCargando(true)
@@ -38,7 +38,7 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
         }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al enviar'); setCargando(false); return }
+      if (!res.ok) { setError(data.error ?? 'Error al enviar.'); setCargando(false); return }
       window.location.href = '/pago-completado'
     } catch {
       setError('Error de conexión. Inténtalo de nuevo.')
@@ -46,75 +46,103 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
     }
   }
 
+  const inputClass = "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#1E4080] focus:border-[#1E4080] transition-colors"
+  const labelClass = "block text-xs font-semibold text-gray-600 mb-1.5 tracking-wide"
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Solicitar información</h2>
-          <div onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none cursor-pointer">&times;</div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md"
+        onClick={e => e.stopPropagation()}
+        style={{ fontFamily: 'var(--font-inter)' }}
+      >
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h2
+              className="text-xl font-semibold text-[#1A2B4A]"
+              style={{ fontFamily: 'var(--font-lora)' }}
+            >
+              Solicitar información
+            </h2>
+            {planSeleccionado && (
+              <p className="text-sm text-[#1E4080] mt-1 font-medium">{planSeleccionado}</p>
+            )}
+          </div>
+          <div
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none cursor-pointer ml-4 mt-0.5"
+            aria-label="Cerrar"
+          >
+            &times;
+          </div>
         </div>
 
-        {planSeleccionado && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mb-4 text-sm text-amber-800 font-medium">
-            {planSeleccionado} seleccionado
-          </div>
-        )}
-
-        <p className="text-sm text-slate-500 mb-6">Déjanos tus datos y te contactamos para explicarte todo sin compromiso.</p>
+        <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+          Déjanos tus datos y te contactamos sin compromiso para explicarte todo y resolver tus dudas.
+        </p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre completo</label>
+            <label className={labelClass}>Nombre completo</label>
             <input
               type="text"
               value={nombre}
               onChange={e => setNombre(e.target.value)}
               placeholder="Tu nombre"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre del restaurante</label>
+            <label className={labelClass}>Nombre del restaurante o bar</label>
             <input
               type="text"
               value={nombreRestaurante}
               onChange={e => setNombreRestaurante(e.target.value)}
-              placeholder="Bar / Restaurante"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-amber-400"
+              placeholder="El nombre de tu negocio"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+            <label className={labelClass}>Correo electrónico</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="tu@email.com"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Teléfono</label>
+            <label className={labelClass}>Teléfono</label>
             <input
               type="tel"
               value={telefono}
               onChange={e => setTelefono(e.target.value)}
               placeholder="+34 600 000 000"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className={inputClass}
             />
           </div>
         </div>
 
-        {error && <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
+        {error && (
+          <p className="mt-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+            {error}
+          </p>
+        )}
 
         <button
           onClick={handleEnviar}
           disabled={cargando}
-          className="w-full mt-6 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-slate-900 font-bold py-4 rounded-2xl text-lg transition-colors"
+          className="w-full mt-6 bg-[#1E4080] hover:bg-[#163260] disabled:opacity-50 text-white font-semibold py-3.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#1E4080] focus:ring-offset-2"
         >
-          {cargando ? 'Enviando...' : 'Quiero que me contacten →'}
+          {cargando ? 'Enviando...' : 'Quiero que me contacten'}
         </button>
-        <p className="text-xs text-slate-400 text-center mt-3">Sin compromiso. Te respondemos en menos de 24h.</p>
+        <p className="text-xs text-gray-400 text-center mt-3">
+          Sin compromiso. Te respondemos en menos de 24 horas.
+        </p>
       </div>
     </div>
   )
