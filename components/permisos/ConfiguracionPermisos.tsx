@@ -66,6 +66,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
     return m.filter(r => {
       if (ROLES_PROTEGIDOS.includes(r.role_name)) return false
       if (ROLES_OCULTOS.includes(r.role_name)) return false
+      if (ROLES_NO_ELIMINABLES.includes(r.role_name)) return false
       if (rolActual === 'gerente' && SOLO_ADMIN_PUEDE_CONFIGURAR.includes(r.role_name)) return false
       return true
     })
@@ -187,15 +188,18 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
       )}
 
       {/* Rol admin — siempre visible, no configurable */}
-      {matriz.find(r => r.role_name === 'admin') && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
-          <span className="text-base">🛡️</span>
-          <div className="flex-1">
-            <span className="text-sm font-semibold text-[var(--text-primary)]">Administrador</span>
-            <span className="ml-2 text-xs text-[var(--text-secondary)] italic">Acceso total — no configurable</span>
+      {(['admin', 'gerente'] as const).map(nombre => {
+        const labels: Record<string, string> = { admin: 'Administrador', gerente: 'Gerente' }
+        return matriz.find(r => r.role_name === nombre) ? (
+          <div key={nombre} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+            <span className="text-base">🛡️</span>
+            <div className="flex-1">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{labels[nombre]}</span>
+              <span className="ml-2 text-xs text-[var(--text-secondary)] italic">Acceso total — no configurable</span>
+            </div>
           </div>
-        </div>
-      )}
+        ) : null
+      })}
 
       {rolesConfigurables.length === 0 && (
         <p className="text-sm text-[var(--text-secondary)]">No hay roles configurables para tu nivel de acceso.</p>
