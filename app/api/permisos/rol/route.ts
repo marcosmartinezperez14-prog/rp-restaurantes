@@ -38,7 +38,8 @@ export async function GET() {
 
   const { data: roles, error: rolesError } = await supabaseAdmin
     .from('roles')
-    .select('id, name')
+    .select('id, name, restaurant_id')
+    .or(`restaurant_id.is.null,restaurant_id.eq.${caller.restaurantId}`)
     .order('name')
 
   if (rolesError) return jsonError('No se pudieron cargar los roles', 500, rolesError)
@@ -68,7 +69,12 @@ export async function GET() {
         permisosPorModulo[modulo.key] = true
       }
     }
-    return { role_id: role.id, role_name: role.name, permisos: permisosPorModulo }
+    return {
+      role_id: role.id,
+      role_name: role.name,
+      restaurant_id: (role as { restaurant_id: string | null }).restaurant_id,
+      permisos: permisosPorModulo,
+    }
   })
 
   return NextResponse.json({ data: matriz })

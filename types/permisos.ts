@@ -15,6 +15,7 @@ export interface PermisosUsuario {
 export interface MatrizPermisos {
   role_id: string
   role_name: string
+  restaurant_id: string | null  // null = rol global de sistema
   permisos: {
     [modulo_key: string]: boolean
   }
