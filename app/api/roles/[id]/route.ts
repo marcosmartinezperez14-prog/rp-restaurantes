@@ -38,13 +38,8 @@ export async function DELETE(
 
   if (!rol) return NextResponse.json({ error: 'Rol no encontrado' }, { status: 404 })
 
-  // Un rol global (restaurant_id NULL) nunca se puede eliminar desde aquí
-  if (!rol.restaurant_id) {
-    return NextResponse.json({ error: 'Los roles del sistema no se pueden eliminar' }, { status: 403 })
-  }
-
-  // El rol debe pertenecer al restaurante del caller — aislamiento crítico
-  if (rol.restaurant_id !== caller.restaurantId) {
+  // Si es un rol personalizado de otro restaurante, rechazar
+  if (rol.restaurant_id && rol.restaurant_id !== caller.restaurantId) {
     return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
   }
 
@@ -65,7 +60,6 @@ export async function DELETE(
     .from('roles')
     .delete()
     .eq('id', id)
-    .eq('restaurant_id', caller.restaurantId) // doble verificación
 
   if (error) return jsonError('No se pudo eliminar el rol', 500, error)
   return NextResponse.json({ ok: true })

@@ -231,19 +231,19 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
       {/* Panel de permisos del rol activo */}
       {rolActivo && (
         <div className="flex flex-col gap-2">
-          {/* Cabecera del rol con botón eliminar si es personalizado */}
-          {esRolPersonalizado(rolActivo) && (
-            <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-blue-50 border border-blue-100">
-              <span className="text-xs text-blue-700 font-medium">Rol personalizado de tu restaurante</span>
-              <button
-                onClick={() => handleEliminarRol(rolActivo.role_id, rolActivo.role_name)}
-                disabled={eliminando === rolActivo.role_id}
-                className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50 transition-colors"
-              >
-                {eliminando === rolActivo.role_id ? 'Eliminando...' : 'Eliminar rol'}
-              </button>
-            </div>
-          )}
+          {/* Botón eliminar — disponible en todos los roles configurables */}
+          <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)]">
+            <span className="text-xs text-[var(--text-secondary)]">
+              {esRolPersonalizado(rolActivo) ? 'Rol personalizado' : 'Rol del sistema'}
+            </span>
+            <button
+              onClick={() => handleEliminarRol(rolActivo.role_id, rolActivo.role_name)}
+              disabled={eliminando === rolActivo.role_id}
+              className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50 transition-colors"
+            >
+              {eliminando === rolActivo.role_id ? 'Eliminando...' : 'Eliminar rol'}
+            </button>
+          </div>
 
           {modulosProtegibles.map(modulo => {
             const activo = rolActivo.permisos[modulo.key] ?? true
