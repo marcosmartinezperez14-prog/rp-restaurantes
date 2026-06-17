@@ -22,7 +22,8 @@ async function getCaller(supabase: Awaited<ReturnType<typeof createClient>>) {
     .single()
   if (!data) return null
   const rolesData = data.user_roles as unknown as { roles: { name: string } | null }[]
-  const rol = rolesData?.[0]?.roles?.name ?? null
+  const rolNames = (rolesData ?? []).map(r => r.roles?.name ?? '')
+  const rol = rolNames.find(n => ['admin', 'gerente'].includes(n)) ?? rolNames[0] ?? null
   return { restaurantId: data.restaurant_id as string, rol }
 }
 
@@ -31,6 +32,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRe.test(id)) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
   const supabase = await createClient()
   const caller = await getCaller(supabase)
   if (!caller) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
@@ -38,7 +41,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
   }
 
-  const body = await req.json().catch(() => null)
+  const body = await req.json().catch(() => ({}))
   const parsed = patchSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 })
@@ -71,6 +74,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRe.test(id)) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
   const supabase = await createClient()
   const caller = await getCaller(supabase)
   if (!caller) return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
