@@ -14,6 +14,8 @@ export type TablaPapelera =
   | 'users'
   | 'reservations'
   | 'movimientos'
+  | 'product_modifier_groups'
+  | 'product_modifier_options'
 
 export interface ItemPapelera {
   id: string
@@ -36,6 +38,9 @@ export interface DatosPapelera {
   // Fase 2
   reservas:    ItemPapelera[]
   movimientos: ItemPapelera[]
+  // Fase 3
+  gruposModificadores:   ItemPapelera[]
+  opcionesModificadores: ItemPapelera[]
 }
 
 // Alias para compatibilidad con imports existentes de Fase 1
@@ -45,7 +50,7 @@ export type PapeleraFase1 = DatosPapelera
 // ─── Lectura ──────────────────────────────────────────────────────────────────
 
 export async function getPapeleraFase1(): Promise<DatosPapelera> {
-  const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos] =
+  const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos, gruposMod, opcionesMod] =
     await Promise.all([
       supabaseAdmin
         .from('tables')
@@ -94,6 +99,18 @@ export async function getPapeleraFase1(): Promise<DatosPapelera> {
         .select('id, concepto, tipo, importe, fecha, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
+
+      supabaseAdmin
+        .from('product_modifier_groups')
+        .select('id, name, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
+
+      supabaseAdmin
+        .from('product_modifier_options')
+        .select('id, name, price_delta, deleted_at, deleted_by, product_modifier_groups!inner(restaurant_id, restaurants(name))')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
     ])
 
   function toItem(row: Record<string, unknown>, nombre: string, extra?: string): ItemPapelera {
@@ -138,6 +155,23 @@ export async function getPapeleraFase1(): Promise<DatosPapelera> {
         r.concepto as string,
         `${r.tipo === 'ingreso' ? '+' : '-'}${Number(r.importe).toFixed(2)}€ · ${r.fecha}`,
       )),
+    gruposModificadores: (gruposMod.data ?? []).map(r =>
+      toItem(r as Record<string, unknown>, r.name as string)),
+    opcionesModificadores: (opcionesMod.data ?? []).map(r => {
+      const grp = r.product_modifier_groups as unknown as { restaurant_id: string; restaurants: { name: string } | null } | { restaurant_id: string; restaurants: { name: string } | null }[]
+      const grpData = Array.isArray(grp) ? grp[0] : grp
+      const restName = grpData?.restaurants?.name ?? '—'
+      const priceDelta = Number(r.price_delta ?? 0)
+      return {
+        id:            r.id as string,
+        nombre:        r.name as string,
+        extra:         priceDelta !== 0 ? `${priceDelta > 0 ? '+' : ''}${priceDelta.toFixed(2)}€` : undefined,
+        restaurante:   restName,
+        restaurant_id: grpData?.restaurant_id ?? '',
+        deleted_at:    (r.deleted_at ?? '') as string,
+        deleted_by:    (r.deleted_by ?? null) as string | null,
+      }
+    }),
   }
 }
 
@@ -170,7 +204,9 @@ export async function restaurarItem(
   }
 
   const camposReset: Record<string, unknown> = { deleted_at: null, deleted_by: null }
-  if (tabla === 'tables' || tabla === 'zones') camposReset.is_active = true
+  if (tabla === 'tables' || tabla === 'zones' || tabla === 'product_modifier_groups' || tabla === 'product_modifier_options') {
+    camposReset.is_active = true
+  }
 
   const { error } = await supabaseAdmin
     .from(tabla)

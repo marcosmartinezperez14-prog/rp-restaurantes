@@ -14,6 +14,7 @@ export async function GET(
     .select('*, options:product_modifier_options(*)')
     .eq('menu_item_id', menu_item_id)
     .eq('is_active', true)
+    .is('deleted_at', null)
     .order('sort_order')
 
   if (error) return jsonError('No se pudieron cargar los modificadores', 500, error)
@@ -21,7 +22,7 @@ export async function GET(
   const sorted = (groups ?? []).map(g => ({
     ...g,
     options: (g.options as ModifierGroup['options'])
-      .filter(o => o.is_active)
+      .filter(o => o.is_active && !o.deleted_at)
       .sort((a, b) => a.sort_order - b.sort_order),
   }))
 

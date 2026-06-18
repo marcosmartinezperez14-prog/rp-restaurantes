@@ -31,8 +31,10 @@ const SECCIONES: Array<{
   { key: 'platos',      tabla: 'menu_items',   titulo: 'Platos de carta',   icono: '🍽️' },
   { key: 'productos',   tabla: 'products',     titulo: 'Productos / stock', icono: '📦' },
   { key: 'usuarios',    tabla: 'users',        titulo: 'Usuarios',          icono: '👤' },
-  { key: 'reservas',    tabla: 'reservations', titulo: 'Reservas',          icono: '📅' },
-  { key: 'movimientos', tabla: 'movimientos',  titulo: 'Movimientos',       icono: '💰' },
+  { key: 'reservas',             tabla: 'reservations',            titulo: 'Reservas',              icono: '📅' },
+  { key: 'movimientos',          tabla: 'movimientos',             titulo: 'Movimientos',           icono: '💰' },
+  { key: 'gruposModificadores',  tabla: 'product_modifier_groups', titulo: 'Grupos modificadores',  icono: '🔧' },
+  { key: 'opcionesModificadores',tabla: 'product_modifier_options',titulo: 'Opciones modificadores',icono: '⚙️' },
 ]
 
 export default function SuperadminPapeleraView({ datos: datosIniciales }: Props) {
@@ -50,14 +52,16 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
 
   function quitarItemLocal(tabla: TablaPapelera, id: string) {
     const keyMap: Record<TablaPapelera, keyof DatosPapelera> = {
-      tables:       'mesas',
-      zones:        'zonas',
-      categories:   'categorias',
-      menu_items:   'platos',
-      products:     'productos',
-      users:        'usuarios',
-      reservations: 'reservas',
-      movimientos:  'movimientos',
+      tables:                    'mesas',
+      zones:                     'zonas',
+      categories:                'categorias',
+      menu_items:                'platos',
+      products:                  'productos',
+      users:                     'usuarios',
+      reservations:              'reservas',
+      movimientos:               'movimientos',
+      product_modifier_groups:   'gruposModificadores',
+      product_modifier_options:  'opcionesModificadores',
     }
     const key = keyMap[tabla]
     setDatos(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) }))

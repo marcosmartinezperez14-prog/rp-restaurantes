@@ -8,6 +8,7 @@ export interface ModifierOption {
   is_default: boolean
   is_active: boolean
   sort_order: number
+  deleted_at?: string | null
 }
 
 export interface ModifierGroup {

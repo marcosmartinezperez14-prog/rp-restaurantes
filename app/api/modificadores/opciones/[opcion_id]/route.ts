@@ -139,7 +139,7 @@ export async function DELETE(
 
     const { data, error } = await supabase
       .from('product_modifier_options')
-      .update({ is_active: false })
+      .update({ is_active: false, deleted_at: new Date().toISOString(), deleted_by: user.id })
       .eq('id', opcion_id)
       .select('id')
 
