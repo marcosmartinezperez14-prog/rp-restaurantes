@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { PERMISOS_POR_ROL } from '@/types/equipo'
 import { z } from 'zod'
 
-const getSupabaseAdmin() = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 const ROLES_VALIDOS = Object.keys(PERMISOS_POR_ROL)
 
