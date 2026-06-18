@@ -40,7 +40,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Día libre no encontrado' }, { status: 404 })
     }
 
-    const { error } = await supabase.from('dias_libres').delete().eq('id', id)
+    const { error } = await supabase
+      .from('dias_libres')
+      .update({ deleted_at: new Date().toISOString(), deleted_by: caller.userId })
+      .eq('id', id)
     if (error) return jsonError('No se pudo eliminar el día libre', 500, error)
 
     return NextResponse.json({ ok: true })

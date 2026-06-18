@@ -101,7 +101,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Solicitud no encontrada' }, { status: 404 })
     }
 
-    const { error } = await supabase.from('solicitudes_vacaciones').delete().eq('id', id)
+    const { error } = await supabase
+      .from('solicitudes_vacaciones')
+      .update({ deleted_at: new Date().toISOString(), deleted_by: caller.userId })
+      .eq('id', id)
     if (error) return jsonError('No se pudo cancelar la solicitud', 500, error)
 
     return NextResponse.json({ ok: true })

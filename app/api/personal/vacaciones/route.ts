@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('solicitudes_vacaciones')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     if (esGestor) {

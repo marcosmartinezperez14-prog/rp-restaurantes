@@ -35,7 +35,10 @@ const SECCIONES: Array<{
   { key: 'movimientos',          tabla: 'movimientos',             titulo: 'Movimientos',           icono: '💰' },
   { key: 'gruposModificadores',  tabla: 'product_modifier_groups', titulo: 'Grupos modificadores',  icono: '🔧' },
   { key: 'opcionesModificadores',tabla: 'product_modifier_options',titulo: 'Opciones modificadores',icono: '⚙️' },
-  { key: 'rolesPersonalizados',  tabla: 'roles',                   titulo: 'Roles personalizados',  icono: '🎭' },
+  { key: 'rolesPersonalizados',  tabla: 'roles',                    titulo: 'Roles personalizados',       icono: '🎭' },
+  { key: 'turnos',               tabla: 'turnos',                   titulo: 'Turnos',                     icono: '🕐' },
+  { key: 'diasLibres',           tabla: 'dias_libres',              titulo: 'Días libres',                icono: '🌴' },
+  { key: 'solicitudesVacaciones',tabla: 'solicitudes_vacaciones',   titulo: 'Solicitudes de vacaciones',  icono: '✈️' },
 ]
 
 export default function SuperadminPapeleraView({ datos: datosIniciales }: Props) {
@@ -64,6 +67,9 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
       product_modifier_groups:   'gruposModificadores',
       product_modifier_options:  'opcionesModificadores',
       roles:                     'rolesPersonalizados',
+      turnos:                    'turnos',
+      dias_libres:               'diasLibres',
+      solicitudes_vacaciones:    'solicitudesVacaciones',
     }
     const key = keyMap[tabla]
     setDatos(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) }))

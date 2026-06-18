@@ -84,7 +84,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const ok = await verificarTurno(supabase, id, caller.restaurantId)
     if (!ok) return NextResponse.json({ error: 'Turno no encontrado' }, { status: 404 })
 
-    const { error } = await supabase.from('turnos').delete().eq('id', id)
+    const { error } = await supabase
+      .from('turnos')
+      .update({ deleted_at: new Date().toISOString(), deleted_by: caller.userId })
+      .eq('id', id)
     if (error) return jsonError('No se pudo eliminar el turno', 500, error)
 
     return NextResponse.json({ ok: true })

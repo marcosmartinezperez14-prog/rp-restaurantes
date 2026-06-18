@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
       .from('dias_libres')
       .select('*')
       .eq('restaurant_id', caller.restaurantId)
+      .is('deleted_at', null)
       .order('fecha', { ascending: true })
 
     if (!esGestor) {
@@ -93,6 +94,8 @@ export async function POST(req: NextRequest) {
           notas: notas ?? null,
           creado_por: caller.userId,
           updated_at: new Date().toISOString(),
+          deleted_at: null,
+          deleted_by: null,
         },
         { onConflict: 'restaurant_id,empleado_id,fecha' }
       )

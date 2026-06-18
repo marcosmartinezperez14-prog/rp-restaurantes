@@ -17,6 +17,9 @@ export type TablaPapelera =
   | 'product_modifier_groups'
   | 'product_modifier_options'
   | 'roles'
+  | 'turnos'
+  | 'dias_libres'
+  | 'solicitudes_vacaciones'
 
 export interface ItemPapelera {
   id: string
@@ -44,6 +47,10 @@ export interface DatosPapelera {
   opcionesModificadores: ItemPapelera[]
   // Fase 4
   rolesPersonalizados: ItemPapelera[]
+  // Fase 5
+  turnos:                ItemPapelera[]
+  diasLibres:            ItemPapelera[]
+  solicitudesVacaciones: ItemPapelera[]
 }
 
 // Alias para compatibilidad con imports existentes de Fase 1
@@ -53,7 +60,7 @@ export type PapeleraFase1 = DatosPapelera
 // ─── Lectura ──────────────────────────────────────────────────────────────────
 
 export async function getPapeleraFase1(): Promise<DatosPapelera> {
-  const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos, gruposMod, opcionesMod, roles] =
+  const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos, gruposMod, opcionesMod, roles, turnos, diasLibres, solicitudes] =
     await Promise.all([
       supabaseAdmin
         .from('tables')
@@ -121,6 +128,24 @@ export async function getPapeleraFase1(): Promise<DatosPapelera> {
         .not('deleted_at', 'is', null)
         .not('restaurant_id', 'is', null)
         .order('deleted_at', { ascending: false }),
+
+      supabaseAdmin
+        .from('turnos')
+        .select('id, fecha, hora_inicio, hora_fin, tipo, deleted_at, deleted_by, restaurant_id, restaurants(name), users!empleado_id(nombre, email)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
+
+      supabaseAdmin
+        .from('dias_libres')
+        .select('id, fecha, tipo, deleted_at, deleted_by, restaurant_id, restaurants(name), users!empleado_id(nombre, email)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
+
+      supabaseAdmin
+        .from('solicitudes_vacaciones')
+        .select('id, fecha_inicio, fecha_fin, estado, deleted_at, deleted_by, restaurant_id, restaurants(name), users!empleado_id(nombre, email)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
     ])
 
   function toItem(row: Record<string, unknown>, nombre: string, extra?: string): ItemPapelera {
@@ -183,6 +208,29 @@ export async function getPapeleraFase1(): Promise<DatosPapelera> {
         deleted_at:    (r.deleted_at ?? '') as string,
         deleted_by:    (r.deleted_by ?? null) as string | null,
       }
+    }),
+    turnos: (turnos.data ?? []).map(r => {
+      const empleado = r.users as unknown as { nombre: string | null; email: string | null } | null
+      const nombre = empleado?.nombre || empleado?.email || '—'
+      return toItem(
+        r as Record<string, unknown>,
+        nombre,
+        `${r.fecha} ${r.hora_inicio}–${r.hora_fin} · ${r.tipo}`,
+      )
+    }),
+    diasLibres: (diasLibres.data ?? []).map(r => {
+      const empleado = r.users as unknown as { nombre: string | null; email: string | null } | null
+      const nombre = empleado?.nombre || empleado?.email || '—'
+      return toItem(r as Record<string, unknown>, nombre, `${r.fecha} · ${r.tipo}`)
+    }),
+    solicitudesVacaciones: (solicitudes.data ?? []).map(r => {
+      const empleado = r.users as unknown as { nombre: string | null; email: string | null } | null
+      const nombre = empleado?.nombre || empleado?.email || '—'
+      return toItem(
+        r as Record<string, unknown>,
+        nombre,
+        `${r.fecha_inicio} → ${r.fecha_fin} · ${r.estado}`,
+      )
     }),
   }
 }

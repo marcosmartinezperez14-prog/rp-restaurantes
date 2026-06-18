@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
       .from('turnos')
       .select('*')
       .eq('restaurant_id', caller.restaurantId)
+      .is('deleted_at', null)
       .order('fecha', { ascending: true })
 
     if (!esGestor) {
