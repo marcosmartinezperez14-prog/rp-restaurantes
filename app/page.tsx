@@ -6,7 +6,7 @@ import ComoFunciona from '@/components/landing/ComoFunciona'
 import Funcionalidades from '@/components/landing/Funcionalidades'
 import Pricing from '@/components/landing/Pricing'
 import Footer from '@/components/landing/Footer'
-import CheckoutModal from '@/components/landing/CheckoutModal'
+import ContactarVentasModal from '@/components/landing/ContactarVentasModal'
 
 export default function LandingPage() {
   const [modalOpen, setModalOpen] = useState(false)
@@ -36,11 +36,11 @@ export default function LandingPage() {
           <a href="#como-funciona" style={{ color: 'inherit', textDecoration: 'none' }}>Cómo funciona</a>
           <a href="#pricing" style={{ color: 'inherit', textDecoration: 'none' }}>Precios</a>
         </div>
-        <a href="#contacto" style={{
+        <button onClick={() => abrirModal()} style={{
           background: '#2F54EB', color: '#fff', border: 'none',
           padding: '11px 20px', borderRadius: 10, fontFamily: 'inherit',
-          fontWeight: 600, fontSize: 14, cursor: 'pointer', textDecoration: 'none'
-        }}>Contactar ventas</a>
+          fontWeight: 600, fontSize: 14, cursor: 'pointer',
+        }}>Contactar ventas</button>
       </nav>
 
       <Hero onCtaClick={() => abrirModal()} />
@@ -61,16 +61,16 @@ export default function LandingPage() {
           <p style={{ fontSize: 18, color: '#D7DEFF', margin: '0 auto 28px', maxWidth: 480 }}>
             Te mostramos RP Restaurantes funcionando con la operativa real de tu local.
           </p>
-          <a href="#contacto" style={{
-            display: 'inline-block', background: '#fff', color: '#2F54EB', border: 'none',
+          <button onClick={() => abrirModal()} style={{
+            background: '#fff', color: '#2F54EB', border: 'none',
             padding: '16px 34px', borderRadius: 12, fontFamily: 'inherit',
-            fontWeight: 700, fontSize: 16, cursor: 'pointer', textDecoration: 'none'
-          }}>Contactar ventas</a>
+            fontWeight: 700, fontSize: 16, cursor: 'pointer',
+          }}>Contactar ventas</button>
         </div>
       </section>
 
       <Footer />
-      <CheckoutModal open={modalOpen} onClose={() => setModalOpen(false)} planSeleccionado={planSeleccionado} />
+      <ContactarVentasModal open={modalOpen} onClose={() => setModalOpen(false)} planSeleccionado={planSeleccionado} />
     </div>
   )
 }
