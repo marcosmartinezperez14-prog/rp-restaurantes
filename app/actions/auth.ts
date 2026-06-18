@@ -48,22 +48,26 @@ export async function loginAction(
     return { error: 'Credenciales incorrectas. Verifica tu usuario y contraseña.' }
   }
 
-  // Comprobar si es superadmin (usando admin client para bypassear RLS)
-  const admin = getSupabaseAdmin()
-  const { data: userRow } = await admin
-    .from('users')
-    .select('id')
-    .eq('auth_id', authData.user.id)
-    .single()
-
+  // Comprobar si es superadmin
   let isSuperadmin = false
-  if (userRow?.id) {
-    const { data: roleRows } = await admin
-      .from('user_roles')
-      .select('role_id, roles(name)')
-      .eq('user_id', userRow.id)
+  try {
+    const admin = getSupabaseAdmin()
+    const { data: userRow } = await admin
+      .from('users')
+      .select('id')
+      .eq('auth_id', authData.user.id)
+      .single()
 
-    isSuperadmin = (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
+    if (userRow?.id) {
+      const { data: roleRows } = await admin
+        .from('user_roles')
+        .select('role_id, roles(name)')
+        .eq('user_id', userRow.id)
+
+      isSuperadmin = (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
+    }
+  } catch (e) {
+    console.error('superadmin check failed:', e)
   }
 
   redirect(isSuperadmin ? '/superadmin' : '/dashboard')
