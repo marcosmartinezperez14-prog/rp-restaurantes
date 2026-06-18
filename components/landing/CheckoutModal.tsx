@@ -26,7 +26,7 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
     }
     setCargando(true)
     try {
-      const res = await fetch('/api/contacto', {
+      const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -34,12 +34,12 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
           nombre_restaurante: nombreRestaurante,
           email,
           telefono,
-          mensaje: planSeleccionado ? `Plan interesado: ${planSeleccionado}` : null,
+          plan_interes: planSeleccionado ?? null,
         }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al enviar.'); setCargando(false); return }
-      window.location.href = '/pago-completado'
+      if (!res.ok) { setError(data.error ?? 'No se pudo preparar el pago. Inténtalo de nuevo.'); setCargando(false); return }
+      window.location.href = data.url
     } catch {
       setError('Error de conexión. Inténtalo de nuevo.')
       setCargando(false)
@@ -65,7 +65,7 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
               className="text-xl font-semibold text-[#1A2B4A]"
               style={{ fontFamily: 'var(--font-lora)' }}
             >
-              Solicitar información
+              Continuar al pago
             </h2>
             {planSeleccionado && (
               <p className="text-sm text-[#1E4080] mt-1 font-medium">{planSeleccionado}</p>
@@ -81,7 +81,7 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
         </div>
 
         <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-          Déjanos tus datos y te contactamos sin compromiso para explicarte todo y resolver tus dudas.
+          Necesitamos tus datos para asociar el pago a tu negocio. Te redirigiremos a la pasarela de pago segura en el siguiente paso.
         </p>
 
         <div className="space-y-4">
@@ -138,10 +138,10 @@ export default function CheckoutModal({ open, onClose, planSeleccionado }: Props
           disabled={cargando}
           className="w-full mt-6 bg-[#1E4080] hover:bg-[#163260] disabled:opacity-50 text-white font-semibold py-3.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#1E4080] focus:ring-offset-2"
         >
-          {cargando ? 'Enviando...' : 'Quiero que me contacten'}
+          {cargando ? 'Preparando pago...' : 'Continuar al pago'}
         </button>
         <p className="text-xs text-gray-400 text-center mt-3">
-          Sin compromiso. Te respondemos en menos de 24 horas.
+          Pago seguro procesado por Stripe. Tus datos están protegidos.
         </p>
       </div>
     </div>

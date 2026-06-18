@@ -10,6 +10,7 @@ const schema = z.object({
   nombre_restaurante: z.string().trim().min(1).max(120),
   email: z.string().email('Email no válido'),
   telefono: z.string().trim().min(1).max(30),
+  plan_interes: z.string().trim().max(120).nullish(),
 })
 
 export async function POST(req: NextRequest) {
@@ -17,13 +18,13 @@ export async function POST(req: NextRequest) {
     const parsed = parseBody(schema, await req.json().catch(() => null))
     if (!parsed.ok) return parsed.response
 
-    const { nombre, nombre_restaurante, email, telefono } = parsed.data
+    const { nombre, nombre_restaurante, email, telefono, plan_interes } = parsed.data
 
     // Guardar lead antes de redirigir. El client_reference_id enlaza el pago
     // con este lead en el webhook checkout.session.completed.
     const { data: lead, error: dbError } = await supabaseAdmin
       .from('leads_pago')
-      .insert({ nombre, nombre_restaurante, email, telefono, estado: 'iniciado' })
+      .insert({ nombre, nombre_restaurante, email, telefono, estado: 'iniciado', plan_interes: plan_interes ?? null })
       .select('id')
       .single()
 
