@@ -47,11 +47,16 @@ export default function ThemeButton() {
       <button
         onClick={() => setOpen(v => !v)}
         aria-label="Cambiar tema"
-        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-          open ? 'bg-white/20' : 'hover:bg-white/10'
-        } ${isPending ? 'opacity-60' : ''}`}
+        style={{
+          width: 34, height: 34, borderRadius: 8,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: open ? 'var(--bg-page)' : 'transparent',
+          border: '1px solid var(--border)',
+          cursor: 'pointer', transition: 'background .15s',
+          opacity: isPending ? 0.6 : 1,
+        }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/>
           <path d="M12 2a10 10 0 0 1 0 20"/>
           <path d="M8 12a4 4 0 0 0 8 0"/>

@@ -5,158 +5,150 @@ import AppShell from '@/components/AppShell'
 import { logoutAction } from '@/app/actions/auth'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
 
+const ARROW_ICON = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--border-strong)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7 17L17 7M9 7h8v8"/>
+  </svg>
+)
+
 const NAV_CARDS = [
+  // ── Operación ──────────────────────────────────────────────
   {
     href: '/tpv',
-    icon: '🖥️',
     label: 'TPV',
     description: 'Mesas, comandas y cobros',
-    color: 'bg-[var(--bg-surface)] border-blue-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-blue-500/15',
-    labelColor: 'text-blue-600',
+    section: 'operacion',
     modulo: 'tpv',
-  },
-  {
-    href: '/reservas',
-    icon: '📅',
-    label: 'Reservas',
-    description: 'Gestión de reservas del día',
-    color: 'bg-[var(--bg-surface)] border-violet-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-violet-500/15',
-    labelColor: 'text-violet-600',
-    modulo: 'pedidos',
-  },
-  {
-    href: '/productos',
-    icon: '📦',
-    label: 'Productos',
-    description: 'Inventario, stock y carta',
-    color: 'bg-[var(--bg-surface)] border-emerald-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-emerald-500/15',
-    labelColor: 'text-emerald-600',
-    modulo: 'productos',
-  },
-  {
-    href: '/dashboard/finanzas',
-    icon: '💰',
-    label: 'Finanzas',
-    description: 'Ingresos, gastos y beneficio',
-    color: 'bg-[var(--bg-surface)] border-orange-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-orange-500/15',
-    labelColor: 'text-orange-600',
-    modulo: 'finanzas',
-  },
-  {
-    href: '/cocina',
-    icon: '🍳',
-    label: 'Cocina',
-    description: 'Platos pendientes y en preparación',
-    color: 'bg-[var(--bg-surface)] border-red-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-red-500/15',
-    labelColor: 'text-red-600',
-    modulo: 'pedidos',
-  },
-  {
-    href: '/dashboard/equipo',
-    icon: '👥',
-    label: 'Equipo',
-    description: 'Usuarios, roles y permisos',
-    color: 'bg-[var(--bg-surface)] border-purple-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-purple-500/15',
-    labelColor: 'text-purple-600',
-    modulo: 'equipo',
-  },
-  {
-    href: '/dashboard/personal',
-    icon: '🗓️',
-    label: 'Personal',
-    description: 'Turnos, vacaciones y días libres',
-    color: 'bg-[var(--bg-surface)] border-teal-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-teal-500/15',
-    labelColor: 'text-teal-600',
-    modulo: 'personal',
-  },
-  {
-    href: '/dashboard/fichaje',
-    icon: '⏱️',
-    label: 'Fichaje',
-    description: 'Registra tu jornada laboral',
-    color: 'bg-[var(--bg-surface)] border-amber-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-amber-500/15',
-    labelColor: 'text-amber-600',
-    modulo: 'personal',
-  },
-  {
-    href: '/dashboard/informes',
-    icon: '📊',
-    label: 'Informes',
-    description: 'Ventas, productos y franjas horarias',
-    color: 'bg-[var(--bg-surface)] border-cyan-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-cyan-500/15',
-    labelColor: 'text-cyan-600',
-    modulo: 'administracion',
-  },
-  {
-    href: '/dashboard/negocio',
-    icon: '🏪',
-    label: 'Mi negocio',
-    description: 'KPIs del día en un vistazo',
-    color: 'bg-[var(--bg-surface)] border-indigo-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-indigo-500/15',
-    labelColor: 'text-indigo-600',
-    modulo: 'administracion',
-  },
-  {
-    href: '/dashboard/configuracion',
-    icon: '⚙️',
-    label: 'Configuración',
-    description: 'Apariencia y preferencias',
-    color: 'bg-[var(--bg-surface)] border-slate-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-slate-500/15',
-    labelColor: 'text-slate-600',
-    modulo: 'configuracion',
-  },
-  {
-    href: '/dashboard/caja',
-    icon: '🏦',
-    label: 'Caja',
-    description: 'Turnos, apertura y cierre de caja',
-    color: 'bg-[var(--bg-surface)] border-green-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-green-500/15',
-    labelColor: 'text-green-600',
-    modulo: 'administracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M6 7h7M6 11h4"/></svg>,
   },
   {
     href: '/dashboard/mesas',
-    icon: '📱',
     label: 'Mesas y QR',
-    description: 'Genera y descarga los QR de cada mesa',
-    color: 'bg-[var(--bg-surface)] border-sky-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-sky-500/15',
-    labelColor: 'text-sky-600',
+    description: 'Plano de sala y carta digital',
+    section: 'operacion',
     modulo: 'administracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h3M21 17.5V21"/></svg>,
   },
   {
-    href: '/dashboard/administracion',
-    icon: '🔧',
-    label: 'Administración',
-    description: 'Reservas, horarios y configuración avanzada',
-    color: 'bg-[var(--bg-surface)] border-rose-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-rose-500/15',
-    labelColor: 'text-rose-600',
+    href: '/cocina',
+    label: 'Cocina',
+    description: 'Platos pendientes y en preparación',
+    section: 'operacion',
+    modulo: 'pedidos',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 14h12v5a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"/><path d="M6 14a4 4 0 0 1-1-7.8A4 4 0 0 1 12 4.6 4 4 0 0 1 19 6.2 4 4 0 0 1 18 14"/></svg>,
+  },
+  {
+    href: '/reservas',
+    label: 'Reservas',
+    description: 'Gestión de reservas del día',
+    section: 'operacion',
+    modulo: 'pedidos',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18"/></svg>,
+  },
+  {
+    href: '/dashboard/caja',
+    label: 'Caja',
+    description: 'Turnos, apertura y cierre de caja',
+    section: 'operacion',
     modulo: 'administracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M15 15h3"/></svg>,
+  },
+  {
+    href: '/dashboard/fichaje',
+    label: 'Fichaje',
+    description: 'Registra tu jornada laboral',
+    section: 'operacion',
+    modulo: 'personal',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>,
+  },
+  // ── Gestión ────────────────────────────────────────────────
+  {
+    href: '/dashboard/negocio',
+    label: 'Mi negocio',
+    description: 'KPIs del día en un vistazo',
+    section: 'gestion',
+    modulo: 'administracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l1.4-5h15.2L21 9"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg>,
+  },
+  {
+    href: '/productos',
+    label: 'Productos',
+    description: 'Inventario, stock y carta',
+    section: 'gestion',
+    modulo: 'productos',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>,
+  },
+  {
+    href: '/dashboard/finanzas',
+    label: 'Finanzas',
+    description: 'Ingresos, gastos y beneficio',
+    section: 'gestion',
+    modulo: 'finanzas',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 6.5A7 7 0 1 0 17 17.5"/><path d="M4 10h9M4 14h9"/></svg>,
+  },
+  {
+    href: '/dashboard/informes',
+    label: 'Informes',
+    description: 'Ventas, productos y franjas horarias',
+    section: 'gestion',
+    modulo: 'administracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><rect x="5" y="11" width="3" height="7" rx="0.5"/><rect x="10.5" y="6" width="3" height="12" rx="0.5"/><rect x="16" y="9" width="3" height="9" rx="0.5"/></svg>,
+  },
+  {
+    href: '/dashboard/personal',
+    label: 'Personal',
+    description: 'Turnos, vacaciones y días libres',
+    section: 'gestion',
+    modulo: 'personal',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18M8.5 14.5l2 2 4-4"/></svg>,
+  },
+  {
+    href: '/dashboard/equipo',
+    label: 'Equipo',
+    description: 'Usuarios, roles y permisos',
+    section: 'gestion',
+    modulo: 'equipo',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="9" cy="8" r="3.5"/><path d="M16 4.2a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-3.6-5.5"/></svg>,
   },
   {
     href: '/dashboard/permisos',
-    icon: '🔐',
     label: 'Permisos',
-    description: 'Configura el acceso por rol',
-    color: 'bg-[var(--bg-surface)] border-purple-500/40 hover:bg-[var(--bg-surface-hover)]',
-    iconBg: 'bg-purple-500/15',
-    labelColor: 'text-purple-600',
+    description: 'Accesos y roles de usuario',
+    section: 'gestion',
     modulo: 'administracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>,
+  },
+  {
+    href: '/dashboard/administracion',
+    label: 'Administración',
+    description: 'Datos fiscales y facturación',
+    section: 'gestion',
+    modulo: 'administracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="20" cy="14" r="2"/></svg>,
+  },
+  {
+    href: '/dashboard/configuracion',
+    label: 'Configuración',
+    description: 'Apariencia y preferencias',
+    section: 'gestion',
+    modulo: 'configuracion',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.5 14.3a1.5 1.5 0 0 0 .3 1.6l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.5 1.5 0 0 0-2.5 1V20a2 2 0 0 1-4 0v-.2a1.5 1.5 0 0 0-2.5-1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.5 1.5 0 0 0 .3-1.6 1.5 1.5 0 0 0-1.4-.9H4a2 2 0 0 1 0-4h.2a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.5 1.5 0 0 0 1.6.3H10a1.5 1.5 0 0 0 1-1.4V4a2 2 0 0 1 4 0v.2a1.5 1.5 0 0 0 1 1.4 1.5 1.5 0 0 0 1.6-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.5 1.5 0 0 0-.3 1.6V10a1.5 1.5 0 0 0 1.4 1H22a2 2 0 0 1 0 4h-.2a1.5 1.5 0 0 0-1.4.9z"/></svg>,
   },
 ]
+
+function SectionDivider({ label, count }: { label: string; count: number }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+      <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.3px', textTransform: 'uppercase', color: 'var(--text-label)', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+      <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+      <span style={{ fontSize: 11, fontFamily: 'var(--font-mono, monospace)', color: 'var(--border-strong)' }}>
+        {String(count).padStart(2, '0')}
+      </span>
+    </div>
+  )
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -182,41 +174,110 @@ export default async function DashboardPage() {
     ?? user.email?.replace('@rp-internal.com', '')
     ?? ''
 
+  const operacion = cardsVisibles.filter(c => c.section === 'operacion')
+  const gestion = cardsVisibles.filter(c => c.section === 'gestion')
+
+  const cardBase: React.CSSProperties = {
+    display: 'flex', flexDirection: 'column', textDecoration: 'none',
+    color: 'inherit', background: 'var(--bg-surface)',
+    border: '1px solid var(--border)', borderRadius: 15,
+    padding: 20, minHeight: 148, transition: 'border-color .18s, box-shadow .18s, transform .18s',
+  }
+
   return (
     <AppShell title="Inicio">
-      <div className="max-w-4xl mx-auto">
-        <p className="text-sm text-[var(--text-secondary)] mb-6">
-          Bienvenido, <span className="font-medium text-[var(--text-primary)]">{nombreMostrado}</span>
+      {/* Saludo */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', color: 'var(--text-primary)' }}>
+          Bienvenido, {nombreMostrado || 'usuario'}
+        </h1>
+        <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>
+          Selecciona un módulo para empezar
         </p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5 mb-8">
-          {cardsVisibles.map(card => (
-            <Link
-              key={card.href}
-              href={card.href}
-              className={`flex flex-col items-center gap-4 p-8 rounded-2xl border transition-colors ${card.color}`}
-            >
-              <div className={`w-16 h-16 rounded-2xl ${card.iconBg} flex items-center justify-center text-4xl`}>
-                {card.icon}
-              </div>
-              <div className="text-center">
-                <div className={`text-lg font-bold ${card.labelColor}`}>{card.label}</div>
-                <div className="text-sm text-[var(--text-secondary)] mt-1">{card.description}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        <form action={logoutAction}>
-          <button
-            type="submit"
-            className="w-full py-2.5 text-sm text-[var(--text-secondary)] border border-[var(--border)] rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
-          >
-            Cerrar sesión
-          </button>
-        </form>
-
       </div>
+
+      {/* Sección: Operación */}
+      {operacion.length > 0 && (
+        <>
+          <SectionDivider label="Operación" count={operacion.length} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14, marginBottom: 32 }}>
+            {operacion.map(card => (
+              <Link key={card.href} href={card.href} style={cardBase}
+                className="module-card"
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--bg-icon)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {card.icon}
+                  </div>
+                  {ARROW_ICON}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 650, letterSpacing: '-0.2px', marginTop: 16, color: 'var(--text-primary)' }}>
+                  {card.label}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.45, marginTop: 4 }}>
+                  {card.description}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Sección: Gestión */}
+      {gestion.length > 0 && (
+        <>
+          <SectionDivider label="Gestión" count={gestion.length} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14, marginBottom: 32 }}>
+            {gestion.map(card => (
+              <Link key={card.href} href={card.href} style={{ ...cardBase, minHeight: 120 }}
+                className="module-card"
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 11, background: 'var(--bg-icon)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {card.icon}
+                  </div>
+                  {ARROW_ICON}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 650, letterSpacing: '-0.2px', marginTop: 14, color: 'var(--text-primary)' }}>
+                  {card.label}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.45, marginTop: 4 }}>
+                  {card.description}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Cerrar sesión */}
+      <form action={logoutAction}>
+        <button
+          type="submit"
+          style={{
+            width: '100%', padding: '10px', fontSize: 13,
+            color: 'var(--text-secondary)', background: 'transparent',
+            border: '1px solid var(--border)', borderRadius: 10,
+            cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit',
+          }}
+          className="logout-btn"
+        >
+          Cerrar sesión
+        </button>
+      </form>
+
+      <style>{`
+        .module-card:hover {
+          border-color: var(--accent) !important;
+          box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 12%, transparent) !important;
+          transform: translateY(-2px) !important;
+        }
+        .logout-btn:hover {
+          background: color-mix(in srgb, var(--status-red) 6%, transparent) !important;
+          color: var(--status-red) !important;
+          border-color: color-mix(in srgb, var(--status-red) 30%, transparent) !important;
+        }
+      `}</style>
     </AppShell>
   )
 }
