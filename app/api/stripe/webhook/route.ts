@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import Stripe from 'stripe'
+import { getStripe } from '@/lib/stripe'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 // IMPORTANTE: este webhook solo marca el lead como pagado.
@@ -9,10 +10,10 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get('stripe-signature')
   if (!sig) return NextResponse.json({ error: 'Sin firma' }, { status: 400 })
 
-  let event: Awaited<ReturnType<typeof stripe.webhooks.constructEventAsync>>
+  let event: Stripe.Event
   try {
     const rawBody = await req.text()
-    event = await stripe.webhooks.constructEventAsync(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = await getStripe().webhooks.constructEventAsync(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch (err) {
     console.error('[webhook] firma inválida:', err)
     return NextResponse.json({ error: 'Firma inválida' }, { status: 400 })

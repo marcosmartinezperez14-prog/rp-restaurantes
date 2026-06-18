@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { jsonError } from '@/lib/api/errors'
 import { parseBody } from '@/lib/api/validate'
 import { PLANES, PERIODICIDADES, calcularPrecio, type Periodicidad } from '@/lib/config/landing'
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     // Construir URL base desde los headers de la request
     const origin = req.headers.get('origin') ?? req.headers.get('referer')?.replace(/\/$/, '') ?? ''
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: 'subscription',
       customer_email: email,
       client_reference_id: lead.id,
