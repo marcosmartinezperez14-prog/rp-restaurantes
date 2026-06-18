@@ -1,19 +1,27 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
-/**
- * Devuelve true si el usuario autenticado tiene el rol superadmin.
- * Úsalo en Server Actions y Route Handlers con el cliente de sesión (createClient()).
- */
 export async function isSuperadmin(
-  supabase: SupabaseClient,
+  _supabase: unknown,
   authUserId: string
 ): Promise<boolean> {
-  const { data } = await supabase
-    .from('users')
-    .select('user_roles!user_id(roles(name))')
-    .eq('id', authUserId)
-    .single()
+  try {
+    const admin = getSupabaseAdmin()
 
-  const roles = data?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
-  return roles?.some(r => r.roles?.name === 'superadmin') ?? false
+    const { data: userRow } = await admin
+      .from('users')
+      .select('id')
+      .eq('auth_id', authUserId)
+      .single()
+
+    if (!userRow?.id) return false
+
+    const { data: roleRows } = await admin
+      .from('user_roles')
+      .select('roles(name)')
+      .eq('user_id', userRow.id)
+
+    return (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
+  } catch {
+    return false
+  }
 }
