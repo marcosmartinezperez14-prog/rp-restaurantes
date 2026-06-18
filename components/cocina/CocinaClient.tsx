@@ -48,7 +48,7 @@ const NEXT_LABEL: Partial<Record<KitchenStatus, string>> = {
 }
 
 const BTN_COLOR: Partial<Record<KitchenStatus, string>> = {
-  pending: 'bg-blue-600 hover:bg-blue-500',
+  pending: 'bg-[var(--accent)] hover:bg-blue-500',
   preparing: 'bg-green-600 hover:bg-green-500',
 }
 

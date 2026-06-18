@@ -127,9 +127,9 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={onCancelar}
     >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
+      <div className="bg-[var(--bg-surface)] rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
         <p className="text-sm text-red-600 mb-4">{fetchError}</p>
-        <button onClick={onCancelar} className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+        <button onClick={onCancelar} className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-page)]">
           Cerrar
         </button>
       </div>
@@ -141,11 +141,11 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onCancelar() }}
     >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
+      <div className="bg-[var(--bg-surface)] rounded-xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
         {/* Cabecera */}
-        <div className="p-5 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-lg font-bold text-gray-900">{menuItem.name}</h2>
-          <p className="text-sm text-gray-500">Personaliza tu pedido</p>
+        <div className="p-5 border-b border-[var(--border)] flex-shrink-0">
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">{menuItem.name}</h2>
+          <p className="text-sm text-[var(--text-secondary)]">Personaliza tu pedido</p>
         </div>
 
         {/* Contenido scrollable */}
@@ -157,14 +157,14 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
             return (
               <div key={grupo.id}>
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <span className="font-semibold text-sm text-gray-900">{grupo.name}</span>
+                  <span className="font-semibold text-sm text-[var(--text-primary)]">{grupo.name}</span>
                   {grupo.required && (
                     <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold ${hayError ? 'bg-red-100 text-red-700' : 'bg-red-50 text-red-600'}`}>
                       Obligatorio
                     </span>
                   )}
                   {grupo.type === 'modificador' && grupo.allows_multiple && (
-                    <span className="text-[10px] text-gray-400">(varios)</span>
+                    <span className="text-[10px] text-[var(--text-secondary)]">(varios)</span>
                   )}
                 </div>
                 {hayError && (
@@ -177,7 +177,7 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
                     return (
                       <label
                         key={opcion.id}
-                        className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${seleccionado ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${seleccionado ? 'border-blue-500 bg-blue-50' : 'border-[var(--border)] hover:bg-[var(--bg-page)]'}`}
                       >
                         <input
                           type={esRadio ? 'radio' : 'checkbox'}
@@ -186,8 +186,8 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
                           onChange={() => toggleOpcion(grupo.id, opcion.id, grupo.allows_multiple && grupo.type === 'modificador')}
                           className="accent-blue-600"
                         />
-                        <span className="flex-1 text-sm text-gray-900">{opcion.name}</span>
-                        <span className="text-sm text-gray-500 flex-shrink-0">
+                        <span className="flex-1 text-sm text-[var(--text-primary)]">{opcion.name}</span>
+                        <span className="text-sm text-[var(--text-secondary)] flex-shrink-0">
                           {grupo.type === 'variante'
                             ? fmt(Number(opcion.price_delta))
                             : opcion.price_delta > 0
@@ -204,7 +204,7 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
 
           {/* Nota libre */}
           <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">
+            <label className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">
               Nota para cocina (opcional)
             </label>
             <textarea
@@ -212,36 +212,36 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
               onChange={e => setNota(e.target.value.slice(0, 200))}
               placeholder="Alergias, preferencias, sin sal..."
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-gray-200 flex-shrink-0 space-y-3">
+        <div className="p-5 border-t border-[var(--border)] flex-shrink-0 space-y-3">
           {/* Desglose de precio */}
-          <div className="text-sm text-gray-500 space-y-0.5">
+          <div className="text-sm text-[var(--text-secondary)] space-y-0.5">
             {varianteSeleccionada && (
-              <p>Precio variante: <span className="font-semibold text-gray-900">{fmt(Number(varianteSeleccionada.price_delta))}</span></p>
+              <p>Precio variante: <span className="font-semibold text-[var(--text-primary)]">{fmt(Number(varianteSeleccionada.price_delta))}</span></p>
             )}
             {!varianteSeleccionada && suplementos > 0 && (
               <p>Base {fmt(menuItem.price)} + suplementos {fmt(suplementos)}</p>
             )}
-            <p className="text-lg font-bold text-gray-900">Total: {fmt(precioFinal)}</p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">Total: {fmt(precioFinal)}</p>
           </div>
 
           {/* Cantidad */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">Cantidad</span>
+            <span className="text-sm text-[var(--text-secondary)]">Cantidad</span>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCantidad(c => Math.max(cantidadMinima, c - 1))}
-                className="w-8 h-8 rounded-full border border-gray-300 text-gray-700 font-bold flex items-center justify-center hover:bg-gray-50"
+                className="w-8 h-8 rounded-full border border-gray-300 text-[var(--text-primary)] font-bold flex items-center justify-center hover:bg-[var(--bg-page)]"
               >−</button>
-              <span className="text-base font-semibold text-gray-900 w-6 text-center">{cantidad}</span>
+              <span className="text-base font-semibold text-[var(--text-primary)] w-6 text-center">{cantidad}</span>
               <button
                 onClick={() => setCantidad(c => c + 1)}
-                className="w-8 h-8 rounded-full border border-gray-300 text-gray-700 font-bold flex items-center justify-center hover:bg-gray-50"
+                className="w-8 h-8 rounded-full border border-gray-300 text-[var(--text-primary)] font-bold flex items-center justify-center hover:bg-[var(--bg-page)]"
               >+</button>
             </div>
           </div>
@@ -250,13 +250,13 @@ export default function SelectorModificadores({ menuItem, cantidadMinima = 1, on
           <div className="flex gap-2">
             <button
               onClick={onCancelar}
-              className="flex-1 py-2.5 border border-gray-300 rounded-xl text-gray-700 text-sm font-semibold hover:bg-gray-50"
+              className="flex-1 py-2.5 border border-gray-300 rounded-xl text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--bg-page)]"
             >
               Cancelar
             </button>
             <button
               onClick={handleConfirmar}
-              className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700"
+              className="flex-1 py-2.5 bg-[var(--accent)] text-white rounded-xl text-sm font-semibold hover:bg-[var(--accent-hover)]"
             >
               Añadir al pedido
             </button>

@@ -46,10 +46,10 @@ export default function TableCard({
           minWidth: '100px',
           minHeight: '90px',
         }}
-        className="bg-white p-3 flex flex-col gap-1 text-left hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed w-full"
+        className="bg-[var(--bg-surface)] p-3 flex flex-col gap-1 text-left hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed w-full"
       >
-        <span className="font-bold text-[#0f172a] text-sm leading-tight">{table.name}</span>
-        <span className="text-[#64748b] text-xs">{table.capacity} pers.</span>
+        <span className="font-bold text-[var(--text-primary)] text-sm leading-tight">{table.name}</span>
+        <span className="text-[var(--text-secondary)] text-xs">{table.capacity} pers.</span>
         <span
           style={{ background: cfg.bg, color: cfg.text, borderRadius: '4px' }}
           className="text-[10px] font-semibold uppercase px-1.5 py-0.5 mt-auto self-start"
@@ -57,9 +57,9 @@ export default function TableCard({
           {cfg.label}
         </span>
         {showExtra && (
-          <div className="text-[10px] text-[#64748b] mt-0.5">
+          <div className="text-[10px] text-[var(--text-secondary)] mt-0.5">
             <div>{formatElapsed(table.openOrder!.opened_at)}</div>
-            <div className="font-semibold text-[#0f172a]">{Number(table.openOrder!.total).toFixed(2)} €</div>
+            <div className="font-semibold text-[var(--text-primary)]">{Number(table.openOrder!.total).toFixed(2)} €</div>
           </div>
         )}
       </button>

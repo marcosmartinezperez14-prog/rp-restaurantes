@@ -88,40 +88,40 @@ export default function MovimientosClient({ initialData, products }: Props) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-4 text-sm">
         <Link href="/productos" className="text-blue-600 hover:underline">← Productos</Link>
-        <span className="text-[#94a3b8]">/</span>
-        <span className="text-[#64748b]">Movimientos de stock</span>
+        <span className="text-[var(--text-secondary)]">/</span>
+        <span className="text-[var(--text-secondary)]">Movimientos de stock</span>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div className="bg-white border border-[#e2e8f0] rounded-xl p-4">
-          <div className="text-[10px] uppercase font-semibold text-[#64748b] tracking-wider">Compras</div>
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+          <div className="text-[10px] uppercase font-semibold text-[var(--text-secondary)] tracking-wider">Compras</div>
           <div className="text-xl font-bold text-green-700 mt-1">+{stats.compras.total}</div>
-          <div className="text-xs text-[#94a3b8] mt-0.5">{stats.compras.count} movimientos</div>
+          <div className="text-xs text-[var(--text-secondary)] mt-0.5">{stats.compras.count} movimientos</div>
         </div>
-        <div className="bg-white border border-[#e2e8f0] rounded-xl p-4">
-          <div className="text-[10px] uppercase font-semibold text-[#64748b] tracking-wider">Ventas</div>
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+          <div className="text-[10px] uppercase font-semibold text-[var(--text-secondary)] tracking-wider">Ventas</div>
           <div className="text-xl font-bold text-blue-700 mt-1">-{stats.ventas.total}</div>
-          <div className="text-xs text-[#94a3b8] mt-0.5">{stats.ventas.count} movimientos</div>
+          <div className="text-xs text-[var(--text-secondary)] mt-0.5">{stats.ventas.count} movimientos</div>
         </div>
-        <div className="bg-white border border-[#e2e8f0] rounded-xl p-4">
-          <div className="text-[10px] uppercase font-semibold text-[#64748b] tracking-wider">Ajustes</div>
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+          <div className="text-[10px] uppercase font-semibold text-[var(--text-secondary)] tracking-wider">Ajustes</div>
           <div className="text-xl font-bold text-amber-700 mt-1">±{stats.ajustes.total}</div>
-          <div className="text-xs text-[#94a3b8] mt-0.5">{stats.ajustes.count} movimientos</div>
+          <div className="text-xs text-[var(--text-secondary)] mt-0.5">{stats.ajustes.count} movimientos</div>
         </div>
-        <div className="bg-white border border-[#e2e8f0] rounded-xl p-4">
-          <div className="text-[10px] uppercase font-semibold text-[#64748b] tracking-wider">Mermas</div>
+        <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+          <div className="text-[10px] uppercase font-semibold text-[var(--text-secondary)] tracking-wider">Mermas</div>
           <div className="text-xl font-bold text-red-600 mt-1">-{stats.mermas.total}</div>
-          <div className="text-xs text-[#94a3b8] mt-0.5">{stats.mermas.count} movimientos</div>
+          <div className="text-xs text-[var(--text-secondary)] mt-0.5">{stats.mermas.count} movimientos</div>
         </div>
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white border border-[#e2e8f0] rounded-xl px-4 py-3 flex gap-3 flex-wrap items-center mb-4">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex gap-3 flex-wrap items-center mb-4">
         <select
           value={tipo}
           onChange={e => handleTipo(e.target.value)}
-          className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 bg-white"
+          className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 bg-[var(--bg-surface)]"
         >
           <option value="">Todos los tipos</option>
           <option value="compra">Compra</option>
@@ -132,7 +132,7 @@ export default function MovimientosClient({ initialData, products }: Props) {
         <select
           value={productoId}
           onChange={e => handleProducto(e.target.value)}
-          className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 bg-white min-w-[160px]"
+          className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 bg-[var(--bg-surface)] min-w-[160px]"
         >
           <option value="">Todos los productos</option>
           {products.map(p => (
@@ -144,20 +144,20 @@ export default function MovimientosClient({ initialData, products }: Props) {
           value={fechaDesde}
           onChange={e => handleFechaDesde(e.target.value)}
           aria-label="Fecha desde"
-          className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
+          className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
         />
-        <span className="text-[#94a3b8] text-sm">—</span>
+        <span className="text-[var(--text-secondary)] text-sm">—</span>
         <input
           type="date"
           value={fechaHasta}
           onChange={e => handleFechaHasta(e.target.value)}
           aria-label="Fecha hasta"
-          className="border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
+          className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
         />
         {hasFilters && (
           <button
             onClick={handleLimpiar}
-            className="ml-auto px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50"
+            className="ml-auto px-3 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)]"
           >
             Limpiar
           </button>
@@ -165,32 +165,32 @@ export default function MovimientosClient({ initialData, products }: Props) {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#e2e8f0] rounded-xl overflow-hidden">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-slate-50 border-b border-[#e2e8f0]">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Fecha</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Producto</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Tipo</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">Cantidad</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-[#64748b] uppercase tracking-wider">P. Coste</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Notas</th>
+            <tr className="bg-[var(--bg-page)] border-b border-[var(--border)]">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Fecha</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Producto</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Tipo</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Cantidad</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">P. Coste</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Notas</th>
             </tr>
           </thead>
           <tbody>
             {data.movements.map(m => {
               const cfg = TYPE_CONFIG[m.type] ?? {
-                label: m.type, badge: 'bg-gray-100 text-gray-600', sign: '', amountColor: 'text-[#64748b]',
+                label: m.type, badge: 'bg-[var(--bg-page)] text-[var(--text-secondary)]', sign: '', amountColor: 'text-[var(--text-secondary)]',
               }
               return (
-                <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-slate-50">
-                  <td className="px-4 py-3 text-xs text-[#64748b] whitespace-nowrap">
+                <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-[var(--bg-page)]">
+                  <td className="px-4 py-3 text-xs text-[var(--text-secondary)] whitespace-nowrap">
                     {new Date(m.created_at).toLocaleString('es-ES', {
                       day: '2-digit', month: '2-digit', year: 'numeric',
                       hour: '2-digit', minute: '2-digit',
                     })}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-[#0f172a]">{m.product_name}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-[var(--text-primary)]">{m.product_name}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${cfg.badge}`}>
                       {cfg.label}
@@ -199,10 +199,10 @@ export default function MovimientosClient({ initialData, products }: Props) {
                   <td className={`px-4 py-3 text-sm text-right font-semibold ${cfg.amountColor}`}>
                     {cfg.sign}{m.quantity}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right text-[#64748b]">
+                  <td className="px-4 py-3 text-sm text-right text-[var(--text-secondary)]">
                     {m.cost_price !== null ? `${m.cost_price.toFixed(2)} €/u` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-[#94a3b8]">
+                  <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
                     <div className="max-w-[200px] truncate">{m.notes ?? '—'}</div>
                   </td>
                 </tr>
@@ -210,7 +210,7 @@ export default function MovimientosClient({ initialData, products }: Props) {
             })}
             {data.movements.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-[#94a3b8]">
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
                   Sin movimientos para los filtros aplicados
                 </td>
               </tr>
@@ -220,22 +220,22 @@ export default function MovimientosClient({ initialData, products }: Props) {
 
         {/* Pagination */}
         {data.total > 0 && (
-          <div className="px-4 py-3 border-t border-[#e2e8f0] flex items-center justify-between">
-            <span className="text-xs text-[#64748b]">
+          <div className="px-4 py-3 border-t border-[var(--border)] flex items-center justify-between">
+            <span className="text-xs text-[var(--text-secondary)]">
               {data.total} movimientos · página {page} de {totalPages || 1}
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => handlePage(page - 1)}
                 disabled={page <= 1}
-                className="px-3 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 ← Anterior
               </button>
               <button
                 onClick={() => handlePage(page + 1)}
                 disabled={page >= totalPages}
-                className="px-3 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Siguiente →
               </button>

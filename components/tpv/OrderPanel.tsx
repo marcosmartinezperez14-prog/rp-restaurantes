@@ -167,7 +167,7 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
                   </span>
                 )}
                 {item.status === 'served' && (
-                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-semibold bg-slate-100 text-[var(--text-secondary)] px-1.5 py-0.5 rounded-full">
                     Servido
                   </span>
                 )}

@@ -103,12 +103,12 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
   return (
     <div className="px-6 py-8 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Papelera</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] mb-1">Papelera</h1>
+        <p className="text-sm text-[var(--text-secondary)]">
           Elementos eliminados de forma lógica. Puedes restaurarlos o borrarlos definitivamente.
         </p>
         {total === 0 && (
-          <div className="mt-10 py-16 text-center text-gray-400 border border-dashed border-gray-200 rounded-2xl">
+          <div className="mt-10 py-16 text-center text-[var(--text-secondary)] border border-dashed border-[var(--border)] rounded-2xl">
             <p className="text-4xl mb-3">🗑️</p>
             <p className="text-sm">La papelera está vacía.</p>
           </div>
@@ -122,25 +122,25 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
           <section key={tabla} className="mb-10">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">{icono}</span>
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{titulo}</h2>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide">{titulo}</h2>
               <span className="ml-1 text-xs font-medium bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
                 {items.length}
               </span>
             </div>
-            <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+            <div className="divide-y divide-gray-100 border border-[var(--border)] rounded-xl overflow-hidden">
               {items.map(item => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-4 px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between gap-4 px-4 py-3 bg-[var(--bg-surface)] hover:bg-[var(--bg-page)] transition-colors"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                       {item.nombre}
                       {item.extra && (
-                        <span className="ml-2 text-xs text-gray-400 font-normal">{item.extra}</span>
+                        <span className="ml-2 text-xs text-[var(--text-secondary)] font-normal">{item.extra}</span>
                       )}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                       {item.restaurante}
                       {item.deleted_at && (
                         <> · {new Date(item.deleted_at).toLocaleDateString('es-ES', {
@@ -153,7 +153,7 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
                     <button
                       disabled={isPending}
                       onClick={() => handleRestaurar(tabla, item)}
-                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-page)] disabled:opacity-50 transition-colors"
                     >
                       Restaurar
                     </button>
@@ -179,11 +179,11 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
           onClick={() => setConfirm(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm"
+            className="bg-[var(--bg-surface)] rounded-xl shadow-2xl p-6 w-full max-w-sm"
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-base font-semibold text-gray-900 mb-2">¿Eliminar definitivamente?</p>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-base font-semibold text-[var(--text-primary)] mb-2">¿Eliminar definitivamente?</p>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">
               Esta acción borrará{' '}
               <span className="font-medium text-gray-800">"{confirm.nombre}"</span>{' '}
               de la base de datos de forma permanente y no se puede deshacer.
@@ -191,7 +191,7 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2 rounded-lg border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
               >
                 Cancelar
               </button>

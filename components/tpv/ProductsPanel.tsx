@@ -43,25 +43,25 @@ export default function ProductsPanel({ categories, products, onAddProduct, disa
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Search */}
-      <div className="p-3 border-b border-[#e2e8f0] flex-shrink-0">
+      <div className="p-3 border-b border-[var(--border)] flex-shrink-0">
         <input
           type="text"
           placeholder="Buscar producto..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full px-3 py-2 text-sm border border-[#e2e8f0] rounded-lg outline-none focus:border-[#2563eb]"
+          className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-lg outline-none focus:border-[#2563eb]"
           style={{ color: 'black' }}
         />
       </div>
 
       {/* Category tabs */}
-      <div className="flex gap-2 px-3 py-2 overflow-x-auto border-b border-[#e2e8f0] flex-shrink-0">
+      <div className="flex gap-2 px-3 py-2 overflow-x-auto border-b border-[var(--border)] flex-shrink-0">
         <button
           onClick={() => setActiveCategory('all')}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap flex-shrink-0 transition-colors ${
             activeCategory === 'all'
               ? 'bg-[#2563eb] text-white'
-              : 'bg-white border border-[#e2e8f0] text-[#64748b] hover:border-[#2563eb]'
+              : 'bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#2563eb]'
           }`}
         >
           Todas
@@ -73,7 +73,7 @@ export default function ProductsPanel({ categories, products, onAddProduct, disa
             className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap flex-shrink-0 transition-colors ${
               activeCategory === cat.id
                 ? 'bg-[#2563eb] text-white'
-                : 'bg-white border border-[#e2e8f0] text-[#64748b] hover:border-[#2563eb]'
+                : 'bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[#2563eb]'
             }`}
           >
             {cat.name}
@@ -90,19 +90,19 @@ export default function ProductsPanel({ categories, products, onAddProduct, disa
             disabled={disabled || !product.is_available}
             className={`text-left p-3 rounded-xl border transition-colors ${
               !product.is_available
-                ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
-                : 'border-[#e2e8f0] bg-white hover:border-[#2563eb] hover:bg-blue-50'
+                ? 'border-[var(--border)] bg-[var(--bg-page)] opacity-50 cursor-not-allowed'
+                : 'border-[var(--border)] bg-[var(--bg-surface)] hover:border-[#2563eb] hover:bg-blue-50'
             }`}
           >
-            <p className="font-semibold text-sm text-[#0f172a] leading-tight">{product.name}</p>
+            <p className="font-semibold text-sm text-[var(--text-primary)] leading-tight">{product.name}</p>
             <p className="text-sm text-[#2563eb] font-bold mt-1">{Number(product.price).toFixed(2)} €</p>
             {product.modifierGroups.length > 0 && (
-              <p className="text-[10px] text-[#64748b] mt-0.5">Personalizable</p>
+              <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Personalizable</p>
             )}
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="col-span-2 text-center text-[#64748b] text-sm py-8">Sin productos</p>
+          <p className="col-span-2 text-center text-[var(--text-secondary)] text-sm py-8">Sin productos</p>
         )}
       </div>
 

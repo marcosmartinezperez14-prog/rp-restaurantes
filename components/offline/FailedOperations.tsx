@@ -68,14 +68,14 @@ export default function FailedOperations({ onClose }: FailedOperationsProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">Operaciones fallidas</h2>
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">Operaciones fallidas</h2>
           <button
             onClick={onClose}
             aria-label="Cerrar panel"
-            className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-secondary)] text-lg leading-none"
           >
             ✕
           </button>
@@ -84,15 +84,15 @@ export default function FailedOperations({ onClose }: FailedOperationsProps) {
         {/* Content */}
         <div className="flex-1 overflow-auto p-5">
           {failed.length === 0 ? (
-            <p className="text-sm text-gray-500">No hay operaciones fallidas.</p>
+            <p className="text-sm text-[var(--text-secondary)]">No hay operaciones fallidas.</p>
           ) : (
             <ul className="flex flex-col gap-3">
               {failed.map(op => (
                 <li key={op.id} className="border border-red-200 rounded-xl p-4 bg-red-50">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{op.type}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{op.type}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">
                         {new Date(op.timestamp).toLocaleString('es-ES')}
                       </p>
                     </div>
@@ -100,7 +100,7 @@ export default function FailedOperations({ onClose }: FailedOperationsProps) {
                       <button
                         onClick={() => handleRetry(op)}
                         disabled={processing}
-                        className="text-xs px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-xs px-2 py-1 rounded-lg bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Reintentar
                       </button>
@@ -114,7 +114,7 @@ export default function FailedOperations({ onClose }: FailedOperationsProps) {
                     </div>
                   </div>
                   {op.errorMessage && (
-                    <p className="text-xs text-red-600 bg-white rounded-lg px-3 py-2 border border-red-100">
+                    <p className="text-xs text-red-600 bg-[var(--bg-surface)] rounded-lg px-3 py-2 border border-red-100">
                       {op.errorMessage}
                     </p>
                   )}
@@ -126,11 +126,11 @@ export default function FailedOperations({ onClose }: FailedOperationsProps) {
 
         {/* Footer */}
         {failed.length > 0 && (
-          <div className="p-5 border-t border-gray-200">
+          <div className="p-5 border-t border-[var(--border)]">
             <button
               onClick={handleRetryAll}
               disabled={processing}
-              className="w-full py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {processing ? 'Procesando...' : `Reintentar todas (${failed.length})`}
             </button>

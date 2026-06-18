@@ -10,21 +10,21 @@ export default async function SuperadminLayout({ children }: { children: React.R
   if (!await isSuperadmin(supabase, user.id)) redirect('/login')
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-6">
-        <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">
+    <div className="min-h-screen bg-[var(--bg-page)]">
+      <header className="bg-[var(--bg-surface)] border-b border-[var(--border)] px-6 py-3 flex items-center gap-6">
+        <span className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">
           RP · Superadmin
         </span>
         <nav className="flex items-center gap-1">
           <Link
             href="/superadmin"
-            className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
           >
             Restaurantes
           </Link>
           <Link
             href="/superadmin/papelera"
-            className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
           >
             🗑️ Papelera
           </Link>

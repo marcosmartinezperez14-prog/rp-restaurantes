@@ -33,7 +33,7 @@ export default function RutaProtegida({ rol, modulo, moduloKey, children }: Prop
   if (!tieneAccesoEstatico) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[#64748b]">No tienes permisos para acceder a esta sección.</p>
+        <p className="text-[var(--text-secondary)]">No tienes permisos para acceder a esta sección.</p>
       </div>
     )
   }
@@ -43,7 +43,7 @@ export default function RutaProtegida({ rol, modulo, moduloKey, children }: Prop
   if (!accesoConcedido) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[#64748b]">No tienes acceso a este módulo.</p>
+        <p className="text-[var(--text-secondary)]">No tienes acceso a este módulo.</p>
       </div>
     )
   }

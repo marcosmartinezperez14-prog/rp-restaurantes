@@ -67,7 +67,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts,
               onClick={() => setFilterCategoryId('')}
               className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                 !filterCategoryId
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-[var(--accent)] text-white border-blue-600'
                   : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-surface-hover)]'
               }`}
             >
@@ -79,7 +79,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts,
                 onClick={() => setFilterCategoryId(c.id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                   filterCategoryId === c.id
-                    ? 'bg-blue-600 text-white border-blue-600'
+                    ? 'bg-[var(--accent)] text-white border-blue-600'
                     : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-surface-hover)]'
                 }`}
               >
@@ -92,7 +92,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts,
         {canEdit && (
           <button
             onClick={handleNewItem}
-            className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+            className="ml-auto px-4 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)]"
           >
             + Nuevo plato
           </button>
@@ -116,7 +116,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts,
           {menuItems.length === 0 && canEdit && (
             <button
               onClick={handleNewItem}
-              className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+              className="mt-4 px-4 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)]"
             >
               + Añadir primer plato
             </button>

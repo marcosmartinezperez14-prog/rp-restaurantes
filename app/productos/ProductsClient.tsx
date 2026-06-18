@@ -128,7 +128,7 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
             {canEdit && (
               <button
                 onClick={() => setShowAdd(true)}
-                className="ml-auto px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center gap-1.5"
+                className="ml-auto px-4 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)] flex items-center gap-1.5"
               >
                 <span className="text-base leading-none">+</span> Añadir producto
               </button>

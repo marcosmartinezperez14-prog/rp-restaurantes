@@ -20,9 +20,9 @@ export default function OnboardingWizard({ initialData }: Props) {
   const [data, setData] = useState<OnboardingData>(initialData)
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[var(--bg-page)] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-2xl">
-        <p className="text-center text-sm text-gray-500 mb-6">RP Restaurantes</p>
+        <p className="text-center text-sm text-[var(--text-secondary)] mb-6">RP Restaurantes</p>
 
         <div className="flex items-center justify-center mb-8">
           {STEP_NAMES.map((name, i) => {
@@ -35,15 +35,15 @@ export default function OnboardingWizard({ initialData }: Props) {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                       isActive || isCompleted
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-300 text-gray-600'
+                        ? 'bg-[var(--accent)] text-white'
+                        : 'bg-gray-300 text-[var(--text-secondary)]'
                     }`}
                   >
                     {isCompleted ? '✓' : stepNum}
                   </div>
                   <span
                     className={`text-xs mt-1 whitespace-nowrap ${
-                      isActive ? 'text-blue-600 font-medium' : 'text-gray-500'
+                      isActive ? 'text-blue-600 font-medium' : 'text-[var(--text-secondary)]'
                     }`}
                   >
                     {name}
@@ -52,7 +52,7 @@ export default function OnboardingWizard({ initialData }: Props) {
                 {i < STEP_NAMES.length - 1 && (
                   <div
                     className={`w-12 h-0.5 mb-5 mx-1 ${
-                      stepNum < step ? 'bg-blue-600' : 'bg-gray-300'
+                      stepNum < step ? 'bg-[var(--accent)]' : 'bg-gray-300'
                     }`}
                   />
                 )}
@@ -61,7 +61,7 @@ export default function OnboardingWizard({ initialData }: Props) {
           })}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-md p-8">
+        <div className="bg-[var(--bg-surface)] rounded-2xl shadow-md p-8">
           {step === 1 && (
             <Step1RestaurantData
               restaurant={data.restaurant}

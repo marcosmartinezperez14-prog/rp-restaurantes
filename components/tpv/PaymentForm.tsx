@@ -75,29 +75,29 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
     )}
     <div className="flex flex-col gap-5">
       {/* Total */}
-      <div className="bg-white rounded-2xl p-6 border border-[#e2e8f0]">
-        <p className="text-sm text-[#64748b] mb-1">Total a cobrar</p>
-        <p style={{ fontSize: '36px', fontWeight: 900 }} className="text-[#0f172a]">
+      <div className="bg-[var(--bg-surface)] rounded-2xl p-6 border border-[var(--border)]">
+        <p className="text-sm text-[var(--text-secondary)] mb-1">Total a cobrar</p>
+        <p style={{ fontSize: '36px', fontWeight: 900 }} className="text-[var(--text-primary)]">
           {Number(total).toFixed(2)} €
         </p>
       </div>
 
       {/* Items summary */}
-      <div className="bg-white rounded-2xl p-5 border border-[#e2e8f0]">
-        <h3 className="text-xs font-semibold text-[#64748b] mb-3 uppercase tracking-wider">Resumen</h3>
+      <div className="bg-[var(--bg-surface)] rounded-2xl p-5 border border-[var(--border)]">
+        <h3 className="text-xs font-semibold text-[var(--text-secondary)] mb-3 uppercase tracking-wider">Resumen</h3>
         <div className="flex flex-col gap-1.5">
           {order.items.map(item => (
             <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-[#0f172a]">{item.product_name} ×{item.quantity}</span>
-              <span className="text-[#64748b]">{Number(item.total_price).toFixed(2)} €</span>
+              <span className="text-[var(--text-primary)]">{item.product_name} ×{item.quantity}</span>
+              <span className="text-[var(--text-secondary)]">{Number(item.total_price).toFixed(2)} €</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Payment method */}
-      <div className="bg-white rounded-2xl p-5 border border-[#e2e8f0]">
-        <h3 className="text-xs font-semibold text-[#64748b] mb-3 uppercase tracking-wider">Método de pago</h3>
+      <div className="bg-[var(--bg-surface)] rounded-2xl p-5 border border-[var(--border)]">
+        <h3 className="text-xs font-semibold text-[var(--text-secondary)] mb-3 uppercase tracking-wider">Método de pago</h3>
         <div className="grid grid-cols-4 gap-2 mb-4">
           {METHODS.map(m => (
             <button
@@ -106,7 +106,7 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
               className={`py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
                 method === m.id
                   ? 'bg-[#2563eb] text-white border-[#2563eb]'
-                  : 'bg-white text-[#64748b] border-[#e2e8f0] hover:border-[#2563eb]'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[#2563eb]'
               }`}
             >
               {m.label}
@@ -117,11 +117,11 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
         {method === 'cash' && (
           <div className="flex flex-col gap-3">
             <div className="flex justify-between text-sm">
-              <span className="text-[#64748b]">Total</span>
-              <span className="font-semibold text-[#0f172a]">{Number(total).toFixed(2)} €</span>
+              <span className="text-[var(--text-secondary)]">Total</span>
+              <span className="font-semibold text-[var(--text-primary)]">{Number(total).toFixed(2)} €</span>
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm text-[#64748b] flex-shrink-0">Entrega cliente</label>
+              <label className="text-sm text-[var(--text-secondary)] flex-shrink-0">Entrega cliente</label>
               <input
                 type="number"
                 value={cashAmount}
@@ -129,12 +129,12 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
                 placeholder="0.00"
                 min={0}
                 step="0.01"
-                className="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm text-right outline-none focus:border-[#2563eb]"
+                className="flex-1 px-3 py-2 border border-[var(--border)] rounded-lg text-sm text-right outline-none focus:border-[#2563eb]"
               />
             </div>
             {cashNum > 0 && change > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-[#64748b]">Cambio</span>
+                <span className="text-[var(--text-secondary)]">Cambio</span>
                 <span className="font-semibold text-green-600">{Number(change).toFixed(2)} €</span>
               </div>
             )}
@@ -144,7 +144,7 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
         {method === 'mixed' && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <label className="text-sm text-[#64748b] w-20 flex-shrink-0">Efectivo</label>
+              <label className="text-sm text-[var(--text-secondary)] w-20 flex-shrink-0">Efectivo</label>
               <input
                 type="number"
                 value={mixedCash}
@@ -152,11 +152,11 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
                 placeholder="0.00"
                 min={0}
                 step="0.01"
-                className="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm text-right outline-none focus:border-[#2563eb]"
+                className="flex-1 px-3 py-2 border border-[var(--border)] rounded-lg text-sm text-right outline-none focus:border-[#2563eb]"
               />
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm text-[#64748b] w-20 flex-shrink-0">Tarjeta</label>
+              <label className="text-sm text-[var(--text-secondary)] w-20 flex-shrink-0">Tarjeta</label>
               <input
                 type="number"
                 value={mixedCard}
@@ -164,7 +164,7 @@ export default function PaymentForm({ order }: { order: OrderWithItems }) {
                 placeholder="0.00"
                 min={0}
                 step="0.01"
-                className="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm text-right outline-none focus:border-[#2563eb]"
+                className="flex-1 px-3 py-2 border border-[var(--border)] rounded-lg text-sm text-right outline-none focus:border-[#2563eb]"
               />
             </div>
             {(mixedCashNum > 0 || mixedCardNum > 0) && !mixedValid && (

@@ -53,17 +53,17 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
-        <div className="p-5 border-b border-[#e2e8f0]">
-          <h2 className="text-lg font-bold text-[#0f172a]">{product.name}</h2>
-          <p className="text-sm text-[#64748b]">Selecciona las opciones</p>
+      <div className="bg-[var(--bg-surface)] rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
+        <div className="p-5 border-b border-[var(--border)]">
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">{product.name}</h2>
+          <p className="text-sm text-[var(--text-secondary)]">Selecciona las opciones</p>
         </div>
 
         <div className="overflow-y-auto flex-1 p-5 flex flex-col gap-5">
           {product.modifierGroups.map(group => (
             <div key={group.id}>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="font-semibold text-sm text-[#0f172a]">{group.name}</span>
+                <span className="font-semibold text-sm text-[var(--text-primary)]">{group.name}</span>
                 {group.required ? (
                   <span className="text-[10px] uppercase px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-semibold">
                     Obligatorio
@@ -81,7 +81,7 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
                   return (
                     <label
                       key={option.id}
-                      className="flex items-center gap-3 p-2.5 rounded-lg border border-[#e2e8f0] cursor-pointer hover:bg-gray-50"
+                      className="flex items-center gap-3 p-2.5 rounded-lg border border-[var(--border)] cursor-pointer hover:bg-[var(--bg-page)]"
                     >
                       <input
                         type={isRadio ? 'radio' : 'checkbox'}
@@ -90,8 +90,8 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
                         onChange={() => toggleOption(group.id, option.id, group.allows_multiple)}
                         className="accent-[#2563eb]"
                       />
-                      <span className="flex-1 text-sm text-[#0f172a]">{option.name}</span>
-                      <span className="text-sm text-[#64748b]">
+                      <span className="flex-1 text-sm text-[var(--text-primary)]">{option.name}</span>
+                      <span className="text-sm text-[var(--text-secondary)]">
                         {option.price_delta > 0
                           ? `+${Number(option.price_delta).toFixed(2)} €`
                           : '—'}
@@ -104,14 +104,14 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
           ))}
         </div>
 
-        <div className="p-5 border-t border-[#e2e8f0] flex items-center justify-between gap-3">
-          <span className="font-bold text-[#0f172a]">
+        <div className="p-5 border-t border-[var(--border)] flex items-center justify-between gap-3">
+          <span className="font-bold text-[var(--text-primary)]">
             {Number(totalPrice).toFixed(2)} €
           </span>
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50"
+              className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)]"
             >
               Cancelar
             </button>
@@ -119,7 +119,7 @@ export default function ModifierModal({ product, onConfirm, onClose }: Props) {
               onClick={handleConfirm}
               disabled={!allRequiredMet}
               style={{ minHeight: '44px', fontWeight: 700 }}
-              className="px-4 py-2 text-sm bg-[#2563eb] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
+              className="px-4 py-2 text-sm bg-[#2563eb] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--accent-hover)]"
             >
               Añadir a la comanda
             </button>

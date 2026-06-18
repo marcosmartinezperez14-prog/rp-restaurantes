@@ -55,22 +55,22 @@ export default function Step1RestaurantData({ restaurant, onNext }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Datos del restaurante</h2>
+      <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Datos del restaurante</h2>
 
       <div>
-        <label htmlFor="ob-name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="ob-name" className="block text-sm font-medium text-[var(--text-primary)] mb-1">
           Nombre del restaurante
         </label>
         <input
           id="ob-name"
           value={name}
           onChange={e => setName(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
         />
       </div>
 
       <div>
-        <label htmlFor="ob-address" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="ob-address" className="block text-sm font-medium text-[var(--text-primary)] mb-1">
           Dirección
         </label>
         <input
@@ -78,12 +78,12 @@ export default function Step1RestaurantData({ restaurant, onNext }: Props) {
           value={address}
           onChange={e => setAddress(e.target.value)}
           placeholder="Calle Mayor 1, Madrid"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
         />
       </div>
 
       <div>
-        <label htmlFor="ob-phone" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="ob-phone" className="block text-sm font-medium text-[var(--text-primary)] mb-1">
           Teléfono
         </label>
         <input
@@ -91,12 +91,12 @@ export default function Step1RestaurantData({ restaurant, onNext }: Props) {
           value={phone}
           onChange={e => setPhone(e.target.value)}
           placeholder="91 123 45 67"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
         />
       </div>
 
       <div>
-        <label htmlFor="ob-schedule" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="ob-schedule" className="block text-sm font-medium text-[var(--text-primary)] mb-1">
           Horario
         </label>
         <input
@@ -104,7 +104,7 @@ export default function Step1RestaurantData({ restaurant, onNext }: Props) {
           value={schedule}
           onChange={e => setSchedule(e.target.value)}
           placeholder="Lun-Vie 12:00-23:00"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
         />
       </div>
 
@@ -113,7 +113,7 @@ export default function Step1RestaurantData({ restaurant, onNext }: Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg disabled:opacity-50 transition-colors"
+        className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold py-2 rounded-lg disabled:opacity-50 transition-colors"
       >
         {isPending ? 'Guardando...' : 'Guardar y continuar →'}
       </button>

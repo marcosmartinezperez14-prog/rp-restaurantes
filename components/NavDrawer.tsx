@@ -70,13 +70,13 @@ export default function NavDrawer() {
             className="fixed inset-0 bg-black/30 z-40"
             onClick={() => setOpen(false)}
           />
-          <aside className="fixed left-0 top-0 h-full w-52 bg-white z-50 flex flex-col shadow-2xl">
-            <div className="px-5 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-              <span className="text-[13px] font-bold text-[#64748b] uppercase tracking-widest">RP Restaurantes</span>
+          <aside className="fixed left-0 top-0 h-full w-52 bg-[var(--bg-surface)] z-50 flex flex-col shadow-2xl">
+            <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
+              <span className="text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">RP Restaurantes</span>
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar menú"
-                className="text-[#94a3b8] hover:text-[#64748b] text-lg leading-none"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-secondary)] text-lg leading-none"
               >
                 ✕
               </button>
@@ -95,7 +95,7 @@ export default function NavDrawer() {
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                       active
                         ? 'bg-blue-50 text-blue-700'
-                        : 'text-[#64748b] hover:bg-slate-100 hover:text-[#0f172a]'
+                        : 'text-[var(--text-secondary)] hover:bg-slate-100 hover:text-[var(--text-primary)]'
                     }`}
                   >
                     <span aria-hidden="true">{item.icon}</span>
@@ -111,7 +111,7 @@ export default function NavDrawer() {
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                     pathname.startsWith('/dashboard/permisos')
                       ? 'bg-blue-50 text-blue-700'
-                      : 'text-[#64748b] hover:bg-slate-100 hover:text-[#0f172a]'
+                      : 'text-[var(--text-secondary)] hover:bg-slate-100 hover:text-[var(--text-primary)]'
                   }`}
                 >
                   <span aria-hidden="true">🔐</span>
@@ -119,7 +119,7 @@ export default function NavDrawer() {
                 </Link>
               )}
             </nav>
-            <div className="px-3 py-3 border-t border-[#e2e8f0] flex flex-col gap-1">
+            <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-1">
               {failedCount > 0 && (
                 <button
                   onClick={() => setShowFailed(true)}
@@ -131,7 +131,7 @@ export default function NavDrawer() {
               <form action={logoutAction}>
                 <button
                   type="submit"
-                  className="w-full text-left px-3 py-2 rounded-lg text-[13px] text-[#64748b] hover:bg-red-50 hover:text-red-600 transition-colors"
+                  className="w-full text-left px-3 py-2 rounded-lg text-[13px] text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 transition-colors"
                 >
                   🚪 Cerrar sesión
                 </button>
