@@ -41,13 +41,23 @@ export async function loginAction(
     : usernameToEmail(username)
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
     return { error: 'Credenciales incorrectas. Verifica tu usuario y contraseña.' }
   }
 
-  redirect('/dashboard')
+  // Comprobar si es superadmin para redirigir al panel correcto
+  const { data: userRecord } = await supabase
+    .from('users')
+    .select('id, user_roles!user_id(roles(name))')
+    .eq('auth_id', authData.user.id)
+    .single()
+
+  const roles = userRecord?.user_roles as { roles: { name: string } | null }[] | undefined
+  const isSuperadmin = roles?.some(r => r.roles?.name === 'superadmin') ?? false
+
+  redirect(isSuperadmin ? '/superadmin' : '/dashboard')
 }
 
 export async function registerAction(
