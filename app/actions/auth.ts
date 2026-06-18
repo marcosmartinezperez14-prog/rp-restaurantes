@@ -48,14 +48,21 @@ export async function loginAction(
   }
 
   // Comprobar si es superadmin para redirigir al panel correcto
-  const { data: userRecord } = await supabase
+  const { data: userRow } = await supabase
     .from('users')
-    .select('id, user_roles!user_id(roles(name))')
+    .select('id')
     .eq('auth_id', authData.user.id)
     .single()
 
-  const roles = userRecord?.user_roles as { roles: { name: string } | null }[] | undefined
-  const isSuperadmin = roles?.some(r => r.roles?.name === 'superadmin') ?? false
+  let isSuperadmin = false
+  if (userRow?.id) {
+    const { data: roleRows } = await supabase
+      .from('user_roles')
+      .select('roles(name)')
+      .eq('user_id', userRow.id)
+
+    isSuperadmin = (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
+  }
 
   redirect(isSuperadmin ? '/superadmin' : '/dashboard')
 }
