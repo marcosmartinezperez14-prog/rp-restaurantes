@@ -653,7 +653,7 @@ export async function deleteCategoria(
 
   const { error } = await supabase
     .from('categories')
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
     .eq('id', id)
     .eq('restaurant_id', restaurantId)
 
@@ -967,7 +967,7 @@ export async function deleteMenuItem(itemId: string): Promise<{ error?: string }
 
   const { error } = await supabase
     .from('menu_items')
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
 

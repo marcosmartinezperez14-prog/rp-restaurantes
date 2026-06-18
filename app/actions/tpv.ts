@@ -924,7 +924,7 @@ export async function deleteTable(tableId: string): Promise<{ error?: string }> 
 
   const { error } = await supabase
     .from('tables')
-    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .update({ deleted_at: new Date().toISOString(), is_active: false, deleted_by: user.id })
     .eq('id', tableId)
     .eq('restaurant_id', restaurantId)
 
@@ -997,7 +997,7 @@ export async function deleteZone(zoneId: string): Promise<{ error?: string }> {
 
   const { error } = await supabase
     .from('zones')
-    .update({ deleted_at: new Date().toISOString(), is_active: false })
+    .update({ deleted_at: new Date().toISOString(), is_active: false, deleted_by: user.id })
     .eq('id', zoneId)
     .eq('restaurant_id', restaurantId)
 
