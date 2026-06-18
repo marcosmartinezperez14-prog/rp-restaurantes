@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { z } from 'zod'
 
 type AuthState = { error?: string; success?: boolean } | undefined
@@ -47,8 +48,9 @@ export async function loginAction(
     return { error: 'Credenciales incorrectas. Verifica tu usuario y contraseña.' }
   }
 
-  // Comprobar si es superadmin para redirigir al panel correcto
-  const { data: userRow } = await supabase
+  // Comprobar si es superadmin (usando admin client para bypassear RLS)
+  const admin = getSupabaseAdmin()
+  const { data: userRow } = await admin
     .from('users')
     .select('id')
     .eq('auth_id', authData.user.id)
@@ -56,9 +58,9 @@ export async function loginAction(
 
   let isSuperadmin = false
   if (userRow?.id) {
-    const { data: roleRows } = await supabase
+    const { data: roleRows } = await admin
       .from('user_roles')
-      .select('roles(name)')
+      .select('role_id, roles(name)')
       .eq('user_id', userRow.id)
 
     isSuperadmin = (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
