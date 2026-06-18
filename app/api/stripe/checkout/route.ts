@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { stripe } from '@/lib/stripe'
 import { jsonError } from '@/lib/api/errors'
 import { parseBody } from '@/lib/api/validate'
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const unitAmountCents = Math.round(totalEuros * 100)
 
     // Guardar lead antes de crear la sesión
-    const { data: lead, error: dbError } = await supabaseAdmin
+    const { data: lead, error: dbError } = await getSupabaseAdmin()
       .from('leads_pago')
       .insert({
         nombre,

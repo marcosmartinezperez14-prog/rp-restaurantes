@@ -3,7 +3,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
-const supabaseAdmin = createClient(
+const getSupabaseAdmin() = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(auth_id, {
+    const { error } = await getSupabaseAdmin().auth.admin.updateUserById(auth_id, {
       password: nueva_password,
     })
 

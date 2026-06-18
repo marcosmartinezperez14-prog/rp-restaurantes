@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
 import { ROLES_PROTEGIDOS } from '@/lib/permisos/modulos'
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verificar que no exista ya ese nombre en este restaurante
-  const { data: existente } = await supabaseAdmin
+  const { data: existente } = await getSupabaseAdmin()
     .from('roles')
     .select('id')
     .eq('name', nombre)
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ya existe un rol con ese nombre en tu restaurante' }, { status: 409 })
   }
 
-  const { data: nuevoRol, error } = await supabaseAdmin
+  const { data: nuevoRol, error } = await getSupabaseAdmin()
     .from('roles')
     .insert({
       name: nombre,

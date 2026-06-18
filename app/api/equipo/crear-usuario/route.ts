@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { PERMISOS_POR_ROL } from '@/types/equipo'
 import { z } from 'zod'
 
-const supabaseAdmin = createClient(
+const getSupabaseAdmin() = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Un gerente no puede crear administradores' }, { status: 403 })
     }
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: authData, error: authError } = await getSupabaseAdmin().auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -72,19 +72,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'No se pudo crear el usuario' }, { status: 400 })
     }
 
-    const { data: newUser, error: userError } = await supabaseAdmin
+    const { data: newUser, error: userError } = await getSupabaseAdmin()
       .from('users')
       .insert({ id: authData.user.id, auth_id: authData.user.id, nombre, email, restaurant_id: callerUser.restaurant_id })
       .select()
       .single()
 
     if (userError || !newUser) {
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      await getSupabaseAdmin().auth.admin.deleteUser(authData.user.id)
       console.error('[crear-usuario] profile error:', userError?.message)
       return NextResponse.json({ success: false, error: 'No se pudo crear el perfil de usuario' }, { status: 500 })
     }
 
-    const { data: rol, error: rolError } = await supabaseAdmin
+    const { data: rol, error: rolError } = await getSupabaseAdmin()
       .from('roles')
       .select('id')
       .eq('name', role_name)
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Rol no encontrado' }, { status: 404 })
     }
 
-    const { error: userRoleError } = await supabaseAdmin
+    const { error: userRoleError } = await getSupabaseAdmin()
       .from('user_roles')
       .insert({ user_id: newUser.id, role_id: rol.id, restaurant_id: callerUser.restaurant_id })
 

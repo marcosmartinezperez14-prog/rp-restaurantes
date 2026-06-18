@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import AppShell from '@/components/AppShell'
 import QRMesasView from '@/components/mesas/QRMesasView'
 import Link from 'next/link'
@@ -50,9 +50,9 @@ export default async function MesasPage() {
   const restaurantId = usuarioActual.restaurant_id
 
   const [{ data: restaurantRaw }, { data: zonesRaw }, { data: tablesRaw }] = await Promise.all([
-    supabaseAdmin.from('restaurants').select('slug').eq('id', restaurantId).single(),
-    supabaseAdmin.from('zones').select('id, name, color').eq('restaurant_id', restaurantId).eq('is_active', true).is('deleted_at', null).order('position'),
-    supabaseAdmin.from('tables').select('id, name, capacity, zone_id').eq('restaurant_id', restaurantId).eq('is_active', true).is('deleted_at', null).order('position'),
+    getSupabaseAdmin().from('restaurants').select('slug').eq('id', restaurantId).single(),
+    getSupabaseAdmin().from('zones').select('id, name, color').eq('restaurant_id', restaurantId).eq('is_active', true).is('deleted_at', null).order('position'),
+    getSupabaseAdmin().from('tables').select('id, name, capacity, zone_id').eq('restaurant_id', restaurantId).eq('is_active', true).is('deleted_at', null).order('position'),
   ])
 
   const slug = (restaurantRaw as { slug: string } | null)?.slug ?? ''

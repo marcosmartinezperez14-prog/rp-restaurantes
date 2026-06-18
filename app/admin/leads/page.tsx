@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import LeadsView from './LeadsView'
 
 export default async function LeadsPage() {
@@ -19,8 +19,8 @@ export default async function LeadsPage() {
   if (!isAdmin) redirect('/login')
 
   const [{ data: leadsPago }, { data: leadsContacto }] = await Promise.all([
-    supabaseAdmin.from('leads_pago').select('*').order('created_at', { ascending: false }),
-    supabaseAdmin.from('leads_contacto').select('*').order('created_at', { ascending: false }),
+    getSupabaseAdmin().from('leads_pago').select('*').order('created_at', { ascending: false }),
+    getSupabaseAdmin().from('leads_contacto').select('*').order('created_at', { ascending: false }),
   ])
 
   return <LeadsView leadsPago={leadsPago ?? []} leadsContacto={leadsContacto ?? []} />

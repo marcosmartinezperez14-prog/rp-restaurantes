@@ -1,7 +1,7 @@
 // app/actions/superadmin.ts
 'use server'
 
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
@@ -51,7 +51,7 @@ export async function crearRestauranteConAdmin(
   const email = `${username}@rp-internal.com`
 
   // Verificar que el username no existe ya
-  const { data: existing } = await supabaseAdmin
+  const { data: existing } = await getSupabaseAdmin()
     .from('users')
     .select('id')
     .eq('email', email)
@@ -60,7 +60,7 @@ export async function crearRestauranteConAdmin(
   if (existing) return { error: 'Este nombre de usuario ya está en uso.' }
 
   // Crear auth user — el trigger handle_new_user crea restaurants + users automáticamente
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+  const { data: authData, error: authError } = await getSupabaseAdmin().auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -75,61 +75,61 @@ export async function crearRestauranteConAdmin(
   const authUserId = authData.user.id
 
   // Leer restaurant_id que creó el trigger
-  const { data: userRecord, error: userReadError } = await supabaseAdmin
+  const { data: userRecord, error: userReadError } = await getSupabaseAdmin()
     .from('users')
     .select('restaurant_id')
     .eq('id', authUserId)
     .single()
 
   if (userReadError || !userRecord?.restaurant_id) {
-    await supabaseAdmin.auth.admin.deleteUser(authUserId)
+    await getSupabaseAdmin().auth.admin.deleteUser(authUserId)
     return { error: 'El trigger no creó el restaurante. Revisa la migración 002.' }
   }
 
   const restaurantId = userRecord.restaurant_id
 
   // Guardar el NIF en el restaurante (el trigger solo pone el nombre)
-  const { error: restaurantUpdateError } = await supabaseAdmin
+  const { error: restaurantUpdateError } = await getSupabaseAdmin()
     .from('restaurants')
     .update({ nif })
     .eq('id', restaurantId)
 
   if (restaurantUpdateError) {
-    await supabaseAdmin.auth.admin.deleteUser(authUserId)
+    await getSupabaseAdmin().auth.admin.deleteUser(authUserId)
     console.error('[crearRestauranteConAdmin] nif error:', restaurantUpdateError.message)
     return { error: 'No se pudo crear el restaurante.' }
   }
 
   // Actualizar el users record con datos completos (el trigger solo pone id y restaurant_id)
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await getSupabaseAdmin()
     .from('users')
     .update({ auth_id: authUserId, nombre, email })
     .eq('id', authUserId)
 
   if (updateError) {
-    await supabaseAdmin.auth.admin.deleteUser(authUserId)
+    await getSupabaseAdmin().auth.admin.deleteUser(authUserId)
     console.error('[crearRestauranteConAdmin] profile error:', updateError.message)
     return { error: 'No se pudo crear el restaurante.' }
   }
 
   // Asignar rol admin al nuevo usuario
-  const { data: rol, error: rolError } = await supabaseAdmin
+  const { data: rol, error: rolError } = await getSupabaseAdmin()
     .from('roles')
     .select('id')
     .eq('name', 'admin')
     .single()
 
   if (rolError || !rol) {
-    await supabaseAdmin.auth.admin.deleteUser(authUserId)
+    await getSupabaseAdmin().auth.admin.deleteUser(authUserId)
     return { error: 'Rol "admin" no encontrado en la tabla roles. Ejecuta el SQL del módulo Equipo.' }
   }
 
-  const { error: userRoleError } = await supabaseAdmin
+  const { error: userRoleError } = await getSupabaseAdmin()
     .from('user_roles')
     .insert({ user_id: authUserId, role_id: rol.id, restaurant_id: restaurantId })
 
   if (userRoleError) {
-    await supabaseAdmin.auth.admin.deleteUser(authUserId)
+    await getSupabaseAdmin().auth.admin.deleteUser(authUserId)
     console.error('[crearRestauranteConAdmin] role error:', userRoleError.message)
     return { error: 'No se pudo asignar el rol.' }
   }

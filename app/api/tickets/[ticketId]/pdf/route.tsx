@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import React from 'react'
 import {
@@ -242,7 +242,7 @@ function TicketPDF({ t }: { t: TicketCompleto }) {
 // ─── Helper: construir TicketCompleto desde DB ────────────────────────────────
 
 async function fetchTicketData(ticketId: string, restaurantId: string): Promise<TicketCompleto | null> {
-  const { data: ticket } = await supabaseAdmin
+  const { data: ticket } = await getSupabaseAdmin()
     .from('tickets')
     .select('*')
     .eq('id', ticketId)
@@ -251,19 +251,19 @@ async function fetchTicketData(ticketId: string, restaurantId: string): Promise<
 
   if (!ticket) return null
 
-  const { data: restaurant } = await supabaseAdmin
+  const { data: restaurant } = await getSupabaseAdmin()
     .from('restaurants')
     .select('phone')
     .eq('id', restaurantId)
     .maybeSingle()
 
-  const { data: items } = await supabaseAdmin
+  const { data: items } = await getSupabaseAdmin()
     .from('order_items')
     .select('id, product_name, quantity, unit_price, total_price')
     .eq('order_id', ticket.order_id)
     .neq('status', 'cancelled')
 
-  const { data: order } = await supabaseAdmin
+  const { data: order } = await getSupabaseAdmin()
     .from('orders')
     .select('table_id')
     .eq('id', ticket.order_id)
@@ -271,7 +271,7 @@ async function fetchTicketData(ticketId: string, restaurantId: string): Promise<
 
   let mesaNombre = 'Mesa'
   if (order?.table_id) {
-    const { data: table } = await supabaseAdmin
+    const { data: table } = await getSupabaseAdmin()
       .from('tables')
       .select('name')
       .eq('id', order.table_id)

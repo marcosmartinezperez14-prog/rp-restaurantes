@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { ThermalPrinter, PrinterTypes, CharacterSet } = require('node-thermal-printer')
@@ -15,7 +15,7 @@ const { ThermalPrinter, PrinterTypes, CharacterSet } = require('node-thermal-pri
 // ─── Helper: construir contenido de impresión ─────────────────────────────────
 
 async function fetchTicketForPrint(ticketId: string, restaurantId: string) {
-  const { data: ticket } = await supabaseAdmin
+  const { data: ticket } = await getSupabaseAdmin()
     .from('tickets')
     .select('*')
     .eq('id', ticketId)
@@ -24,13 +24,13 @@ async function fetchTicketForPrint(ticketId: string, restaurantId: string) {
 
   if (!ticket) return null
 
-  const { data: items } = await supabaseAdmin
+  const { data: items } = await getSupabaseAdmin()
     .from('order_items')
     .select('product_name, quantity, unit_price, total_price')
     .eq('order_id', ticket.order_id)
     .neq('status', 'cancelled')
 
-  const { data: order } = await supabaseAdmin
+  const { data: order } = await getSupabaseAdmin()
     .from('orders')
     .select('table_id')
     .eq('id', ticket.order_id)
@@ -38,7 +38,7 @@ async function fetchTicketForPrint(ticketId: string, restaurantId: string) {
 
   let mesaNombre = 'Mesa'
   if (order?.table_id) {
-    const { data: table } = await supabaseAdmin
+    const { data: table } = await getSupabaseAdmin()
       .from('tables')
       .select('name')
       .eq('id', order.table_id)

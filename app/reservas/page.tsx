@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import AppShell from '@/components/AppShell'
 import ReservasView from '@/components/reservas/ReservasView'
 import type { Reserva } from '@/types/reservas'
@@ -18,7 +18,7 @@ export default async function ReservasPage() {
 
   if (!usuarioActual?.restaurant_id) redirect('/login')
 
-  const { data: reservasRaw } = await supabaseAdmin
+  const { data: reservasRaw } = await getSupabaseAdmin()
     .from('reservations')
     .select('id, restaurant_id, customer_name, customer_phone, customer_email, party_size, reservation_date, reservation_time, status, notes, consentimiento_rgpd, created_at')
     .eq('restaurant_id', usuarioActual.restaurant_id)

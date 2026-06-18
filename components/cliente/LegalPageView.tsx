@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { plantillaLegal } from '@/lib/legal/templates'
 import { LEGAL_TITULO, type LegalTipo } from '@/types/legal'
 import MarkdownLegal from './MarkdownLegal'
@@ -14,7 +14,7 @@ export default async function LegalPageView({
   slug: string
   tipo: LegalTipo
 }) {
-  const { data: restaurante } = await supabaseAdmin
+  const { data: restaurante } = await getSupabaseAdmin()
     .from('restaurants')
     .select('id, name, slug')
     .eq('slug', slug)
@@ -22,7 +22,7 @@ export default async function LegalPageView({
 
   if (!restaurante) notFound()
 
-  const { data: legal } = await supabaseAdmin
+  const { data: legal } = await getSupabaseAdmin()
     .from('legal_pages')
     .select('contenido, updated_at')
     .eq('restaurant_id', restaurante.id)

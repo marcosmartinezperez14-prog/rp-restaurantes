@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 export type ItemCarta = {
   id: string
@@ -22,7 +22,7 @@ export async function GET(
 ) {
   const { slug } = await params
 
-  const { data: restaurante } = await supabaseAdmin
+  const { data: restaurante } = await getSupabaseAdmin()
     .from('restaurants')
     .select('id')
     .eq('slug', slug)
@@ -32,14 +32,14 @@ export async function GET(
     return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
   }
 
-  const { data: categorias } = await supabaseAdmin
+  const { data: categorias } = await getSupabaseAdmin()
     .from('categories')
     .select('id, name, position')
     .eq('restaurant_id', restaurante.id)
     .is('deleted_at', null)
     .order('position')
 
-  const { data: items } = await supabaseAdmin
+  const { data: items } = await getSupabaseAdmin()
     .from('menu_items')
     .select('id, name, description, price, image_url, category_id, cantidad_minima')
     .eq('restaurant_id', restaurante.id)

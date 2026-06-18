@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import type { NextRequest } from 'next/server'
 
 /**
@@ -23,7 +23,7 @@ export async function checkRateLimit(
   max: number,
   windowSeconds: number,
 ): Promise<boolean> {
-  const { data, error } = await supabaseAdmin.rpc('check_rate_limit', {
+  const { data, error } = await getSupabaseAdmin().rpc('check_rate_limit', {
     p_bucket: bucket,
     p_max: max,
     p_window_seconds: windowSeconds,

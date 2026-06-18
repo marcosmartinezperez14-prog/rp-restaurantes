@@ -3,7 +3,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
-const supabaseAdmin = createClient(
+const getSupabaseAdmin() = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     // Ownership: el usuario destino debe pertenecer al mismo restaurante
     // (update con service_role salta RLS).
-    const { data: targetUser } = await supabaseAdmin
+    const { data: targetUser } = await getSupabaseAdmin()
       .from('users')
       .select('id, restaurant_id')
       .eq('id', user_id)
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
     }
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await getSupabaseAdmin()
       .from('users')
       .update({ activo: false })
       .eq('id', user_id)

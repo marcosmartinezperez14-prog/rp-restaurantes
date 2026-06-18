@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
 import { checkRateLimit, clientIp } from '@/lib/api/rate-limit'
 import { parseBody } from '@/lib/api/validate'
@@ -29,7 +29,7 @@ const pedidoSchema = z.object({
 type ItemPedido = z.infer<typeof itemPedidoSchema>
 
 async function getRestauranteBySlug(slug: string) {
-  const { data } = await supabaseAdmin
+  const { data } = await getSupabaseAdmin()
     .from('restaurants')
     .select('id')
     .eq('slug', slug)
@@ -46,7 +46,7 @@ export async function GET(
   const restaurante = await getRestauranteBySlug(slug)
   if (!restaurante) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
 
-  const { data: mesa } = await supabaseAdmin
+  const { data: mesa } = await getSupabaseAdmin()
     .from('tables')
     .select('id, name, capacity')
     .eq('id', mesa_id)
@@ -56,14 +56,14 @@ export async function GET(
 
   if (!mesa) return NextResponse.json({ error: 'Mesa no encontrada' }, { status: 404 })
 
-  const { data: categorias } = await supabaseAdmin
+  const { data: categorias } = await getSupabaseAdmin()
     .from('categories')
     .select('id, name, position')
     .eq('restaurant_id', restaurante.id)
     .is('deleted_at', null)
     .order('position')
 
-  const { data: items } = await supabaseAdmin
+  const { data: items } = await getSupabaseAdmin()
     .from('menu_items')
     .select('id, name, description, price, image_url, category_id, cantidad_minima')
     .eq('restaurant_id', restaurante.id)
@@ -109,7 +109,7 @@ export async function POST(
     const restaurante = await getRestauranteBySlug(slug)
     if (!restaurante) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
 
-    const { data: mesa } = await supabaseAdmin
+    const { data: mesa } = await getSupabaseAdmin()
       .from('tables')
       .select('id')
       .eq('id', mesa_id)
@@ -122,7 +122,7 @@ export async function POST(
     // Buscar order abierta para la mesa
     let orderId: string
 
-    const { data: orderAbierta } = await supabaseAdmin
+    const { data: orderAbierta } = await getSupabaseAdmin()
       .from('orders')
       .select('id')
       .eq('table_id', mesa_id)
@@ -135,7 +135,7 @@ export async function POST(
       orderId = orderAbierta.id
     } else {
       // Crear nueva order
-      const { data: orderNumber, error: rpcError } = await supabaseAdmin
+      const { data: orderNumber, error: rpcError } = await getSupabaseAdmin()
         .rpc('get_next_order_number', { p_restaurant_id: restaurante.id })
 
       if (rpcError || orderNumber === null) {
@@ -143,7 +143,7 @@ export async function POST(
       }
 
       const today = new Date().toISOString().split('T')[0]
-      const { data: nuevaOrder, error: orderError } = await supabaseAdmin
+      const { data: nuevaOrder, error: orderError } = await getSupabaseAdmin()
         .from('orders')
         .insert({
           restaurant_id: restaurante.id,
@@ -163,14 +163,14 @@ export async function POST(
       orderId = nuevaOrder.id
 
       // Marcar mesa como ocupada
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('tables')
         .update({ status: 'occupied' })
         .eq('id', mesa_id)
     }
 
     // Verificar items contra la BD (precio real, items del restaurante)
-    const { data: menuItems, error: menuError } = await supabaseAdmin
+    const { data: menuItems, error: menuError } = await getSupabaseAdmin()
       .from('menu_items')
       .select('id, name, price')
       .in('id', items.map(i => i.menu_item_id))
@@ -216,7 +216,7 @@ export async function POST(
       }
     })
 
-    const { error: itemsError } = await supabaseAdmin
+    const { error: itemsError } = await getSupabaseAdmin()
       .from('order_items')
       .insert(orderItemsData)
 

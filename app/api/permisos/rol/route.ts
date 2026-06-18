@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import type { MatrizPermisos } from '@/types/permisos'
 import { MODULOS_SISTEMA, MODULOS_SIEMPRE_ACTIVOS, ROLES_PROTEGIDOS, SOLO_ADMIN_PUEDE_CONFIGURAR, ROLES_OCULTOS } from '@/lib/permisos/modulos'
 import { jsonError } from '@/lib/api/errors'
@@ -36,7 +36,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
   }
 
-  const { data: roles, error: rolesError } = await supabaseAdmin
+  const { data: roles, error: rolesError } = await getSupabaseAdmin()
     .from('roles')
     .select('id, name, restaurant_id')
     .or(`restaurant_id.is.null,restaurant_id.eq.${caller.restaurantId}`)
@@ -45,7 +45,7 @@ export async function GET() {
 
   if (rolesError) return jsonError('No se pudieron cargar los roles', 500, rolesError)
 
-  const { data: permisos, error: permisosError } = await supabaseAdmin
+  const { data: permisos, error: permisosError } = await getSupabaseAdmin()
     .from('permisos_rol')
     .select('role_id, modulo_key, activo')
     .eq('restaurant_id', caller.restaurantId)
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Módulo inválido' }, { status: 400 })
   }
 
-  const { data: roleData } = await supabaseAdmin
+  const { data: roleData } = await getSupabaseAdmin()
     .from('roles')
     .select('name')
     .eq('id', role_id)
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Este módulo no se puede desactivar' }, { status: 403 })
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('permisos_rol')
     .upsert({
       restaurant_id: caller.restaurantId,

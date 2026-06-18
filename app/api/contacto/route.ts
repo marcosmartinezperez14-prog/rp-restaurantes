@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
 import { parseBody } from '@/lib/api/validate'
 
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const { nombre, nombre_restaurante, email, telefono, mensaje } = parsed.data
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('leads_contacto')
       .insert({ nombre, nombre_restaurante, email, telefono, mensaje: mensaje ?? null })
 

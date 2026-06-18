@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { isSuperadmin } from '@/lib/auth/superadmin'
 
 export type TablaPapelera =
@@ -62,86 +62,86 @@ export type PapeleraFase1 = DatosPapelera
 export async function getPapeleraFase1(): Promise<DatosPapelera> {
   const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos, gruposMod, opcionesMod, roles, turnos, diasLibres, solicitudes] =
     await Promise.all([
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('tables')
         .select('id, name, capacity, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('zones')
         .select('id, name, color, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('categories')
         .select('id, name, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('menu_items')
         .select('id, name, price, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('products')
         .select('id, name, cost_price, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('users')
         .select('id, nombre, email, activo, restaurant_id, restaurants(name)')
         .eq('activo', false)
         .order('id', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('reservations')
         .select('id, customer_name, party_size, reservation_date, reservation_time, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('movimientos')
         .select('id, concepto, tipo, importe, fecha, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('product_modifier_groups')
         .select('id, name, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('product_modifier_options')
         .select('id, name, price_delta, deleted_at, deleted_by, product_modifier_groups!inner(restaurant_id, restaurants(name))')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('roles')
         .select('id, name, display_name, deleted_at, deleted_by, restaurant_id, restaurants(name)')
         .not('deleted_at', 'is', null)
         .not('restaurant_id', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('turnos')
         .select('id, fecha, hora_inicio, hora_fin, tipo, deleted_at, deleted_by, restaurant_id, restaurants(name), users!empleado_id(nombre, email)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('dias_libres')
         .select('id, fecha, tipo, deleted_at, deleted_by, restaurant_id, restaurants(name), users!empleado_id(nombre, email)')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
 
-      supabaseAdmin
+      getSupabaseAdmin()
         .from('solicitudes_vacaciones')
         .select('id, fecha_inicio, fecha_fin, estado, deleted_at, deleted_by, restaurant_id, restaurants(name), users!empleado_id(nombre, email)')
         .not('deleted_at', 'is', null)
@@ -255,7 +255,7 @@ export async function restaurarItem(
   await requireSuperadmin()
 
   if (tabla === 'users') {
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('users')
       .update({ activo: true })
       .eq('id', id)
@@ -268,7 +268,7 @@ export async function restaurarItem(
     camposReset.is_active = true
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from(tabla)
     .update(camposReset)
     .eq('id', id)
@@ -286,7 +286,7 @@ export async function eliminarDefinitivo(
   await requireSuperadmin()
 
   if (tabla === 'users') {
-    const { data: userRow } = await supabaseAdmin
+    const { data: userRow } = await getSupabaseAdmin()
       .from('users')
       .select('id')
       .eq('id', id)
@@ -294,20 +294,20 @@ export async function eliminarDefinitivo(
 
     if (!userRow) return { error: 'Usuario no encontrado.' }
 
-    const { error: dbError } = await supabaseAdmin
+    const { error: dbError } = await getSupabaseAdmin()
       .from('users')
       .delete()
       .eq('id', id)
     if (dbError) return { error: 'No se pudo eliminar el usuario.' }
 
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id)
+    const { error: authError } = await getSupabaseAdmin().auth.admin.deleteUser(id)
     if (authError) {
       console.error('[eliminarDefinitivo] auth delete error:', authError.message)
     }
     return {}
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from(tabla)
     .delete()
     .eq('id', id)

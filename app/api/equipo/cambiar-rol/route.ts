@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { PERMISOS_POR_ROL } from '@/types/equipo'
 import { z } from 'zod'
 
-const supabaseAdmin = createClient(
+const getSupabaseAdmin() = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     // Ownership: el user_role destino debe pertenecer al mismo restaurante (la
     // RPC/update usa service_role y salta RLS, así que validamos aquí).
-    const { data: targetRole } = await supabaseAdmin
+    const { data: targetRole } = await getSupabaseAdmin()
       .from('user_roles')
       .select('id, restaurant_id')
       .eq('id', user_role_id)
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Asignación no encontrada' }, { status: 404 })
     }
 
-    const { data: rol, error: rolError } = await supabaseAdmin
+    const { data: rol, error: rolError } = await getSupabaseAdmin()
       .from('roles')
       .select('id')
       .eq('name', nuevo_rol)
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Rol no encontrado' }, { status: 404 })
     }
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await getSupabaseAdmin()
       .from('user_roles')
       .update({ role_id: rol.id })
       .eq('id', user_role_id)

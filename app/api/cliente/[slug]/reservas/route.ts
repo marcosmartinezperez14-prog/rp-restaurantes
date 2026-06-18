@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
 import { checkRateLimit, clientIp } from '@/lib/api/rate-limit'
 import { parseBody } from '@/lib/api/validate'
@@ -48,7 +48,7 @@ export async function POST(
     const today = new Date().toISOString().split('T')[0]
     if (fecha < today) return NextResponse.json({ error: 'La fecha no puede ser en el pasado' }, { status: 400 })
 
-    const { data: restaurante } = await supabaseAdmin
+    const { data: restaurante } = await getSupabaseAdmin()
       .from('restaurants')
       .select('id')
       .eq('slug', slug)
@@ -56,7 +56,7 @@ export async function POST(
 
     if (!restaurante) return NextResponse.json({ error: 'Restaurante no encontrado' }, { status: 404 })
 
-    const { data: settings, error: settingsError } = await supabaseAdmin
+    const { data: settings, error: settingsError } = await getSupabaseAdmin()
       .from('reservation_settings')
       .select('auto_confirm, schedule')
       .eq('restaurant_id', restaurante.id)
@@ -88,7 +88,7 @@ export async function POST(
       }
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('reservations')
       .insert({
         restaurant_id: restaurante.id,

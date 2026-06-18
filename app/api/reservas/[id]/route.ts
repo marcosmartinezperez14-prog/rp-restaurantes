@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
 
 const patchSchema = z.object({
@@ -48,7 +48,7 @@ export async function PATCH(
   }
 
   // Verificar que la reserva pertenece a este restaurante
-  const { data: reserva } = await supabaseAdmin
+  const { data: reserva } = await getSupabaseAdmin()
     .from('reservations')
     .select('id')
     .eq('id', id)
@@ -57,7 +57,7 @@ export async function PATCH(
 
   if (!reserva) return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 })
 
-  const { data: updated, error } = await supabaseAdmin
+  const { data: updated, error } = await getSupabaseAdmin()
     .from('reservations')
     .update(parsed.data)
     .eq('id', id)
@@ -83,7 +83,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Sin permisos' }, { status: 403 })
   }
 
-  const { data: reserva } = await supabaseAdmin
+  const { data: reserva } = await getSupabaseAdmin()
     .from('reservations')
     .select('id')
     .eq('id', id)
@@ -95,7 +95,7 @@ export async function DELETE(
   // Obtener auth_id del caller para deleted_by
   const { data: { user: callerAuth } } = await (await createClient()).auth.getUser()
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('reservations')
     .update({
       deleted_at: new Date().toISOString(),

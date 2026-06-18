@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
 import { ROLES_NO_ELIMINABLES } from '@/lib/permisos/modulos'
 
@@ -31,7 +31,7 @@ export async function DELETE(
   }
 
   // Verificar que el rol pertenece a ESTE restaurante (aislamiento entre tenants)
-  const { data: rol } = await supabaseAdmin
+  const { data: rol } = await getSupabaseAdmin()
     .from('roles')
     .select('id, name, restaurant_id')
     .eq('id', id)
@@ -50,7 +50,7 @@ export async function DELETE(
   }
 
   // Verificar que no haya usuarios asignados a este rol en este restaurante
-  const { count } = await supabaseAdmin
+  const { count } = await getSupabaseAdmin()
     .from('user_roles')
     .select('id', { count: 'exact', head: true })
     .eq('role_id', id)
@@ -62,7 +62,7 @@ export async function DELETE(
     }, { status: 409 })
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from('roles')
     .update({ deleted_at: new Date().toISOString(), deleted_by: caller.authUserId })
     .eq('id', id)

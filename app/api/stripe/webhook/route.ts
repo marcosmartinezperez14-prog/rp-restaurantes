@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 // IMPORTANTE: este webhook solo marca el lead como pagado.
 // NO crea cuenta de restaurante ni asigna roles. El alta real
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     if (leadId) {
       // Idempotente: solo actualiza si no está ya pagado
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('leads_pago')
         .update({
           estado: 'pagado',

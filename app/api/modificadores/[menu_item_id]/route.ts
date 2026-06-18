@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { jsonError } from '@/lib/api/errors'
 import type { ModifierGroup } from '@/types/modificadores'
 
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { menu_item_id } = await params
 
-  const { data: groups, error } = await supabaseAdmin
+  const { data: groups, error } = await getSupabaseAdmin()
     .from('product_modifier_groups')
     .select('*, options:product_modifier_options(*)')
     .eq('menu_item_id', menu_item_id)
