@@ -118,21 +118,6 @@ export default function NavDrawer() {
                   Permisos
                 </Link>
               )}
-              {rol === 'superadmin' && (
-                <Link
-                  href="/dashboard/papelera"
-                  onClick={() => setOpen(false)}
-                  aria-current={pathname.startsWith('/dashboard/papelera') ? 'page' : undefined}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                    pathname.startsWith('/dashboard/papelera')
-                      ? 'bg-red-50 text-red-700'
-                      : 'text-[#64748b] hover:bg-slate-100 hover:text-[#0f172a]'
-                  }`}
-                >
-                  <span aria-hidden="true">🗑️</span>
-                  Papelera
-                </Link>
-              )}
             </nav>
             <div className="px-3 py-3 border-t border-[#e2e8f0] flex flex-col gap-1">
               {failedCount > 0 && (

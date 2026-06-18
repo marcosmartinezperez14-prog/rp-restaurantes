@@ -1,24 +1,5 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import SuperadminForm from './SuperadminForm'
 
-export default async function SuperadminPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: userRecord } = await supabase
-    .from('users')
-    .select('user_roles!user_id(roles(name))')
-    .eq('auth_id', user.id)
-    .single()
-
-  if (!userRecord) redirect('/login')
-
-  const roles = userRecord.user_roles as unknown as { roles: { name: string } | null }[]
-  const isSuperadmin = roles?.some(r => r.roles?.name === 'superadmin' || r.roles?.name === 'admin') ?? false
-
-  if (!isSuperadmin) redirect('/login')
-
+export default function SuperadminPage() {
   return <SuperadminForm />
 }
