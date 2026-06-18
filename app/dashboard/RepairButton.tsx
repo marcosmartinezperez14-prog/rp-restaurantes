@@ -40,15 +40,15 @@ export default function RepairButton() {
       <button
         onClick={handleDiag}
         disabled={isPending}
-        className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium rounded-xl disabled:opacity-50 transition-colors text-xs"
+        className="w-full py-2 bg-[var(--bg-page)] hover:bg-gray-200 text-[var(--text-secondary)] font-medium rounded-xl disabled:opacity-50 transition-colors text-xs"
       >
         Ver diagnóstico BD
       </button>
       {result && (
-        <p className="text-xs text-center text-gray-600 px-2">{result}</p>
+        <p className="text-xs text-center text-[var(--text-secondary)] px-2">{result}</p>
       )}
       {diag && (
-        <pre className="text-[10px] text-left bg-gray-50 border border-gray-200 rounded-lg p-2 overflow-auto max-h-64 text-gray-700">
+        <pre className="text-[10px] text-left bg-[var(--bg-page)] border border-[var(--border)] rounded-lg p-2 overflow-auto max-h-64 text-[var(--text-primary)]">
           {diag}
         </pre>
       )}

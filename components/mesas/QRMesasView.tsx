@@ -48,12 +48,12 @@ function QRCard({ mesa, slug }: { mesa: Mesa; slug: string }) {
   }, [mesa.name])
 
   return (
-    <div className="flex flex-col items-center gap-3 p-5 rounded-xl border border-[var(--border)] bg-white hover:shadow-md transition-shadow">
+    <div className="flex flex-col items-center gap-3 p-5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] hover:shadow-md transition-shadow">
       <div className="text-sm font-semibold text-[var(--text-primary)]">{mesa.name}</div>
       {mesa.capacity > 0 && (
         <div className="text-xs text-[var(--text-secondary)]">{mesa.capacity} personas</div>
       )}
-      <div className="p-2 bg-white rounded-lg border border-gray-100">
+      <div className="p-2 bg-[var(--bg-surface)] rounded-lg border border-gray-100">
         <QRCodeSVG
           ref={svgRef}
           value={url}

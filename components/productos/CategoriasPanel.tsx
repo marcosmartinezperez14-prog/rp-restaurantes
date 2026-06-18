@@ -68,13 +68,13 @@ export default function CategoriasPanel({ categories, onClose, onChanged }: Prop
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-[440px] bg-white shadow-2xl z-50 flex flex-col">
+      <div className="fixed inset-y-0 right-0 w-full max-w-[440px] bg-[var(--bg-surface)] shadow-2xl z-50 flex flex-col">
         {/* Cabecera */}
-        <div className="px-5 py-4 border-b border-[#e2e8f0] flex items-center justify-between flex-shrink-0">
-          <h2 className="text-[15px] font-bold text-[#0f172a]">Categorías</h2>
+        <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between flex-shrink-0">
+          <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Categorías</h2>
           <button
             onClick={onClose}
-            className="text-[#94a3b8] hover:text-[#0f172a] text-xl leading-none"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none"
           >
             ✕
           </button>
@@ -85,19 +85,19 @@ export default function CategoriasPanel({ categories, onClose, onChanged }: Prop
 
           {/* Nueva categoría */}
           <div>
-            <p className="text-xs font-medium text-[#64748b] mb-1.5">Nueva categoría</p>
+            <p className="text-xs font-medium text-[var(--text-secondary)] mb-1.5">Nueva categoría</p>
             <div className="flex gap-2">
               <input
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleCreate()}
                 placeholder="Nombre de la categoría"
-                className="flex-1 border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-blue-400"
+                className="flex-1 border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-blue-400"
               />
               <button
                 onClick={handleCreate}
                 disabled={isPending}
-                className="px-3 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
+                className="px-3 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50 whitespace-nowrap"
               >
                 Añadir
               </button>
@@ -107,11 +107,11 @@ export default function CategoriasPanel({ categories, onClose, onChanged }: Prop
 
           {/* Lista */}
           <div className="flex flex-col gap-0.5">
-            <p className="text-xs font-medium text-[#64748b] mb-1">
+            <p className="text-xs font-medium text-[var(--text-secondary)] mb-1">
               {categories.length} categoría{categories.length !== 1 ? 's' : ''}
             </p>
             {categories.length === 0 && (
-              <p className="text-sm text-[#94a3b8] py-4 text-center">Sin categorías</p>
+              <p className="text-sm text-[var(--text-secondary)] py-4 text-center">Sin categorías</p>
             )}
             {categories.map(cat => (
               <div key={cat.id} className="flex flex-col">
@@ -125,28 +125,28 @@ export default function CategoriasPanel({ categories, onClose, onChanged }: Prop
                         if (e.key === 'Escape') cancelEdit()
                       }}
                       autoFocus
-                      className="flex-1 border border-blue-400 rounded-lg px-3 py-1.5 text-sm text-[#0f172a] outline-none"
+                      className="flex-1 border border-blue-400 rounded-lg px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none"
                     />
                     <button
                       onClick={() => handleUpdate(cat.id)}
                       disabled={isPending}
-                      className="px-3 py-1.5 text-xs bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      className="px-3 py-1.5 text-xs bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50"
                     >
                       Guardar
                     </button>
                     <button
                       onClick={cancelEdit}
-                      className="px-3 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50"
+                      className="px-3 py-1.5 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)]"
                     >
                       Cancelar
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 py-2 px-1 rounded-lg group hover:bg-slate-50">
-                    <span className="flex-1 text-sm text-[#0f172a]">{cat.name}</span>
+                  <div className="flex items-center gap-2 py-2 px-1 rounded-lg group hover:bg-[var(--bg-page)]">
+                    <span className="flex-1 text-sm text-[var(--text-primary)]">{cat.name}</span>
                     <button
                       onClick={() => startEdit(cat)}
-                      className="px-2.5 py-1 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="px-2.5 py-1 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       Editar
                     </button>

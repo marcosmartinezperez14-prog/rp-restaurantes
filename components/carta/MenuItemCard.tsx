@@ -42,7 +42,7 @@ export default function MenuItemCard({ item, onEdit, onRefresh, canEdit = false 
   }
 
   return (
-    <div className={`bg-white border border-[#e2e8f0] rounded-xl overflow-hidden shadow-sm transition-opacity ${isPending ? 'opacity-60' : ''} ${!item.is_active ? 'opacity-70' : ''}`}>
+    <div className={`bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl overflow-hidden shadow-sm transition-opacity ${isPending ? 'opacity-60' : ''} ${!item.is_active ? 'opacity-70' : ''}`}>
       {item.image_url && (
         <div className="h-36 bg-slate-100 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -54,9 +54,9 @@ export default function MenuItemCard({ item, onEdit, onRefresh, canEdit = false 
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-[#0f172a] text-sm">{item.name}</span>
+              <span className="font-bold text-[var(--text-primary)] text-sm">{item.name}</span>
               {!item.is_active && (
-                <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-[#64748b]">
+                <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-[var(--text-secondary)]">
                   Inactivo
                 </span>
               )}
@@ -67,16 +67,16 @@ export default function MenuItemCard({ item, onEdit, onRefresh, canEdit = false 
               )}
             </div>
             {item.description && (
-              <p className="text-xs text-[#64748b] mt-0.5 line-clamp-2">{item.description}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">{item.description}</p>
             )}
           </div>
-          <span className="font-bold text-[#0f172a] text-base whitespace-nowrap">
+          <span className="font-bold text-[var(--text-primary)] text-base whitespace-nowrap">
             {item.price.toFixed(2)} €
           </span>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-[#64748b]">
+          <span className="text-xs text-[var(--text-secondary)]">
             Coste: <strong>{totalCost.toFixed(2)} €</strong>
           </span>
           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${marginColorClass(margin)}`}>
@@ -86,16 +86,16 @@ export default function MenuItemCard({ item, onEdit, onRefresh, canEdit = false 
 
         {item.ingredients.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-semibold uppercase text-[#94a3b8] tracking-wide">
+            <span className="text-[10px] font-semibold uppercase text-[var(--text-secondary)] tracking-wide">
               {item.ingredients.length} ing.
             </span>
             {item.ingredients.slice(0, 3).map(ing => (
-              <span key={ing.id} className="text-[10px] px-1.5 py-0.5 bg-slate-50 rounded text-[#64748b]">
+              <span key={ing.id} className="text-[10px] px-1.5 py-0.5 bg-[var(--bg-page)] rounded text-[var(--text-secondary)]">
                 {ing.product?.name ?? '—'} ({ing.quantity}{ing.unit})
               </span>
             ))}
             {item.ingredients.length > 3 && (
-              <span className="text-[10px] text-[#94a3b8]">+{item.ingredients.length - 3} más</span>
+              <span className="text-[10px] text-[var(--text-secondary)]">+{item.ingredients.length - 3} más</span>
             )}
           </div>
         )}
@@ -105,14 +105,14 @@ export default function MenuItemCard({ item, onEdit, onRefresh, canEdit = false 
             <button
               onClick={handleToggleActive}
               disabled={isPending}
-              className="flex-1 px-2 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-50"
+              className="flex-1 px-2 py-1.5 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)] disabled:opacity-50"
             >
               {item.is_active ? 'Desactivar' : 'Activar'}
             </button>
             <button
               onClick={() => onEdit(item)}
               disabled={isPending}
-              className="flex-1 px-2 py-1.5 text-xs border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-50 disabled:opacity-50"
+              className="flex-1 px-2 py-1.5 text-xs border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)] disabled:opacity-50"
             >
               Editar
             </button>

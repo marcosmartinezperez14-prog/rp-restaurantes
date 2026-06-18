@@ -145,7 +145,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
             type="date"
             value={filtroFecha}
             onChange={e => setFiltroFecha(e.target.value)}
-            className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-black bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -153,7 +153,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
           <select
             value={filtroEstado}
             onChange={e => setFiltroEstado(e.target.value as FiltroEstado)}
-            className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-black bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           >
             <option value="all">Todos</option>
             <option value="pending">Pendientes</option>
@@ -186,7 +186,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
               {reservasFiltradas.map(r => (
-                <tr key={r.id} className="bg-white hover:bg-[var(--bg-surface)] transition-colors">
+                <tr key={r.id} className="bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] transition-colors">
                   <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{r.reservation_time.slice(0, 5)}</td>
                   <td className="px-4 py-3 text-[var(--text-primary)]">
                     <div>{r.customer_name}</div>
@@ -253,7 +253,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
           onClick={() => setModalEditar(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md border border-[var(--border)]"
+            className="bg-[var(--bg-surface)] rounded-xl shadow-2xl p-6 w-full max-w-md border border-[var(--border)]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
@@ -280,7 +280,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
                     type="date"
                     value={editFecha}
                     onChange={e => setEditFecha(e.target.value)}
-                    className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   />
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
@@ -289,7 +289,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
                     type="time"
                     value={editHora}
                     onChange={e => setEditHora(e.target.value)}
-                    className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   />
                 </div>
               </div>
@@ -301,7 +301,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
                   max={99}
                   value={editPersonas}
                   onChange={e => setEditPersonas(Number(e.target.value))}
-                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -311,7 +311,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
                   onChange={e => setEditNotas(e.target.value)}
                   rows={3}
                   maxLength={500}
-                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none"
                 />
               </div>
             </div>
@@ -330,7 +330,7 @@ export default function ReservasView({ reservas: reservasIniciales }: Props) {
               <button
                 onClick={guardarEdicion}
                 disabled={guardando}
-                className="flex-1 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                className="flex-1 px-4 py-2 text-sm bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg disabled:opacity-50 transition-colors"
               >
                 {guardando ? 'Guardando...' : 'Guardar'}
               </button>

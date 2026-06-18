@@ -160,7 +160,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
         </span>
         <button
           onClick={() => { setFormGrupo(FORM_GRUPO_VACIO); setErrorGrupo(null); setModalGrupo(true) }}
-          className="text-xs px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          className="text-xs px-2.5 py-1.5 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-hover)] font-medium"
         >
           + Añadir grupo
         </button>
@@ -168,7 +168,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
 
       {cargando && (
         <div className="space-y-2">
-          {[1,2].map(i => <div key={i} className="h-10 bg-gray-100 rounded-lg animate-pulse" />)}
+          {[1,2].map(i => <div key={i} className="h-10 bg-[var(--bg-page)] rounded-lg animate-pulse" />)}
         </div>
       )}
 
@@ -185,7 +185,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-[var(--text-primary)]">{grupo.name}</span>
-              <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold ${grupo.type === 'variante' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-semibold ${grupo.type === 'variante' ? 'bg-blue-100 text-blue-700' : 'bg-[var(--bg-page)] text-[var(--text-secondary)]'}`}>
                 {grupo.type}
               </span>
               {grupo.required && (
@@ -206,7 +206,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
                   setErrorOpcion(null)
                   setModalOpcion({ groupId: grupo.id, groupName: grupo.name, groupType: grupo.type })
                 }}
-                className="text-xs px-2 py-1 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-gray-50"
+                className="text-xs px-2 py-1 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)]"
               >
                 + Opción
               </button>
@@ -225,7 +225,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
 
           <div className="flex flex-col gap-1">
             {grupo.options.map(opcion => (
-              <div key={opcion.id} className="flex items-center justify-between gap-2 px-2 py-1.5 bg-gray-50 rounded-lg">
+              <div key={opcion.id} className="flex items-center justify-between gap-2 px-2 py-1.5 bg-[var(--bg-page)] rounded-lg">
                 <span className="text-xs text-[var(--text-primary)] flex-1">{opcion.name}</span>
                 <span className="text-xs text-[var(--text-secondary)]">
                   {opcion.price_delta > 0
@@ -253,7 +253,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
           onClick={e => { if (e.target === e.currentTarget && !guardandoGrupo) setModalGrupo(false) }}
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 flex flex-col gap-4">
+          <div className="bg-[var(--bg-surface)] rounded-xl shadow-xl w-full max-w-sm p-5 flex flex-col gap-4">
             <h3 className="font-bold text-[var(--text-primary)]">Nuevo grupo de variante / modificador</h3>
 
             <label className="flex flex-col gap-1">
@@ -267,7 +267,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
               <div className="flex gap-2">
                 {(['variante', 'modificador'] as const).map(t => (
                   <button key={t} onClick={() => setFormGrupo(p => ({ ...p, type: t }))}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${formGrupo.type === t ? 'bg-blue-600 text-white border-blue-600' : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-blue-400'}`}>
+                    className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${formGrupo.type === t ? 'bg-[var(--accent)] text-white border-blue-600' : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-blue-400'}`}>
                     {t === 'variante' ? 'Variante (con precio)' : 'Modificador (suplemento)'}
                   </button>
                 ))}
@@ -294,11 +294,11 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
 
             <div className="flex gap-2 pt-1">
               <button onClick={() => setModalGrupo(false)}
-                className="flex-1 py-2 text-sm border border-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:bg-gray-50">
+                className="flex-1 py-2 text-sm border border-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
                 Cancelar
               </button>
               <button onClick={handleCrearGrupo} disabled={guardandoGrupo}
-                className="flex-1 py-2 text-sm bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50">
+                className="flex-1 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-xl hover:bg-[var(--accent-hover)] disabled:opacity-50">
                 {guardandoGrupo ? 'Guardando...' : 'Crear grupo'}
               </button>
             </div>
@@ -312,7 +312,7 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
           onClick={e => { if (e.target === e.currentTarget && !guardandoOpcion) setModalOpcion(null) }}
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 flex flex-col gap-4">
+          <div className="bg-[var(--bg-surface)] rounded-xl shadow-xl w-full max-w-sm p-5 flex flex-col gap-4">
             <h3 className="font-bold text-[var(--text-primary)]">
               Nueva opción — {modalOpcion.groupName}
             </h3>
@@ -343,11 +343,11 @@ export default function GestorModificadores({ menuItemId, menuItemName }: Props)
 
             <div className="flex gap-2 pt-1">
               <button onClick={() => setModalOpcion(null)}
-                className="flex-1 py-2 text-sm border border-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:bg-gray-50">
+                className="flex-1 py-2 text-sm border border-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
                 Cancelar
               </button>
               <button onClick={handleCrearOpcion} disabled={guardandoOpcion}
-                className="flex-1 py-2 text-sm bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50">
+                className="flex-1 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-xl hover:bg-[var(--accent-hover)] disabled:opacity-50">
                 {guardandoOpcion ? 'Guardando...' : 'Añadir opción'}
               </button>
             </div>

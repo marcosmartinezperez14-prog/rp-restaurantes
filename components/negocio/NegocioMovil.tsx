@@ -28,9 +28,9 @@ function diferenciaVsAyer(
   hoy: number,
   ayer: number,
 ): { texto: string; color: string } {
-  if (ayer === 0) return { texto: '— sin datos de ayer', color: 'text-gray-400' }
+  if (ayer === 0) return { texto: '— sin datos de ayer', color: 'text-[var(--text-secondary)]' }
   const pct = ((hoy - ayer) / ayer) * 100
-  if (Math.abs(pct) < 0.5) return { texto: '= igual que ayer', color: 'text-gray-500' }
+  if (Math.abs(pct) < 0.5) return { texto: '= igual que ayer', color: 'text-[var(--text-secondary)]' }
   if (pct > 0) return { texto: `▲ +${pct.toFixed(1)}% vs ayer`, color: 'text-green-600' }
   return { texto: `▼ ${pct.toFixed(1)}% vs ayer`, color: 'text-red-500' }
 }
@@ -110,13 +110,13 @@ export default function NegocioMovil() {
     : null
 
   return (
-    <div className="max-w-[430px] mx-auto min-h-screen bg-gray-50 px-4 py-6 flex flex-col gap-5">
+    <div className="max-w-[430px] mx-auto min-h-screen bg-[var(--bg-page)] px-4 py-6 flex flex-col gap-5">
 
       {/* Cabecera */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mi negocio</h1>
-          <p className="text-sm text-gray-500 capitalize">{fechaHoy()}</p>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Mi negocio</h1>
+          <p className="text-sm text-[var(--text-secondary)] capitalize">{fechaHoy()}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <button
@@ -127,14 +127,14 @@ export default function NegocioMovil() {
             🔄
           </button>
           {tiempoLabel && (
-            <span className="text-[10px] text-gray-400">Actualizado {tiempoLabel}</span>
+            <span className="text-[10px] text-[var(--text-secondary)]">Actualizado {tiempoLabel}</span>
           )}
         </div>
       </div>
 
       {/* KPI principal + secundarios */}
       {errorResumen ? (
-        <div className="bg-white rounded-2xl border border-red-200 p-5 shadow-sm">
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-red-200 p-5 shadow-sm">
           <p className="text-sm text-red-500 mb-3">No se pudieron cargar los KPIs.</p>
           <button
             onClick={cargarResumen}
@@ -146,8 +146,8 @@ export default function NegocioMovil() {
       ) : (
         <>
           {/* Ingresos del día */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-5 shadow-sm">
+            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide mb-1">
               Ingresos de hoy
             </p>
             {loadingResumen ? (
@@ -157,7 +157,7 @@ export default function NegocioMovil() {
               </>
             ) : (
               <>
-                <p className="text-4xl font-bold text-gray-900">
+                <p className="text-4xl font-bold text-[var(--text-primary)]">
                   {fmt(Number(resumen?.ingresos_hoy ?? 0))}
                 </p>
                 {diff && (
@@ -169,48 +169,48 @@ export default function NegocioMovil() {
 
           {/* Grid 2x2 KPIs secundarios */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <p className="text-[11px] text-gray-500 mb-1">📋 Pedidos cerrados</p>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4 shadow-sm">
+              <p className="text-[11px] text-[var(--text-secondary)] mb-1">📋 Pedidos cerrados</p>
               {loadingResumen ? (
                 <Skeleton className="h-7 w-12" />
               ) : (
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-[var(--text-primary)]">
                   {resumen?.pedidos_cerrados ?? 0}
                 </p>
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <p className="text-[11px] text-gray-500 mb-1">🧾 Ticket medio</p>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4 shadow-sm">
+              <p className="text-[11px] text-[var(--text-secondary)] mb-1">🧾 Ticket medio</p>
               {loadingResumen ? (
                 <Skeleton className="h-7 w-20" />
               ) : (
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-[var(--text-primary)]">
                   {fmt(Number(resumen?.ticket_medio ?? 0))}
                 </p>
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <p className="text-[11px] text-gray-500 mb-1">🪑 Mesas ocupadas</p>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4 shadow-sm">
+              <p className="text-[11px] text-[var(--text-secondary)] mb-1">🪑 Mesas ocupadas</p>
               {loadingResumen ? (
                 <Skeleton className="h-7 w-16" />
               ) : (
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-[var(--text-primary)]">
                   {resumen?.mesas_ocupadas ?? 0}
-                  <span className="text-base font-normal text-gray-400">
+                  <span className="text-base font-normal text-[var(--text-secondary)]">
                     {' '}/ {resumen?.mesas_totales ?? 0}
                   </span>
                 </p>
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <p className="text-[11px] text-gray-500 mb-1">⭐ Producto estrella</p>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4 shadow-sm">
+              <p className="text-[11px] text-[var(--text-secondary)] mb-1">⭐ Producto estrella</p>
               {loadingResumen ? (
                 <Skeleton className="h-7 w-24" />
               ) : (
-                <p className="text-sm font-bold text-gray-900 leading-tight mt-1 truncate">
+                <p className="text-sm font-bold text-[var(--text-primary)] leading-tight mt-1 truncate">
                   {resumen?.producto_estrella ?? '—'}
                 </p>
               )}
@@ -220,16 +220,16 @@ export default function NegocioMovil() {
       )}
 
       {/* Actividad reciente */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+      <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-4 shadow-sm">
         <p className="text-sm font-semibold text-gray-800 mb-3">Últimos pedidos de hoy</p>
         {errorActividad ? (
-          <p className="text-sm text-gray-500">No se pudo cargar la actividad reciente.</p>
+          <p className="text-sm text-[var(--text-secondary)]">No se pudo cargar la actividad reciente.</p>
         ) : loadingActividad ? (
           <div className="flex flex-col gap-2">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
           </div>
         ) : actividad.length === 0 ? (
-          <p className="text-sm text-gray-500">Aún no hay pedidos cerrados hoy.</p>
+          <p className="text-sm text-[var(--text-secondary)]">Aún no hay pedidos cerrados hoy.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-gray-100">
             {actividad.map((a) => (
@@ -237,10 +237,10 @@ export default function NegocioMovil() {
                 <span className="text-sm font-medium text-gray-800 flex-1 truncate">
                   {a.mesa_nombre}
                 </span>
-                <span className="text-xs text-gray-400 flex-shrink-0">
+                <span className="text-xs text-[var(--text-secondary)] flex-shrink-0">
                   {horaDeISO(a.cerrado_at)}
                 </span>
-                <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                <span className="text-sm font-semibold text-[var(--text-primary)] flex-shrink-0">
                   {fmt(Number(a.total))}
                 </span>
               </li>

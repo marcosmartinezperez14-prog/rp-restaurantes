@@ -88,9 +88,9 @@ export default function ReservasConfigPanel({ initialConfig }: { initialConfig: 
                   {/* Toggle activo */}
                   <button
                     onClick={() => setDia(key, { activo: !dia.activo })}
-                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${dia.activo ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${dia.activo ? 'bg-[var(--accent)]' : 'bg-gray-300'}`}
                   >
-                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${dia.activo ? 'translate-x-5' : 'translate-x-0'}`} />
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[var(--bg-surface)] rounded-full shadow transition-transform ${dia.activo ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                   <span className={`text-sm font-medium w-24 ${dia.activo ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                     {label}
@@ -108,19 +108,19 @@ export default function ReservasConfigPanel({ initialConfig }: { initialConfig: 
                           type="time"
                           value={franja.apertura}
                           onChange={e => setFranja(key, i, { apertura: e.target.value })}
-                          className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                         />
                         <span className="text-xs text-[var(--text-secondary)]">hasta</span>
                         <input
                           type="time"
                           value={franja.cierre}
                           onChange={e => setFranja(key, i, { cierre: e.target.value })}
-                          className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                         />
                         {dia.franjas.length > 1 && (
                           <button
                             onClick={() => removeFranja(key, i)}
-                            className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors text-sm font-bold"
+                            className="w-6 h-6 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-50 rounded transition-colors text-sm font-bold"
                           >
                             ×
                           </button>
@@ -152,7 +152,7 @@ export default function ReservasConfigPanel({ initialConfig }: { initialConfig: 
             step={15}
             value={config.duration_minutes}
             onChange={e => setConfig(prev => ({ ...prev, duration_minutes: Number(e.target.value) }))}
-            className="w-24 border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-24 border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           />
           <span className="text-sm text-[var(--text-secondary)]">minutos</span>
           <span className="text-sm text-[var(--text-primary)] font-medium">
@@ -167,9 +167,9 @@ export default function ReservasConfigPanel({ initialConfig }: { initialConfig: 
         <div className="flex items-start gap-3">
           <button
             onClick={() => setConfig(prev => ({ ...prev, auto_confirm: !prev.auto_confirm }))}
-            className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 mt-0.5 ${config.auto_confirm ? 'bg-blue-600' : 'bg-gray-300'}`}
+            className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 mt-0.5 ${config.auto_confirm ? 'bg-[var(--accent)]' : 'bg-gray-300'}`}
           >
-            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${config.auto_confirm ? 'translate-x-5' : 'translate-x-0'}`} />
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-[var(--bg-surface)] rounded-full shadow transition-transform ${config.auto_confirm ? 'translate-x-5' : 'translate-x-0'}`} />
           </button>
           <div>
             <p className="text-sm text-[var(--text-primary)] font-medium">
@@ -196,7 +196,7 @@ export default function ReservasConfigPanel({ initialConfig }: { initialConfig: 
       <button
         onClick={handleGuardar}
         disabled={isPending}
-        className="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm"
+        className="w-full py-2.5 bg-[var(--accent)] text-white font-semibold rounded-xl hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors text-sm"
       >
         {isPending ? 'Guardando...' : 'Guardar configuración'}
       </button>

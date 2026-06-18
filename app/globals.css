@@ -202,6 +202,15 @@ body {
   --status-red:       #d04040;
 }
 
+/* ─── Aliases de compatibilidad ───────────────────────────── */
+/* Mantienen funcionando referencias legacy a --primary */
+:root,
+[data-theme] {
+  --primary:        var(--accent);
+  --primary-hover:  var(--accent-hover);
+  --text-muted:     var(--text-label);
+}
+
 /* ─── Global ───────────────────────────────────────────────── */
 body {
   background: var(--bg-page);

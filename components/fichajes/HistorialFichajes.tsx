@@ -151,17 +151,17 @@ export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
   const usuarios = getUniqueUsers(fichajes)
 
   const inputClass =
-    'border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white'
+    'border border-gray-300 rounded-lg px-3 py-2 text-sm bg-[var(--bg-surface)]'
   const inputStyle = { color: 'black' }
 
   return (
     <div className="w-full px-4 py-6 space-y-4 max-w-full">
       {/* Filters card */}
-      <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm p-4 space-y-3">
         <div className="flex flex-wrap gap-3 items-end">
           {/* Desde */}
           <div className="flex flex-col gap-1 min-w-[140px]">
-            <label className="text-xs font-medium text-gray-500">Desde</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)]">Desde</label>
             <input
               type="date"
               value={desde}
@@ -173,7 +173,7 @@ export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
 
           {/* Hasta */}
           <div className="flex flex-col gap-1 min-w-[140px]">
-            <label className="text-xs font-medium text-gray-500">Hasta</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)]">Hasta</label>
             <input
               type="date"
               value={hasta}
@@ -186,7 +186,7 @@ export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
           {/* User filter — admin only */}
           {isAdmin && (
             <div className="flex flex-col gap-1 min-w-[180px]">
-              <label className="text-xs font-medium text-gray-500">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Empleado
               </label>
               <select
@@ -210,7 +210,7 @@ export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
             <button
               onClick={() => exportarCSV(fichajes, isAdmin)}
               disabled={loading || fichajes.length === 0}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-page)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Exportar CSV
             </button>
@@ -219,29 +219,29 @@ export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
       </div>
 
       {/* Table card */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 {isAdmin && (
-                  <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                     Empleado
                   </th>
                 )}
-                <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                   Fecha
                 </th>
-                <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                   Entrada
                 </th>
-                <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                   Salida
                 </th>
-                <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                   Duración
                 </th>
-                <th className="px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                   Nota
                 </th>
               </tr>
@@ -259,7 +259,7 @@ export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
                 <tr>
                   <td
                     colSpan={isAdmin ? 6 : 5}
-                    className="px-4 py-10 text-center text-gray-400"
+                    className="px-4 py-10 text-center text-[var(--text-secondary)]"
                   >
                     No hay registros para el período seleccionado.
                   </td>
@@ -270,28 +270,28 @@ export default function HistorialFichajes({ isAdmin, refreshKey }: Props) {
                     key={f.fichaje_id}
                     className={
                       idx % 2 === 0
-                        ? 'bg-white'
-                        : 'bg-gray-50'
+                        ? 'bg-[var(--bg-surface)]'
+                        : 'bg-[var(--bg-page)]'
                     }
                   >
                     {isAdmin && (
-                      <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                      <td className="px-4 py-3 text-[var(--text-primary)] whitespace-nowrap">
                         {f.nombre}
                       </td>
                     )}
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-[var(--text-primary)] whitespace-nowrap">
                       {formatFecha(f.entrada_at)}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-[var(--text-primary)] whitespace-nowrap">
                       {formatHora(f.entrada_at)}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-[var(--text-primary)] whitespace-nowrap">
                       {f.salida_at ? formatHora(f.salida_at) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-[var(--text-primary)] whitespace-nowrap">
                       {formatDuracion(f.duracion_min)}
                     </td>
-                    <td className="px-4 py-3 text-gray-500">
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">
                       {f.nota ?? '—'}
                     </td>
                   </tr>

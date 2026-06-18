@@ -46,13 +46,13 @@ export default function ClearDataButton() {
       {confirmed && !isPending && (
         <button
           onClick={() => setConfirmed(false)}
-          className="text-xs text-gray-400 hover:text-gray-600 text-center"
+          className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-secondary)] text-center"
         >
           Cancelar
         </button>
       )}
       {result && (
-        <p className="text-xs text-center text-gray-600 px-2">{result}</p>
+        <p className="text-xs text-center text-[var(--text-secondary)] px-2">{result}</p>
       )}
     </div>
   )

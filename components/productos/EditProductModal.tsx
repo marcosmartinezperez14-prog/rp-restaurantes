@@ -108,7 +108,7 @@ export default function EditProductModal({ product, allCategories, onClose, onSa
                 <p className="text-xs text-[var(--text-secondary)] py-1 px-1">Sin categorías disponibles</p>
               )}
               {allCategories.map(c => (
-                <label key={c.id} className="flex items-center gap-2 cursor-pointer px-1 py-0.5 hover:bg-slate-50 rounded">
+                <label key={c.id} className="flex items-center gap-2 cursor-pointer px-1 py-0.5 hover:bg-[var(--bg-page)] rounded">
                   <input
                     type="checkbox"
                     checked={selectedCategoryIds.includes(c.id)}
@@ -133,11 +133,11 @@ export default function EditProductModal({ product, allCategories, onClose, onSa
           {error && <p className="text-red-600 text-xs">{error}</p>}
         </div>
         <div className="px-5 py-3 border-t border-[var(--border)] flex gap-2 justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-50">
+          <button onClick={onClose} className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
             Cancelar
           </button>
           <button onClick={handleSave} disabled={isPending}
-            className="px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            className="px-4 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50">
             {isPending ? 'Guardando...' : 'Guardar'}
           </button>
         </div>

@@ -36,7 +36,7 @@ export default function AforoOnlinePanel({ initialMax }: { initialMax: number | 
           value={valor}
           onChange={e => setValor(e.target.value)}
           placeholder="Sin límite"
-          className="w-32 border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-32 border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         />
       </div>
 
@@ -52,7 +52,7 @@ export default function AforoOnlinePanel({ initialMax }: { initialMax: number | 
       <button
         onClick={handleGuardar}
         disabled={isPending}
-        className="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm"
+        className="w-full py-2.5 bg-[var(--accent)] text-white font-semibold rounded-xl hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors text-sm"
       >
         {isPending ? 'Guardando...' : 'Guardar'}
       </button>

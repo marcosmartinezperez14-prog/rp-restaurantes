@@ -108,14 +108,14 @@ export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props
   return (
     <div className="w-full max-w-[430px] mx-auto px-4 py-6 space-y-4">
       {/* Clock card */}
-      <div className="bg-white rounded-2xl shadow-sm p-6 text-center">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm p-6 text-center">
         <p className="text-4xl font-mono font-bold text-gray-800 tracking-wider">
           {reloj}
         </p>
       </div>
 
       {/* Status card */}
-      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-2">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm p-5 space-y-2">
         <div className="flex items-center gap-2">
           {estado.abierto ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -123,7 +123,7 @@ export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props
               Jornada abierta
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-[var(--bg-page)] text-[var(--text-secondary)]">
               <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
               Fuera de jornada
             </span>
@@ -131,8 +131,8 @@ export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props
         </div>
 
         {estado.abierto && duracionLabel && (
-          <p className="text-sm text-gray-500 pl-1">
-            Llevas <span className="font-semibold text-gray-700">{duracionLabel}</span>
+          <p className="text-sm text-[var(--text-secondary)] pl-1">
+            Llevas <span className="font-semibold text-[var(--text-primary)]">{duracionLabel}</span>
           </p>
         )}
       </div>
@@ -158,12 +158,12 @@ export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props
             if (e.target === e.currentTarget) cerrarModal()
           }}
         >
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-[400px] p-6 space-y-4">
+          <div className="bg-[var(--bg-surface)] rounded-2xl shadow-lg w-full max-w-[400px] p-6 space-y-4">
             <h2 className="text-xl font-bold text-gray-800">{tituloModal}</h2>
 
             <div className="space-y-1">
-              <label className="block text-sm text-gray-600">
-                Nota <span className="text-gray-400">(opcional)</span>
+              <label className="block text-sm text-[var(--text-secondary)]">
+                Nota <span className="text-[var(--text-secondary)]">(opcional)</span>
               </label>
               <input
                 type="text"
@@ -186,7 +186,7 @@ export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props
               <button
                 onClick={cerrarModal}
                 disabled={cargando}
-                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-[var(--text-primary)] font-semibold text-sm hover:bg-[var(--bg-page)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancelar
               </button>

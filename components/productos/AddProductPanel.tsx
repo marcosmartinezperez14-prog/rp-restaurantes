@@ -117,7 +117,7 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
                 <p className="text-xs text-[var(--text-secondary)] py-1 px-1">Sin categorías disponibles</p>
               )}
               {categories.map(c => (
-                <label key={c.id} className="flex items-center gap-2 cursor-pointer px-1 py-0.5 hover:bg-slate-50 rounded">
+                <label key={c.id} className="flex items-center gap-2 cursor-pointer px-1 py-0.5 hover:bg-[var(--bg-page)] rounded">
                   <input
                     type="checkbox"
                     checked={selectedCategoryIds.includes(c.id)}
@@ -226,11 +226,11 @@ export default function AddProductPanel({ categories, onClose, onSaved }: Props)
           {error && <p className="text-red-600 text-xs mb-3">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button onClick={onClose}
-              className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-50">
+              className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
               Cancelar
             </button>
             <button onClick={handleSave} disabled={isPending}
-              className="px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50">
+              className="px-4 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50">
               {isPending ? 'Guardando...' : 'Guardar producto'}
             </button>
           </div>

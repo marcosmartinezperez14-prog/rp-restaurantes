@@ -58,7 +58,7 @@ const TURNO_COLOR: Record<TipoTurno, string> = {
 }
 
 const DIA_COLOR: Record<TipoDiaLibre, string> = {
-  libre: 'bg-slate-100 text-slate-600',
+  libre: 'bg-slate-100 text-[var(--text-secondary)]',
   festivo: 'bg-blue-100 text-blue-700',
   baja: 'bg-red-100 text-red-700',
 }
@@ -234,7 +234,7 @@ export default function PersonalAdminView({
           </h3>
           <div className="flex flex-col gap-2">
             {solicitudes.map(s => (
-              <div key={s.id} className="flex items-center gap-3 bg-white rounded-xl border border-yellow-100 p-3">
+              <div key={s.id} className="flex items-center gap-3 bg-[var(--bg-surface)] rounded-xl border border-yellow-100 p-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)]">
                     {s.empleado?.nombre ?? s.empleado_id}

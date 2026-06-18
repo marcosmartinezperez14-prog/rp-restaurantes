@@ -59,7 +59,7 @@ export default function ProductRow({ product, allCategories, onRefresh, canEdit 
             {!stockCritical && stockLow && <span title="Stock bajo" className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />}
             <span className="text-sm font-medium text-[var(--text-primary)]">{product.name}</span>
             {!product.is_available && (
-              <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase font-semibold">No disp.</span>
+              <span className="text-[10px] bg-[var(--bg-page)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded uppercase font-semibold">No disp.</span>
             )}
           </div>
         </td>
@@ -137,7 +137,7 @@ export default function ProductRow({ product, allCategories, onRefresh, canEdit 
         </td>
       </tr>
       {modal === 'history' && (
-        <tr className="bg-slate-50">
+        <tr className="bg-[var(--bg-page)]">
           <td colSpan={6} className="px-8 pb-3 pt-1">
             <StockHistory productId={product.id} />
           </td>

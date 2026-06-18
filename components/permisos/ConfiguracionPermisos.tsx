@@ -227,7 +227,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
         </div>
         <button
           onClick={() => { setModalCrear(true); setErrorCrear(null); setNombreNuevoRol('') }}
-          className="mb-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          className="mb-1 px-3 py-1.5 text-xs font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-lg transition-colors"
         >
           + Nuevo rol
         </button>
@@ -287,7 +287,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
                     } ${activo ? 'bg-green-500' : 'bg-gray-300'}`}
                   >
                     <span
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-[var(--bg-surface)] rounded-full shadow transition-transform ${
                         activo ? 'translate-x-5' : 'translate-x-0'
                       }`}
                     />
@@ -328,7 +328,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
               onKeyDown={e => e.key === 'Enter' && handleCrearRol()}
               placeholder="Ej: Encargado de sala"
               maxLength={60}
-              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black bg-[var(--bg-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] mb-3"
             />
             {errorCrear && (
               <p className="text-xs text-red-500 mb-3">{errorCrear}</p>
@@ -343,7 +343,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
               <button
                 onClick={handleCrearRol}
                 disabled={creando}
-                className="flex-1 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                className="flex-1 px-4 py-2 text-sm bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg disabled:opacity-50 transition-colors"
               >
                 {creando ? 'Creando...' : 'Crear rol'}
               </button>

@@ -256,7 +256,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
                       type="button"
                       onClick={handleCreateCategory}
                       disabled={catPending || !newCatName.trim()}
-                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 whitespace-nowrap"
+                      className="px-2 py-1 text-xs bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-40 whitespace-nowrap"
                     >
                       {catPending ? '...' : 'Crear'}
                     </button>
@@ -285,7 +285,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
                   placeholder="URL de imagen (o sube una)"
                   className={inputClass}
                 />
-                <label className="flex-shrink-0 cursor-pointer px-3 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-50 whitespace-nowrap">
+                <label className="flex-shrink-0 cursor-pointer px-3 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)] whitespace-nowrap">
                   {imageUploading ? '...' : 'Subir'}
                   <input
                     type="file"
@@ -327,7 +327,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
             </label>
           </div>
 
-          <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between gap-4">
+          <div className="bg-[var(--bg-page)] rounded-xl p-3 flex items-center justify-between gap-4">
             <div>
               <div className="text-xs text-[var(--text-secondary)]">Coste total</div>
               <div className="text-base font-bold text-[var(--text-primary)]">{totalCost.toFixed(2)} €</div>
@@ -381,7 +381,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
                               type="button"
                               onMouseDown={e => e.preventDefault()}
                               onClick={() => selectProduct(p)}
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center justify-between gap-2"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-page)] flex items-center justify-between gap-2"
                             >
                               <span className="font-medium text-[var(--text-primary)]">{p.name}</span>
                               <span className="text-xs text-[var(--text-secondary)]">
@@ -413,7 +413,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
                 <button
                   onClick={addIngredient}
                   disabled={!selectedProductId}
-                  className="px-3 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-40 whitespace-nowrap"
+                  className="px-3 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-40 whitespace-nowrap"
                 >
                   + Añadir
                 </button>
@@ -425,7 +425,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
                 <p className="text-sm text-[var(--text-secondary)] py-2 text-center">Sin ingredientes</p>
               )}
               {ingredients.map((ing, idx) => (
-                <div key={idx} className="flex items-center gap-2 py-2 px-3 bg-slate-50 rounded-lg">
+                <div key={idx} className="flex items-center gap-2 py-2 px-3 bg-[var(--bg-page)] rounded-lg">
                   <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">{ing.productName}</span>
                   <span className="text-xs text-[var(--text-secondary)]">{ing.quantity} {ing.unit}</span>
                   <span className="text-xs text-[var(--text-secondary)]">
@@ -453,13 +453,13 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
         </div>
 
         <div className="px-5 py-3 border-t border-[var(--border)] flex gap-2 justify-end flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-50">
+          <button onClick={onClose} className="px-4 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={isPending || imageUploading}
-            className="px-4 py-2 text-sm bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50"
           >
             {isPending ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Crear plato'}
           </button>

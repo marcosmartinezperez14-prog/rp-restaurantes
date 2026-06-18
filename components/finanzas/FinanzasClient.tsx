@@ -301,7 +301,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
 
       {/* A — Filtro período */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wider mr-1">Período:</span>
+        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mr-1">Período:</span>
         {PERIODOS.map(p => (
           <button
             key={p.value}
@@ -309,7 +309,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
             className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
               periodo === p.value
                 ? 'bg-[#0f172a] text-white border-[#0f172a]'
-                : 'bg-white text-[#64748b] border-[#e2e8f0] hover:bg-slate-50'
+                : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-page)]'
             }`}
           >
             {p.label}
@@ -318,15 +318,15 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
       </div>
 
       {/* B — Tabs */}
-      <div className="flex border-b border-[#e2e8f0]">
+      <div className="flex border-b border-[var(--border)]">
         {(['movimientos', 'tickets'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
               tab === t
-                ? 'border-[#0f172a] text-[#0f172a]'
-                : 'border-transparent text-[#64748b] hover:text-[#0f172a]'
+                ? 'border-[#0f172a] text-[var(--text-primary)]'
+                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {t === 'movimientos' ? 'Movimientos' : `Tickets (${num_tickets})`}
@@ -346,8 +346,8 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
       {tab === 'movimientos' && (
         <>
           {/* Gráfico */}
-          <div className="bg-white rounded-xl border border-[#e2e8f0] p-4">
-            <h2 className="text-sm font-semibold text-[#0f172a] mb-4">Últimos 6 meses</h2>
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Últimos 6 meses</h2>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={datosGrafico} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -369,7 +369,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
           <div className="flex gap-3">
             <button
               onClick={() => setModalTipo('ingreso')}
-              className="px-4 py-2.5 text-sm bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 flex items-center gap-1.5"
+              className="px-4 py-2.5 text-sm bg-[var(--accent)] text-white font-semibold rounded-xl hover:bg-[var(--accent-hover)] flex items-center gap-1.5"
             >
               <span className="text-base leading-none">+</span> Añadir ingreso
             </button>
@@ -382,26 +382,26 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
           </div>
 
           {/* Tabla movimientos */}
-          <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#e2e8f0] flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[#0f172a]">
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Todos los movimientos {movimientos.length > 0 && `(${movimientos.length})`}
               </h2>
-              <span className="text-xs text-[#94a3b8]">El período solo afecta al resumen</span>
+              <span className="text-xs text-[var(--text-secondary)]">El período solo afecta al resumen</span>
             </div>
 
             {movimientos.length === 0 ? (
               <div className="py-16 text-center">
                 <div className="text-4xl mb-3">📊</div>
-                <p className="text-sm text-[#94a3b8]">Aún no hay movimientos registrados</p>
+                <p className="text-sm text-[var(--text-secondary)]">Aún no hay movimientos registrados</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                    <tr className="border-b border-[var(--border)] bg-[var(--bg-page)]">
                       {['Fecha', 'Tipo', 'Concepto', 'Categoría', 'Importe', 'Acciones'].map(h => (
-                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Importe' || h === 'Acciones' ? 'text-right' : 'text-left'}`}>
+                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider ${h === 'Importe' || h === 'Acciones' ? 'text-right' : 'text-left'}`}>
                           {h}
                         </th>
                       ))}
@@ -411,8 +411,8 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                     {movimientos.map(m => {
                       const recLabel = etiquetaRecurrencia(m)
                       return (
-                        <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-slate-50">
-                          <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">{m.fecha}</td>
+                        <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-[var(--bg-page)]">
+                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)] whitespace-nowrap">{m.fecha}</td>
                           <td className="px-4 py-3">
                             <div className="flex flex-col gap-1">
                               <span className={`inline-block w-fit px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'ingreso' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -425,20 +425,20 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-[#0f172a]">
+                          <td className="px-4 py-3 text-sm text-[var(--text-primary)]">
                             <span>{m.concepto}</span>
-                            {m.notas && <span className="block text-xs text-[#94a3b8]">{m.notas}</span>}
+                            {m.notas && <span className="block text-xs text-[var(--text-secondary)]">{m.notas}</span>}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[#64748b]">{m.categoria}</td>
+                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">{m.categoria}</td>
                           <td className={`px-4 py-3 text-sm text-right font-semibold whitespace-nowrap ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
                             {m.tipo === 'ingreso' ? '+' : '−'}{fmt(Number(m.importe))}
-                            {recLabel && <span className="block text-xs font-normal text-[#94a3b8]">{m.recurrencia === 'mensual' ? '/mes' : '/año'}</span>}
+                            {recLabel && <span className="block text-xs font-normal text-[var(--text-secondary)]">{m.recurrencia === 'mensual' ? '/mes' : '/año'}</span>}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <button
                               onClick={() => handleEliminar(m.id)}
                               disabled={eliminandoId === m.id}
-                              className="px-2 py-1 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50 transition-colors"
+                              className="px-2 py-1 text-xs bg-slate-100 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50 transition-colors"
                             >
                               {eliminandoId === m.id ? '...' : 'Eliminar'}
                             </button>
@@ -467,9 +467,9 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
       {tab === 'tickets' && (
         <>
           {/* ── Pendientes de envío ────────────────────────── */}
-          <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#e2e8f0] flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="text-sm font-semibold text-[#0f172a]">
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between gap-3 flex-wrap">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Pendientes de envío a Verifactu
                 {ticketsPendientes.length > 0 && (
                   <span className="ml-2 px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full font-medium">
@@ -488,14 +488,14 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                         setSelectedIds(new Set(elegibles.map(t => t.id)))
                       }
                     }}
-                    className="text-xs text-[#64748b] hover:text-[#0f172a] underline"
+                    className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline"
                   >
                     {selectedIds.size === ticketsPendientes.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
                   </button>
                   {selectedIds.size > 0 && (
                     <button
                       onClick={() => setBatchConfirm(true)}
-                      className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-hover)] transition-colors"
                     >
                       Enviar seleccionados ({selectedIds.size})
                     </button>
@@ -507,16 +507,16 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
             {ticketsPendientes.length === 0 ? (
               <div className="py-10 text-center">
                 <div className="text-3xl mb-2">✓</div>
-                <p className="text-sm text-[#94a3b8]">Todos los tickets de este período están enviados</p>
+                <p className="text-sm text-[var(--text-secondary)]">Todos los tickets de este período están enviados</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                    <tr className="border-b border-[var(--border)] bg-[var(--bg-page)]">
                       <th className="px-4 py-3 w-8" />
                       {['Nº Ticket', 'Fecha', 'Mesa', 'Método', 'Total', ''].map(h => (
-                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Total' || h === '' ? 'text-right' : 'text-left'}`}>
+                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider ${h === 'Total' || h === '' ? 'text-right' : 'text-left'}`}>
                           {h}
                         </th>
                       ))}
@@ -528,7 +528,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                       const seleccionado = selectedIds.has(t.id)
                       const isAnulado = t.anulado || anuladoLocal.has(t.id)
                       return (
-                        <tr key={t.id} className={`border-b border-[#f1f5f9] transition-colors ${isAnulado ? 'opacity-60 bg-red-50/40' : seleccionado ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
+                        <tr key={t.id} className={`border-b border-[#f1f5f9] transition-colors ${isAnulado ? 'opacity-60 bg-red-50/40' : seleccionado ? 'bg-blue-50' : 'hover:bg-[var(--bg-page)]'}`}>
                           <td className="px-4 py-3">
                             {!isAnulado && (
                               <input
@@ -545,13 +545,13 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                               />
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm font-mono text-[#0f172a]">{t.numero_ticket}</td>
-                          <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm font-mono text-[var(--text-primary)]">{t.numero_ticket}</td>
+                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)] whitespace-nowrap">
                             {new Date(t.fecha).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[#64748b]">{t.mesa_nombre}</td>
-                          <td className="px-4 py-3 text-sm text-[#64748b]">{METODO_LABEL[t.metodo_pago] ?? t.metodo_pago}</td>
-                          <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">{fmt(t.total)}</td>
+                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">{t.mesa_nombre}</td>
+                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">{METODO_LABEL[t.metodo_pago] ?? t.metodo_pago}</td>
+                          <td className="px-4 py-3 text-sm text-right font-semibold text-[var(--text-primary)]">{fmt(t.total)}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {isAnulado && (
@@ -559,7 +559,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                               )}
                               <button
                                 onClick={() => setTicketModalId(t.id)}
-                                className="px-2.5 py-1.5 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 transition-colors"
+                                className="px-2.5 py-1.5 text-xs bg-slate-100 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-200 transition-colors"
                               >
                                 Ver
                               </button>
@@ -567,7 +567,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                                 <button
                                   onClick={() => setEditModal({ ticketId: t.id, numero: t.numero_ticket, total: t.total })}
                                   disabled={enviando}
-                                  className="px-2.5 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                  className="px-2.5 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
                                 >
                                   {enviando ? '...' : 'Enviar'}
                                 </button>
@@ -593,9 +593,9 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
 
           {/* ── Enviados a Verifactu ───────────────────────── */}
           {ticketsEnviados.length > 0 && (
-            <div className="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#e2e8f0]">
-                <h2 className="text-sm font-semibold text-[#0f172a]">
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
+              <div className="px-4 py-3 border-b border-[var(--border)]">
+                <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                   Enviados a Verifactu
                   <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">
                     {ticketsEnviados.length}
@@ -605,9 +605,9 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[#e2e8f0] bg-slate-50">
+                    <tr className="border-b border-[var(--border)] bg-[var(--bg-page)]">
                       {['Nº Ticket', 'Fecha', 'Mesa', 'Total', 'Estado', ''].map(h => (
-                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wider ${h === 'Total' || h === '' ? 'text-right' : 'text-left'}`}>
+                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider ${h === 'Total' || h === '' ? 'text-right' : 'text-left'}`}>
                           {h}
                         </th>
                       ))}
@@ -617,13 +617,13 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                     {ticketsEnviados.map(t => {
                       const isAnulado = t.anulado || anuladoLocal.has(t.id)
                       return (
-                        <tr key={t.id} className={`border-b border-[#f1f5f9] transition-colors ${isAnulado ? 'opacity-60 bg-red-50/40' : 'hover:bg-slate-50'}`}>
-                          <td className="px-4 py-3 text-sm font-mono text-[#0f172a]">{t.numero_ticket}</td>
-                          <td className="px-4 py-3 text-sm text-[#64748b] whitespace-nowrap">
+                        <tr key={t.id} className={`border-b border-[#f1f5f9] transition-colors ${isAnulado ? 'opacity-60 bg-red-50/40' : 'hover:bg-[var(--bg-page)]'}`}>
+                          <td className="px-4 py-3 text-sm font-mono text-[var(--text-primary)]">{t.numero_ticket}</td>
+                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)] whitespace-nowrap">
                             {new Date(t.fecha).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[#64748b]">{t.mesa_nombre}</td>
-                          <td className="px-4 py-3 text-sm text-right font-semibold text-[#0f172a]">{fmt(t.total)}</td>
+                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">{t.mesa_nombre}</td>
+                          <td className="px-4 py-3 text-sm text-right font-semibold text-[var(--text-primary)]">{fmt(t.total)}</td>
                           <td className="px-4 py-3">
                             {isAnulado ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
@@ -641,7 +641,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => setTicketModalId(t.id)}
-                                className="px-2.5 py-1.5 text-xs bg-slate-100 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-slate-200 transition-colors"
+                                className="px-2.5 py-1.5 text-xs bg-slate-100 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-slate-200 transition-colors"
                               >
                                 Ver
                               </button>
@@ -784,18 +784,18 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
   }
 
   const esIngreso = tipo === 'ingreso'
-  const accentBtn = esIngreso ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
+  const accentBtn = esIngreso ? 'bg-[var(--accent)] hover:bg-[var(--accent-hover)]' : 'bg-red-600 hover:bg-red-700'
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e8f0]">
-          <h3 className="text-base font-bold text-[#0f172a]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+          <h3 className="text-base font-bold text-[var(--text-primary)]">
             {esIngreso ? 'Añadir ingreso' : 'Añadir gasto'}
           </h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#94a3b8] hover:text-[#0f172a] hover:bg-slate-100 text-xl leading-none">×</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-100 text-xl leading-none">×</button>
         </div>
 
         <div className="px-6 py-4 space-y-4">
@@ -804,39 +804,39 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-[#64748b] mb-1">Concepto *</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Concepto *</label>
             <input type="text" value={concepto} onChange={e => setConcepto(e.target.value)}
               placeholder="Describe el movimiento"
-              className="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#64748b] mb-1">Importe (€) *</label>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Importe (€) *</label>
               <input type="number" min="0.01" step="0.01" value={importe} onChange={e => setImporte(e.target.value)}
                 placeholder="0,00"
-                className="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
+                className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#64748b] mb-1">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                 {recurrencia === 'unico' ? 'Fecha *' : 'Fecha de inicio *'}
               </label>
               <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-                className="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
+                className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#64748b] mb-1">Categoría *</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Categoría *</label>
             <select value={categoria} onChange={e => setCategoria(e.target.value)}
-              className="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 bg-white">
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 bg-[var(--bg-surface)]">
               <option value="">Seleccionar categoría</option>
               {CATEGORIAS[tipo].map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#64748b] mb-2">Repetición</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-2">Repetición</label>
             <div className="grid grid-cols-3 gap-2">
               {RECURRENCIAS.map(r => (
                 <button
@@ -845,7 +845,7 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
                   className={`px-3 py-2 text-sm rounded-xl border text-center transition-colors ${
                     recurrencia === r.value
                       ? 'bg-violet-600 text-white border-violet-600'
-                      : 'bg-white text-[#64748b] border-[#e2e8f0] hover:bg-slate-50'
+                      : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-page)]'
                   }`}
                 >
                   {r.label}
@@ -860,16 +860,16 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#64748b] mb-1">Notas (opcional)</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
             <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
               placeholder="Observaciones adicionales..."
-              className="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 resize-none" />
+              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 resize-none" />
           </div>
         </div>
 
         <div className="px-6 pb-5 flex justify-end gap-3">
           <button onClick={onClose}
-            className="px-4 py-2 text-sm border border-[#e2e8f0] rounded-xl text-[#64748b] hover:bg-slate-50">
+            className="px-4 py-2 text-sm border border-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
             Cancelar
           </button>
           <button onClick={handleGuardar} disabled={saving}
@@ -903,29 +903,29 @@ function EditEnviarModal({ ticketId: _ticketId, numero, total, enviando, onClose
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e2e8f0]">
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
           <div>
-            <h3 className="text-base font-bold text-[#0f172a]">Enviar a Verifactu</h3>
-            <p className="text-xs text-[#64748b] mt-0.5">Ticket {numero} · {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</p>
+            <h3 className="text-base font-bold text-[var(--text-primary)]">Enviar a Verifactu</h3>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">Ticket {numero} · {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</p>
           </div>
-          <button onClick={onClose} className="text-[#94a3b8] hover:text-[#0f172a] text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none">×</button>
         </div>
 
         <div className="px-5 py-4 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#64748b] mb-2">Tipo de factura</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-2">Tipo de factura</label>
             <div className="grid grid-cols-2 gap-2">
               {(['F2', 'F1'] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => setTipo(t)}
                   className={`px-3 py-2.5 rounded-xl border text-sm font-medium text-left transition-colors ${
-                    tipo === t ? 'bg-blue-600 text-white border-blue-600' : 'border-[#e2e8f0] text-[#64748b] hover:bg-slate-50'
+                    tipo === t ? 'bg-[var(--accent)] text-white border-blue-600' : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-page)]'
                   }`}
                 >
                   <div className="font-semibold">{t}</div>
-                  <div className={`text-xs mt-0.5 ${tipo === t ? 'text-blue-100' : 'text-[#94a3b8]'}`}>
+                  <div className={`text-xs mt-0.5 ${tipo === t ? 'text-blue-100' : 'text-[var(--text-secondary)]'}`}>
                     {t === 'F2' ? 'Simplificada' : 'Factura completa'}
                   </div>
                 </button>
@@ -936,23 +936,23 @@ function EditEnviarModal({ ticketId: _ticketId, numero, total, enviando, onClose
           {tipo === 'F1' && (
             <>
               <div>
-                <label className="block text-xs font-semibold text-[#64748b] mb-1">NIF del cliente</label>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">NIF del cliente</label>
                 <input
                   type="text"
                   value={nif}
                   onChange={e => setNif(e.target.value)}
                   placeholder="12345678A"
-                  className="w-full border border-[#e2e8f0] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
+                  className="w-full border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#64748b] mb-1">Nombre del cliente</label>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Nombre del cliente</label>
                 <input
                   type="text"
                   value={nombre}
                   onChange={e => setNombre(e.target.value)}
                   placeholder="Nombre o razón social"
-                  className="w-full border border-[#e2e8f0] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
+                  className="w-full border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-blue-400"
                 />
               </div>
             </>
@@ -960,13 +960,13 @@ function EditEnviarModal({ ticketId: _ticketId, numero, total, enviando, onClose
         </div>
 
         <div className="px-5 pb-5 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e2e8f0] rounded-xl text-sm text-[#64748b] hover:bg-slate-50">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[var(--border)] rounded-xl text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={enviando}
-            className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="flex-1 py-2.5 bg-[var(--accent)] text-white rounded-xl text-sm font-semibold hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
           >
             {enviando ? 'Enviando...' : 'Confirmar y enviar'}
           </button>
@@ -992,25 +992,25 @@ function AnularModal({ numero, total, fecha, yaEnviado, anulando, onClose, onCon
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e2e8f0]">
-          <h3 className="text-base font-bold text-[#0f172a]">Anular ticket</h3>
-          <button onClick={onClose} className="text-[#94a3b8] hover:text-[#0f172a] text-xl leading-none">×</button>
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+          <h3 className="text-base font-bold text-[var(--text-primary)]">Anular ticket</h3>
+          <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl leading-none">×</button>
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          <div className="bg-slate-50 rounded-xl p-3 text-sm space-y-1">
+          <div className="bg-[var(--bg-page)] rounded-xl p-3 text-sm space-y-1">
             <div className="flex justify-between">
-              <span className="text-[#64748b]">Ticket</span>
-              <span className="font-mono font-semibold text-[#0f172a]">{numero}</span>
+              <span className="text-[var(--text-secondary)]">Ticket</span>
+              <span className="font-mono font-semibold text-[var(--text-primary)]">{numero}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#64748b]">Importe</span>
-              <span className="font-semibold text-[#0f172a]">{total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
+              <span className="text-[var(--text-secondary)]">Importe</span>
+              <span className="font-semibold text-[var(--text-primary)]">{total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#64748b]">Fecha</span>
-              <span className="text-[#0f172a]">{new Date(fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+              <span className="text-[var(--text-secondary)]">Fecha</span>
+              <span className="text-[var(--text-primary)]">{new Date(fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
             </div>
           </div>
 
@@ -1027,20 +1027,20 @@ function AnularModal({ numero, total, fecha, yaEnviado, anulando, onClose, onCon
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#64748b] mb-1">Motivo (opcional)</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Motivo (opcional)</label>
             <input
               type="text"
               value={motivo}
               onChange={e => setMotivo(e.target.value)}
               placeholder="Ej: error en artículos, duplicado..."
-              className="w-full border border-[#e2e8f0] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-red-300"
+              className="w-full border border-[var(--border)] rounded-xl px-3 py-2 text-sm text-black outline-none focus:border-red-300"
             />
           </div>
         </div>
 
         <div className="px-5 pb-5 flex gap-3">
           <button onClick={onClose} disabled={anulando}
-            className="flex-1 py-2.5 border border-[#e2e8f0] rounded-xl text-sm text-[#64748b] hover:bg-slate-50 disabled:opacity-50">
+            className="flex-1 py-2.5 border border-[var(--border)] rounded-xl text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-page)] disabled:opacity-50">
             Cancelar
           </button>
           <button
@@ -1066,25 +1066,25 @@ function BatchConfirmModal({ count, onClose, onConfirm }: {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="px-5 py-4 border-b border-[#e2e8f0]">
-          <h3 className="text-base font-bold text-[#0f172a]">Enviar {count} tickets</h3>
+      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="px-5 py-4 border-b border-[var(--border)]">
+          <h3 className="text-base font-bold text-[var(--text-primary)]">Enviar {count} tickets</h3>
         </div>
         <div className="px-5 py-4">
-          <p className="text-sm text-[#64748b]">
-            Se enviarán <span className="font-semibold text-[#0f172a]">{count} tickets</span> a Verifactu como <span className="font-semibold">factura simplificada (F2)</span>.
+          <p className="text-sm text-[var(--text-secondary)]">
+            Se enviarán <span className="font-semibold text-[var(--text-primary)]">{count} tickets</span> a Verifactu como <span className="font-semibold">factura simplificada (F2)</span>.
           </p>
-          <p className="text-xs text-[#94a3b8] mt-2">
+          <p className="text-xs text-[var(--text-secondary)] mt-2">
             Para facturas completas con NIF de cliente, envíalos uno a uno.
           </p>
         </div>
         <div className="px-5 pb-5 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e2e8f0] rounded-xl text-sm text-[#64748b] hover:bg-slate-50">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[var(--border)] rounded-xl text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+            className="flex-1 py-2.5 bg-[var(--accent)] text-white rounded-xl text-sm font-semibold hover:bg-[var(--accent-hover)] transition-colors"
           >
             Confirmar y enviar
           </button>

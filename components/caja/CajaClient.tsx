@@ -23,8 +23,8 @@ function fmtFecha(iso: string) {
 }
 
 function DescuadreChip({ valor }: { valor: number | null }) {
-  if (valor === null) return <span className="text-gray-400">—</span>
-  const color = valor === 0 ? 'text-gray-500' : valor > 0 ? 'text-yellow-600' : 'text-red-600'
+  if (valor === null) return <span className="text-[var(--text-secondary)]">—</span>
+  const color = valor === 0 ? 'text-[var(--text-secondary)]' : valor > 0 ? 'text-yellow-600' : 'text-red-600'
   return <span className={`font-medium ${color}`}>{valor >= 0 ? '+' : ''}{fmt(valor)}</span>
 }
 
@@ -127,7 +127,7 @@ export default function CajaClient({
             key={v}
             onClick={() => setVista(v)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              vista === v ? 'bg-blue-600 text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              vista === v ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {v === 'actual' ? 'Turno actual' : 'Historial'}
@@ -156,7 +156,7 @@ export default function CajaClient({
                     step="0.01"
                     value={fondoInicial}
                     onChange={e => setFondoInicial(e.target.value)}
-                    className="w-full border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   />
                 </div>
                 {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
@@ -256,31 +256,31 @@ export default function CajaClient({
                       </tr>
                       {filaExpandida === t.id && (
                         <tr>
-                          <td colSpan={9} className="px-6 py-4 bg-slate-50">
+                          <td colSpan={9} className="px-6 py-4 bg-[var(--bg-page)]">
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
                               <div>
-                                <p className="text-xs text-gray-500 mb-0.5">Cerrado por</p>
+                                <p className="text-xs text-[var(--text-secondary)] mb-0.5">Cerrado por</p>
                                 <p className="font-medium">{t.cerrado_por_nombre ?? '—'}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500 mb-0.5">Fondo inicial</p>
+                                <p className="text-xs text-[var(--text-secondary)] mb-0.5">Fondo inicial</p>
                                 <p className="font-medium">{fmt(Number(t.fondo_inicial))}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500 mb-0.5">Efectivo esperado</p>
+                                <p className="text-xs text-[var(--text-secondary)] mb-0.5">Efectivo esperado</p>
                                 <p className="font-medium">{fmt(Number(t.efectivo_esperado ?? 0))}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500 mb-0.5">Efectivo contado</p>
+                                <p className="text-xs text-[var(--text-secondary)] mb-0.5">Efectivo contado</p>
                                 <p className="font-medium">{fmt(Number(t.efectivo_contado ?? 0))}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500 mb-0.5">Descuadre</p>
+                                <p className="text-xs text-[var(--text-secondary)] mb-0.5">Descuadre</p>
                                 <DescuadreChip valor={t.descuadre !== null ? Number(t.descuadre) : null} />
                               </div>
                               {t.notas && (
                                 <div className="col-span-2 sm:col-span-3">
-                                  <p className="text-xs text-gray-500 mb-0.5">Notas</p>
+                                  <p className="text-xs text-[var(--text-secondary)] mb-0.5">Notas</p>
                                   <p>{t.notas}</p>
                                 </div>
                               )}
@@ -320,22 +320,22 @@ export default function CajaClient({
       {/* ── Modal de cierre ── */}
       {modalCierre && turno && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-5 shadow-2xl">
-            <h2 className="text-lg font-bold text-gray-900">Cierre de turno</h2>
+          <div className="bg-[var(--bg-surface)] rounded-2xl p-6 w-full max-w-md space-y-5 shadow-2xl">
+            <h2 className="text-lg font-bold text-[var(--text-primary)]">Cierre de turno</h2>
 
-            <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+            <div className="bg-[var(--bg-page)] rounded-xl p-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Total ventas</span>
-                <span className="font-medium text-gray-900">{fmt(resumenActual?.total_ventas ?? 0)}</span>
+                <span className="text-[var(--text-secondary)]">Total ventas</span>
+                <span className="font-medium text-[var(--text-primary)]">{fmt(resumenActual?.total_ventas ?? 0)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Efectivo esperado en caja</span>
-                <span className="font-medium text-gray-900">{fmt(efectivoEsperado)}</span>
+                <span className="text-[var(--text-secondary)]">Efectivo esperado en caja</span>
+                <span className="font-medium text-[var(--text-primary)]">{fmt(efectivoEsperado)}</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
                 Efectivo contado en caja (€)
               </label>
               <input
@@ -346,11 +346,11 @@ export default function CajaClient({
                 onChange={e => setEfectivoContado(e.target.value)}
                 placeholder="0.00"
                 autoFocus
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
               />
               {efectivoContado !== '' && (
                 <p className={`text-sm mt-2 font-medium ${
-                  diferencia > 0 ? 'text-green-600' : diferencia < 0 ? 'text-red-600' : 'text-gray-500'
+                  diferencia > 0 ? 'text-green-600' : diferencia < 0 ? 'text-red-600' : 'text-[var(--text-secondary)]'
                 }`}>
                   Diferencia: {diferencia >= 0 ? '+' : ''}{fmt(diferencia)}
                 </p>
@@ -358,13 +358,13 @@ export default function CajaClient({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Notas (opcional)</label>
               <textarea
                 value={notasCierre}
                 onChange={e => setNotasCierre(e.target.value)}
                 rows={2}
                 placeholder="Observaciones del cierre..."
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none"
               />
             </div>
 
@@ -373,7 +373,7 @@ export default function CajaClient({
             <div className="flex gap-3">
               <button
                 onClick={() => { setModalCierre(false); setError(null) }}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2.5 border border-gray-300 text-[var(--text-primary)] text-sm font-medium rounded-xl hover:bg-[var(--bg-page)] transition-colors"
               >
                 Cancelar
               </button>

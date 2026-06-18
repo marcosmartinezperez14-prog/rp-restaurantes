@@ -22,8 +22,8 @@ export default function StockHistory({ productId }: { productId: string }) {
     })
   }, [productId])
 
-  if (isPending) return <p className="text-xs text-[#94a3b8] py-2">Cargando historial...</p>
-  if (movements.length === 0) return <p className="text-xs text-[#94a3b8] py-2">Sin movimientos</p>
+  if (isPending) return <p className="text-xs text-[var(--text-secondary)] py-2">Cargando historial...</p>
+  if (movements.length === 0) return <p className="text-xs text-[var(--text-secondary)] py-2">Sin movimientos</p>
 
   return (
     <div className="flex flex-col gap-1 mt-2">
@@ -33,11 +33,11 @@ export default function StockHistory({ productId }: { productId: string }) {
         return (
           <div key={m.id} className="flex items-center gap-2 text-xs py-1 border-b border-[#f1f5f9] last:border-0">
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${cfg.color}`}>{cfg.label}</span>
-            <span className="font-semibold text-[#0f172a]">{sign}{m.quantity}</span>
-            {m.cost_price !== null && <span className="text-[#64748b]">{Number(m.cost_price).toFixed(2)} €/u</span>}
-            {m.purchase_date && <span className="text-[#94a3b8]">{m.purchase_date}</span>}
-            {m.notes && <span className="text-[#94a3b8] truncate">{m.notes}</span>}
-            <span className="ml-auto text-[#94a3b8] flex-shrink-0">
+            <span className="font-semibold text-[var(--text-primary)]">{sign}{m.quantity}</span>
+            {m.cost_price !== null && <span className="text-[var(--text-secondary)]">{Number(m.cost_price).toFixed(2)} €/u</span>}
+            {m.purchase_date && <span className="text-[var(--text-secondary)]">{m.purchase_date}</span>}
+            {m.notes && <span className="text-[var(--text-secondary)] truncate">{m.notes}</span>}
+            <span className="ml-auto text-[var(--text-secondary)] flex-shrink-0">
               {new Date(m.created_at).toLocaleDateString('es-ES')}
             </span>
           </div>
