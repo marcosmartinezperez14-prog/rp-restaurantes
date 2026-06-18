@@ -43,6 +43,7 @@ export default async function FinanzasPage() {
       .from('movimientos')
       .select('*')
       .eq('restaurant_id', restaurantId)
+      .is('deleted_at', null)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false }),
     supabase

@@ -5,14 +5,15 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { isSuperadmin } from '@/lib/auth/superadmin'
 
-// Tablas gestionadas en la Fase 1 de la papelera
-export type TablaFase1 =
+export type TablaPapelera =
   | 'tables'
   | 'zones'
   | 'categories'
   | 'menu_items'
   | 'products'
   | 'users'
+  | 'reservations'
+  | 'movimientos'
 
 export interface ItemPapelera {
   id: string
@@ -24,66 +25,87 @@ export interface ItemPapelera {
   deleted_by: string | null
 }
 
-export interface PapeleraFase1 {
+export interface DatosPapelera {
+  // Fase 1
   mesas:       ItemPapelera[]
   zonas:       ItemPapelera[]
   categorias:  ItemPapelera[]
   platos:      ItemPapelera[]
   productos:   ItemPapelera[]
   usuarios:    ItemPapelera[]
+  // Fase 2
+  reservas:    ItemPapelera[]
+  movimientos: ItemPapelera[]
 }
+
+// Alias para compatibilidad con imports existentes de Fase 1
+export type TablaFase1 = TablaPapelera
+export type PapeleraFase1 = DatosPapelera
 
 // ─── Lectura ──────────────────────────────────────────────────────────────────
 
-export async function getPapeleraFase1(): Promise<PapeleraFase1> {
-  const [mesas, zonas, categorias, platos, productos, usuarios] = await Promise.all([
-    supabaseAdmin
-      .from('tables')
-      .select('id, name, capacity, deleted_at, deleted_by, restaurant_id, restaurants(name)')
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false }),
+export async function getPapeleraFase1(): Promise<DatosPapelera> {
+  const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos] =
+    await Promise.all([
+      supabaseAdmin
+        .from('tables')
+        .select('id, name, capacity, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
 
-    supabaseAdmin
-      .from('zones')
-      .select('id, name, color, deleted_at, deleted_by, restaurant_id, restaurants(name)')
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false }),
+      supabaseAdmin
+        .from('zones')
+        .select('id, name, color, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
 
-    supabaseAdmin
-      .from('categories')
-      .select('id, name, deleted_at, deleted_by, restaurant_id, restaurants(name)')
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false }),
+      supabaseAdmin
+        .from('categories')
+        .select('id, name, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
 
-    supabaseAdmin
-      .from('menu_items')
-      .select('id, name, price, deleted_at, deleted_by, restaurant_id, restaurants(name)')
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false }),
+      supabaseAdmin
+        .from('menu_items')
+        .select('id, name, price, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
 
-    supabaseAdmin
-      .from('products')
-      .select('id, name, cost_price, deleted_at, deleted_by, restaurant_id, restaurants(name)')
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false }),
+      supabaseAdmin
+        .from('products')
+        .select('id, name, cost_price, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
 
-    supabaseAdmin
-      .from('users')
-      .select('id, nombre, email, activo, restaurant_id, restaurants(name)')
-      .eq('activo', false)
-      .order('id', { ascending: false }),
-  ])
+      supabaseAdmin
+        .from('users')
+        .select('id, nombre, email, activo, restaurant_id, restaurants(name)')
+        .eq('activo', false)
+        .order('id', { ascending: false }),
+
+      supabaseAdmin
+        .from('reservations')
+        .select('id, customer_name, party_size, reservation_date, reservation_time, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
+
+      supabaseAdmin
+        .from('movimientos')
+        .select('id, concepto, tipo, importe, fecha, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false }),
+    ])
 
   function toItem(row: Record<string, unknown>, nombre: string, extra?: string): ItemPapelera {
     const rest = row.restaurants as { name: string } | null
     return {
-      id:           row.id as string,
+      id:            row.id as string,
       nombre,
       extra,
-      restaurante:  rest?.name ?? '—',
+      restaurante:   rest?.name ?? '—',
       restaurant_id: row.restaurant_id as string,
-      deleted_at:   (row.deleted_at ?? '') as string,
-      deleted_by:   (row.deleted_by ?? null) as string | null,
+      deleted_at:    (row.deleted_at ?? '') as string,
+      deleted_by:    (row.deleted_by ?? null) as string | null,
     }
   }
 
@@ -104,6 +126,18 @@ export async function getPapeleraFase1(): Promise<PapeleraFase1> {
         (r.nombre as string) || (r.email as string),
         r.email as string,
       )),
+    reservas: (reservas.data ?? []).map(r =>
+      toItem(
+        r as Record<string, unknown>,
+        r.customer_name as string,
+        `${r.party_size} pers. · ${r.reservation_date} ${r.reservation_time}`,
+      )),
+    movimientos: (movimientos.data ?? []).map(r =>
+      toItem(
+        r as Record<string, unknown>,
+        r.concepto as string,
+        `${r.tipo === 'ingreso' ? '+' : '-'}${Number(r.importe).toFixed(2)}€ · ${r.fecha}`,
+      )),
   }
 }
 
@@ -121,7 +155,7 @@ async function requireSuperadmin(): Promise<string> {
 // ─── Restaurar ────────────────────────────────────────────────────────────────
 
 export async function restaurarItem(
-  tabla: TablaFase1,
+  tabla: TablaPapelera,
   id: string
 ): Promise<{ error?: string }> {
   await requireSuperadmin()
@@ -150,13 +184,12 @@ export async function restaurarItem(
 // ─── Eliminar definitivamente ─────────────────────────────────────────────────
 
 export async function eliminarDefinitivo(
-  tabla: TablaFase1,
+  tabla: TablaPapelera,
   id: string
 ): Promise<{ error?: string }> {
   await requireSuperadmin()
 
   if (tabla === 'users') {
-    // Obtener auth_id antes de eliminar el registro
     const { data: userRow } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -171,11 +204,9 @@ export async function eliminarDefinitivo(
       .eq('id', id)
     if (dbError) return { error: 'No se pudo eliminar el usuario.' }
 
-    // Eliminar también de Supabase Auth
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id)
     if (authError) {
       console.error('[eliminarDefinitivo] auth delete error:', authError.message)
-      // No hacemos rollback del DB delete — el usuario ya no puede autenticarse
     }
     return {}
   }

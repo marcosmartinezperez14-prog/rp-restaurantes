@@ -233,7 +233,7 @@ export async function deleteReservation(reservationId: string): Promise<{ error?
 
   const { error } = await supabase
     .from('reservations')
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
     .eq('id', reservationId)
     .eq('restaurant_id', restaurantId)
 

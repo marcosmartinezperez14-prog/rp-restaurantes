@@ -42,6 +42,7 @@ export default async function ReservasPage() {
     .from('reservations')
     .select('id, restaurant_id, customer_name, customer_phone, customer_email, party_size, reservation_date, reservation_time, status, notes, consentimiento_rgpd, created_at')
     .eq('restaurant_id', usuarioActual.restaurant_id)
+    .is('deleted_at', null)
     .order('reservation_date', { ascending: false })
     .order('reservation_time', { ascending: true })
 

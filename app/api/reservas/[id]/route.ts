@@ -92,9 +92,15 @@ export async function DELETE(
 
   if (!reserva) return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 })
 
+  // Obtener auth_id del caller para deleted_by
+  const { data: { user: callerAuth } } = await (await createClient()).auth.getUser()
+
   const { error } = await supabaseAdmin
     .from('reservations')
-    .delete()
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: callerAuth?.id ?? null,
+    })
     .eq('id', id)
     .eq('restaurant_id', caller.restaurantId)
 

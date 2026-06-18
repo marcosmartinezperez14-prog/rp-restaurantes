@@ -276,14 +276,17 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
   }
 
   async function handleEliminar(id: string) {
-    if (!confirm('¿Eliminar este movimiento? Esta acción no se puede deshacer.')) return
+    if (!confirm('¿Eliminar este movimiento?')) return
     setEliminandoId(id)
     const supabase = createClient()
-    const { error } = await supabase.from('movimientos').delete().eq('id', id)
+    const { error } = await supabase
+      .from('movimientos')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
     setEliminandoId(null)
     if (error) { showToast('Error al eliminar: ' + error.message); return }
     setMovimientos(prev => prev.filter(m => m.id !== id))
-    showToast('Movimiento eliminado')
+    showToast('Movimiento enviado a la papelera')
   }
 
   return (

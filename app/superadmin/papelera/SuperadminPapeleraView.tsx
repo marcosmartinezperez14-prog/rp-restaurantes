@@ -4,37 +4,39 @@ import { useState, useTransition } from 'react'
 import {
   restaurarItem,
   eliminarDefinitivo,
-  type TablaFase1,
+  type TablaPapelera,
   type ItemPapelera,
-  type PapeleraFase1,
+  type DatosPapelera,
 } from '@/app/actions/papelera'
 
 interface Props {
-  datos: PapeleraFase1
+  datos: DatosPapelera
 }
 
 interface ConfirmState {
-  tabla: TablaFase1
+  tabla: TablaPapelera
   id: string
   nombre: string
 }
 
 const SECCIONES: Array<{
-  key: keyof PapeleraFase1
-  tabla: TablaFase1
+  key: keyof DatosPapelera
+  tabla: TablaPapelera
   titulo: string
   icono: string
 }> = [
-  { key: 'mesas',      tabla: 'tables',     titulo: 'Mesas',             icono: '🪑' },
-  { key: 'zonas',      tabla: 'zones',      titulo: 'Zonas',             icono: '🗺️' },
-  { key: 'categorias', tabla: 'categories', titulo: 'Categorías',        icono: '📂' },
-  { key: 'platos',     tabla: 'menu_items', titulo: 'Platos de carta',   icono: '🍽️' },
-  { key: 'productos',  tabla: 'products',   titulo: 'Productos / stock', icono: '📦' },
-  { key: 'usuarios',   tabla: 'users',      titulo: 'Usuarios',          icono: '👤' },
+  { key: 'mesas',       tabla: 'tables',       titulo: 'Mesas',             icono: '🪑' },
+  { key: 'zonas',       tabla: 'zones',        titulo: 'Zonas',             icono: '🗺️' },
+  { key: 'categorias',  tabla: 'categories',   titulo: 'Categorías',        icono: '📂' },
+  { key: 'platos',      tabla: 'menu_items',   titulo: 'Platos de carta',   icono: '🍽️' },
+  { key: 'productos',   tabla: 'products',     titulo: 'Productos / stock', icono: '📦' },
+  { key: 'usuarios',    tabla: 'users',        titulo: 'Usuarios',          icono: '👤' },
+  { key: 'reservas',    tabla: 'reservations', titulo: 'Reservas',          icono: '📅' },
+  { key: 'movimientos', tabla: 'movimientos',  titulo: 'Movimientos',       icono: '💰' },
 ]
 
 export default function SuperadminPapeleraView({ datos: datosIniciales }: Props) {
-  const [datos, setDatos] = useState<PapeleraFase1>(datosIniciales)
+  const [datos, setDatos] = useState<DatosPapelera>(datosIniciales)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [toast, setToast] = useState<{ msg: string; tipo: 'ok' | 'err' } | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -46,20 +48,22 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
     setTimeout(() => setToast(null), 3500)
   }
 
-  function quitarItemLocal(tabla: TablaFase1, id: string) {
-    const keyMap: Record<TablaFase1, keyof PapeleraFase1> = {
-      tables:     'mesas',
-      zones:      'zonas',
-      categories: 'categorias',
-      menu_items: 'platos',
-      products:   'productos',
-      users:      'usuarios',
+  function quitarItemLocal(tabla: TablaPapelera, id: string) {
+    const keyMap: Record<TablaPapelera, keyof DatosPapelera> = {
+      tables:       'mesas',
+      zones:        'zonas',
+      categories:   'categorias',
+      menu_items:   'platos',
+      products:     'productos',
+      users:        'usuarios',
+      reservations: 'reservas',
+      movimientos:  'movimientos',
     }
     const key = keyMap[tabla]
     setDatos(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) }))
   }
 
-  function handleRestaurar(tabla: TablaFase1, item: ItemPapelera) {
+  function handleRestaurar(tabla: TablaPapelera, item: ItemPapelera) {
     startTransition(async () => {
       const res = await restaurarItem(tabla, item.id)
       if (res.error) { mostrarToast(res.error, 'err'); return }
@@ -68,7 +72,7 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
     })
   }
 
-  function handleEliminarClick(tabla: TablaFase1, item: ItemPapelera) {
+  function handleEliminarClick(tabla: TablaPapelera, item: ItemPapelera) {
     setConfirm({ tabla, id: item.id, nombre: item.nombre })
   }
 
