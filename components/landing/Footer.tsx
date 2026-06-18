@@ -2,30 +2,32 @@ import { CONTACTO_EMAIL } from '@/lib/config/landing'
 
 export default function Footer() {
   return (
-    <footer className="bg-[#1A2B4A] text-slate-400 py-12 px-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-          <p
-            className="text-white font-semibold text-lg"
-            style={{ fontFamily: 'var(--font-lora)' }}
-          >
-            RP Restaurantes
-          </p>
-          <div
-            className="flex flex-wrap gap-x-6 gap-y-2 text-sm"
-            style={{ fontFamily: 'var(--font-inter)' }}
-          >
-            <a href="/privacidad" className="hover:text-white transition-colors">Política de privacidad</a>
-            <a href="/aviso-legal" className="hover:text-white transition-colors">Aviso legal</a>
-            <a href="/cookies" className="hover:text-white transition-colors">Política de cookies</a>
-            <a href={`mailto:${CONTACTO_EMAIL}`} className="hover:text-white transition-colors">{CONTACTO_EMAIL}</a>
+    <footer style={{
+      background: '#0B1020', color: '#9AA4BD',
+      padding: '48px 28px', fontFamily: 'var(--font-plus-jakarta)'
+    }}>
+      <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+          justifyContent: 'space-between', gap: 24, marginBottom: 32
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8, background: '#2F54EB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontWeight: 800, fontSize: 15
+            }}>R</div>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>RP Restaurantes</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', fontSize: 14 }}>
+            <a href="/privacidad" style={{ color: 'inherit', textDecoration: 'none' }}>Política de privacidad</a>
+            <a href="/aviso-legal" style={{ color: 'inherit', textDecoration: 'none' }}>Aviso legal</a>
+            <a href="/cookies" style={{ color: 'inherit', textDecoration: 'none' }}>Política de cookies</a>
+            <a href={`mailto:${CONTACTO_EMAIL}`} style={{ color: 'inherit', textDecoration: 'none' }}>{CONTACTO_EMAIL}</a>
           </div>
         </div>
-        <div className="border-t border-white/10 pt-6">
-          <p
-            className="text-xs text-slate-500"
-            style={{ fontFamily: 'var(--font-inter)' }}
-          >
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 24 }}>
+          <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
             © {new Date().getFullYear()} RP Restaurantes. Todos los derechos reservados.
           </p>
         </div>

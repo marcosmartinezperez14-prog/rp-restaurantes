@@ -2,104 +2,86 @@ import { PLANES } from '@/lib/config/landing'
 
 export default function Pricing({ onCtaClick }: { onCtaClick?: (planNombre: string) => void }) {
   return (
-    <section className="py-24 px-4 bg-[#F7F6F3]" id="pricing">
-      <div className="max-w-5xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-semibold text-[#1A2B4A] text-center mb-4"
-          style={{ fontFamily: 'var(--font-lora)' }}
-        >
-          Elige tu plan
-        </h2>
-        <p className="text-gray-500 text-center mb-4 text-base" style={{ fontFamily: 'var(--font-inter)' }}>
-          Sin permanencia. Cambia o cancela cuando quieras.
-        </p>
-        <p className="text-center mb-14">
-          <span
-            className="inline-block border border-[#B8860B] text-[#B8860B] text-sm px-4 py-1.5 rounded"
-            style={{ fontFamily: 'var(--font-inter)' }}
-          >
-            Montaje inicial: precio a consultar (pago único)
-          </span>
-        </p>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {PLANES.map(plan => (
-            <div
-              key={plan.id}
-              className={`bg-white flex flex-col p-8 rounded-lg border-t-4 ${
-                plan.destacado
-                  ? 'border-t-[#1E4080] shadow-md'
-                  : 'border-t-gray-200'
-              }`}
-            >
-              {plan.destacado && (
-                <p
-                  className="text-xs font-semibold tracking-widest text-[#1E4080] uppercase mb-3"
-                  style={{ fontFamily: 'var(--font-inter)' }}
-                >
-                  Más solicitado
-                </p>
-              )}
-              {!plan.destacado && <div className="mb-6" />}
-
-              <h3
-                className="text-xl font-semibold text-[#1A2B4A] mb-2"
-                style={{ fontFamily: 'var(--font-lora)' }}
-              >
-                {plan.nombre}
-              </h3>
-
-              <div className="flex items-end gap-1 mb-2">
-                <span
-                  className="text-4xl font-semibold text-[#1A2B4A]"
-                  style={{ fontFamily: 'var(--font-lora)' }}
-                >
-                  {plan.precio}€
-                </span>
-                <span className="text-gray-400 mb-1 text-sm" style={{ fontFamily: 'var(--font-inter)' }}>
-                  /mes
-                </span>
+    <section id="pricing" style={{ maxWidth: 1180, margin: '0 auto', padding: '70px 28px' }}>
+      <h2 style={{
+        fontSize: 36, fontWeight: 800, letterSpacing: '-0.025em',
+        textAlign: 'center', margin: '0 0 8px'
+      }}>
+        Precios claros, sin sorpresas
+      </h2>
+      <p style={{ textAlign: 'center', color: '#5B6477', fontSize: 17, margin: '0 0 44px' }}>
+        Empieza por un local y crece cuando quieras.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, alignItems: 'start' }}>
+        {PLANES.map(plan => (
+          plan.destacado ? (
+            <div key={plan.id} style={{
+              background: '#0B1020', color: '#fff',
+              borderRadius: 20, padding: 30,
+              boxShadow: '0 24px 60px rgba(11,16,32,0.28)',
+              position: 'relative'
+            }}>
+              <div style={{
+                position: 'absolute', top: -12, left: 30,
+                background: '#2F54EB', color: '#fff',
+                fontSize: 12, fontWeight: 700,
+                padding: '6px 13px', borderRadius: 999
+              }}>
+                Más elegido
               </div>
-
-              <p className="text-sm text-gray-500 mb-8 leading-relaxed" style={{ fontFamily: 'var(--font-inter)' }}>
-                {plan.descripcion}
-              </p>
-
-              <ul className="space-y-3 mb-10 flex-1">
-                {plan.features.map(f => (
-                  <li
-                    key={f}
-                    className="flex items-start gap-3 text-sm text-gray-600"
-                    style={{ fontFamily: 'var(--font-inter)' }}
-                  >
-                    <span className="text-[#B8860B] mt-0.5 flex-shrink-0">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#9AA4BD', marginBottom: 10 }}>
+                {plan.nombre}
+              </div>
+              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.02em' }}>
+                {plan.precio}€<span style={{ fontSize: 16, color: '#9AA4BD', fontWeight: 600 }}>/mes</span>
+              </div>
+              <p style={{ fontSize: 14, color: '#9AA4BD', margin: '8px 0 20px' }}>{plan.descripcion}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14, color: '#D7DCEA' }}>
+                {plan.features.map(f => <span key={f}>✓ {f}</span>)}
+              </div>
               <button
                 onClick={() => onCtaClick?.(plan.nombre)}
-                className={`w-full font-semibold py-3 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                  plan.destacado
-                    ? 'bg-[#1E4080] hover:bg-[#163260] text-white focus:ring-[#1E4080]'
-                    : 'bg-white hover:bg-gray-50 text-[#1A2B4A] border border-gray-300 focus:ring-gray-400'
-                }`}
-                style={{ fontFamily: 'var(--font-inter)' }}
+                style={{
+                  width: '100%', marginTop: 24, background: '#2F54EB', color: '#fff',
+                  border: 'none', padding: 13, borderRadius: 11,
+                  fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer', fontSize: 15
+                }}
               >
                 Solicitar {plan.nombre}
               </button>
             </div>
-          ))}
-        </div>
-
-        <p
-          className="text-xs text-gray-400 text-center mt-10"
-          style={{ fontFamily: 'var(--font-inter)' }}
-        >
-          El precio del montaje inicial se acuerda individualmente según las necesidades de tu negocio.
-        </p>
+          ) : (
+            <div key={plan.id} style={{
+              background: '#fff', border: '1px solid #E6EAF3',
+              borderRadius: 20, padding: 30
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#5B6477', marginBottom: 10 }}>
+                {plan.nombre}
+              </div>
+              <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.02em' }}>
+                {plan.precio}€<span style={{ fontSize: 16, color: '#8A93A6', fontWeight: 600 }}>/mes</span>
+              </div>
+              <p style={{ fontSize: 14, color: '#5B6477', margin: '8px 0 20px' }}>{plan.descripcion}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14, color: '#3A4255' }}>
+                {plan.features.map(f => <span key={f}>✓ {f}</span>)}
+              </div>
+              <button
+                onClick={() => onCtaClick?.(plan.nombre)}
+                style={{
+                  width: '100%', marginTop: 24, background: '#fff', color: '#0B1020',
+                  border: '1.5px solid #D9DFEC', padding: 13, borderRadius: 11,
+                  fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer', fontSize: 15
+                }}
+              >
+                Solicitar {plan.nombre}
+              </button>
+            </div>
+          )
+        ))}
       </div>
+      <p style={{ fontSize: 12, color: '#8A93A6', textAlign: 'center', marginTop: 20 }}>
+        El precio del montaje inicial se acuerda individualmente según las necesidades de tu negocio.
+      </p>
     </section>
   )
 }

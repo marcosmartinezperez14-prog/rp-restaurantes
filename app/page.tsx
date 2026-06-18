@@ -5,7 +5,6 @@ import Hero from '@/components/landing/Hero'
 import ComoFunciona from '@/components/landing/ComoFunciona'
 import Funcionalidades from '@/components/landing/Funcionalidades'
 import Pricing from '@/components/landing/Pricing'
-import ContactoForm from '@/components/landing/ContactoForm'
 import Footer from '@/components/landing/Footer'
 import CheckoutModal from '@/components/landing/CheckoutModal'
 
@@ -19,50 +18,54 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ fontFamily: 'var(--font-inter)' }}>
-      {/* Navegación */}
-      <nav className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span
-            className="text-[#1A2B4A] font-semibold text-lg"
-            style={{ fontFamily: 'var(--font-lora)' }}
-          >
-            RP Restaurantes
-          </span>
-          <div className="hidden sm:flex items-center gap-6 text-sm text-gray-500">
-            <a href="#como-funciona" className="hover:text-[#1A2B4A] transition-colors">Cómo funciona</a>
-            <a href="#funcionalidades" className="hover:text-[#1A2B4A] transition-colors">Funcionalidades</a>
-            <a href="#pricing" className="hover:text-[#1A2B4A] transition-colors">Precios</a>
-            <a
-              href="#contacto"
-              className="bg-[#1E4080] hover:bg-[#163260] text-white font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              Contacto
-            </a>
-          </div>
+    <div style={{ fontFamily: 'var(--font-plus-jakarta)', background: '#FFFFFF', color: '#0B1020' }}>
+      <nav style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        maxWidth: 1180, margin: '0 auto', padding: '22px 28px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 9, background: '#2F54EB',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 800, fontSize: 17
+          }}>R</div>
+          <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em' }}>RP Restaurantes</span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 30, fontSize: 15, fontWeight: 500, color: '#46506A' }}>
+          <a href="#funcionalidades" style={{ color: 'inherit', textDecoration: 'none' }}>Funciones</a>
+          <a href="#como-funciona" style={{ color: 'inherit', textDecoration: 'none' }}>Cómo funciona</a>
+          <a href="#pricing" style={{ color: 'inherit', textDecoration: 'none' }}>Precios</a>
+        </div>
+        <a href="#contacto" style={{
+          background: '#2F54EB', color: '#fff', border: 'none',
+          padding: '11px 20px', borderRadius: 10, fontFamily: 'inherit',
+          fontWeight: 600, fontSize: 14, cursor: 'pointer', textDecoration: 'none'
+        }}>Contactar ventas</a>
       </nav>
 
-      {/* Espacio para la nav fija */}
-      <div className="h-16" />
-
       <Hero onCtaClick={() => abrirModal()} />
-      <ComoFunciona />
       <Funcionalidades />
+      <ComoFunciona />
       <Pricing onCtaClick={(plan) => abrirModal(plan)} />
 
-      <section className="py-24 px-4 bg-white" id="contacto">
-        <div className="max-w-xl mx-auto">
-          <h2
-            className="text-3xl md:text-4xl font-semibold text-[#1A2B4A] text-center mb-4"
-            style={{ fontFamily: 'var(--font-lora)' }}
-          >
-            ¿Hablamos?
+      {/* CTA FINAL */}
+      <section style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px 70px' }}>
+        <div style={{
+          background: '#2F54EB', borderRadius: 26, padding: '64px 40px',
+          textAlign: 'center', color: '#fff',
+          boxShadow: '0 30px 70px rgba(47,84,235,0.3)'
+        }}>
+          <h2 style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 14px' }}>
+            ¿Listo para ordenar tu servicio?
           </h2>
-          <p className="text-gray-500 text-center mb-12 text-base">
-            Cuéntanos sobre tu negocio y te explicamos todo sin compromiso.
+          <p style={{ fontSize: 18, color: '#D7DEFF', margin: '0 auto 28px', maxWidth: 480 }}>
+            Te mostramos RP Restaurantes funcionando con la operativa real de tu local.
           </p>
-          <ContactoForm />
+          <a href="#contacto" style={{
+            display: 'inline-block', background: '#fff', color: '#2F54EB', border: 'none',
+            padding: '16px 34px', borderRadius: 12, fontFamily: 'inherit',
+            fontWeight: 700, fontSize: 16, cursor: 'pointer', textDecoration: 'none'
+          }}>Contactar ventas</a>
         </div>
       </section>
 

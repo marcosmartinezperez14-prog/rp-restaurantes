@@ -1,52 +1,35 @@
 const PASOS = [
-  { n: '01', titulo: 'Regístrate en 5 minutos', desc: 'Crea tu cuenta, añade tu restaurante y configura el horario. Sin papeleos ni instalaciones.' },
-  { n: '02', titulo: 'Configura tu carta y tus mesas', desc: 'Sube tu menú, crea categorías, asigna mesas y genera el QR para tus clientes.' },
-  { n: '03', titulo: 'Empieza a cobrar con el TPV', desc: 'Abre comandas, divide cuentas y cobra con tarjeta o efectivo desde cualquier tablet.' },
-  { n: '04', titulo: 'Cumple con Hacienda automáticamente', desc: 'Cada ticket genera su registro Verifactu. Sin errores, sin multas, sin trabajo extra.' },
+  { n: '1', title: 'Configura tu carta', desc: 'Sube tus platos, precios y categorías. Define tus mesas y zonas de sala.' },
+  { n: '2', title: 'Toma comandas', desc: 'Tu equipo apunta los pedidos desde cualquier dispositivo, junto a la mesa.' },
+  { n: '3', title: 'La cocina recibe todo', desc: 'Las comandas llegan a la pantalla de cocina ordenadas y en tiempo real.' },
+  { n: '4', title: 'Cobra y analiza', desc: 'Cierra cuentas en un toque y revisa tus ventas, ticket medio y horas punta.' },
 ]
 
 export default function ComoFunciona() {
   return (
-    <section className="py-24 px-4 bg-[#F7F6F3]" id="como-funciona">
-      <div className="max-w-4xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-semibold text-[#1A2B4A] text-center mb-4"
-          style={{ fontFamily: 'var(--font-lora)' }}
-        >
-          Cómo funciona
+    <section id="como-funciona" style={{
+      background: '#0B1020', color: '#fff',
+      padding: '70px 28px', marginTop: 20
+    }}>
+      <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+        <h2 style={{
+          fontSize: 36, fontWeight: 800, letterSpacing: '-0.025em',
+          textAlign: 'center', margin: '0 0 50px'
+        }}>
+          Listo para operar en 4 pasos
         </h2>
-        <p className="text-gray-500 text-center mb-16 text-base" style={{ fontFamily: 'var(--font-inter)' }}>
-          Cuatro pasos para tener tu restaurante digitalizado
-        </p>
-        <div className="grid md:grid-cols-2 gap-10">
-          {PASOS.map(p => (
-            <div key={p.n} className="flex gap-6">
-              <div className="flex-shrink-0 relative">
-                <span
-                  className="text-7xl font-semibold text-[#1A2B4A] select-none leading-none"
-                  style={{ fontFamily: 'var(--font-lora)', opacity: 0.08 }}
-                  aria-hidden="true"
-                >
-                  {p.n}
-                </span>
-                <span
-                  className="absolute top-1 left-0 text-sm font-semibold text-[#1E4080]"
-                  style={{ fontFamily: 'var(--font-inter)' }}
-                >
-                  {p.n}
-                </span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 22 }}>
+          {PASOS.map(s => (
+            <div key={s.n}>
+              <div style={{
+                width: 42, height: 42, borderRadius: 11, background: '#2F54EB',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 800, fontSize: 17, marginBottom: 16
+              }}>
+                {s.n}
               </div>
-              <div className="pt-1">
-                <h3
-                  className="font-semibold text-[#1A2B4A] mb-2 text-lg"
-                  style={{ fontFamily: 'var(--font-lora)' }}
-                >
-                  {p.titulo}
-                </h3>
-                <p className="text-sm text-gray-500 leading-relaxed" style={{ fontFamily: 'var(--font-inter)' }}>
-                  {p.desc}
-                </p>
-              </div>
+              <h3 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 7px' }}>{s.title}</h3>
+              <p style={{ fontSize: 14, lineHeight: 1.55, color: '#9AA4BD', margin: 0 }}>{s.desc}</p>
             </div>
           ))}
         </div>
