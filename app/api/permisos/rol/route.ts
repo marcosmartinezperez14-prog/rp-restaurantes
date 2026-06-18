@@ -40,6 +40,7 @@ export async function GET() {
     .from('roles')
     .select('id, name, restaurant_id')
     .or(`restaurant_id.is.null,restaurant_id.eq.${caller.restaurantId}`)
+    .is('deleted_at', null)
     .order('name')
 
   if (rolesError) return jsonError('No se pudieron cargar los roles', 500, rolesError)

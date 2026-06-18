@@ -35,6 +35,7 @@ const SECCIONES: Array<{
   { key: 'movimientos',          tabla: 'movimientos',             titulo: 'Movimientos',           icono: '💰' },
   { key: 'gruposModificadores',  tabla: 'product_modifier_groups', titulo: 'Grupos modificadores',  icono: '🔧' },
   { key: 'opcionesModificadores',tabla: 'product_modifier_options',titulo: 'Opciones modificadores',icono: '⚙️' },
+  { key: 'rolesPersonalizados',  tabla: 'roles',                   titulo: 'Roles personalizados',  icono: '🎭' },
 ]
 
 export default function SuperadminPapeleraView({ datos: datosIniciales }: Props) {
@@ -62,6 +63,7 @@ export default function SuperadminPapeleraView({ datos: datosIniciales }: Props)
       movimientos:               'movimientos',
       product_modifier_groups:   'gruposModificadores',
       product_modifier_options:  'opcionesModificadores',
+      roles:                     'rolesPersonalizados',
     }
     const key = keyMap[tabla]
     setDatos(prev => ({ ...prev, [key]: prev[key].filter(i => i.id !== id) }))

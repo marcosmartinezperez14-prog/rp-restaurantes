@@ -15,7 +15,7 @@ async function getCaller(supabase: Awaited<ReturnType<typeof createClient>>) {
   if (!data) return null
   const rolesData = data.user_roles as unknown as { roles: { name: string } | null }[]
   const rol = rolesData?.[0]?.roles?.name ?? null
-  return { restaurantId: data.restaurant_id as string, rol }
+  return { authUserId: user.id, restaurantId: data.restaurant_id as string, rol }
 }
 
 export async function DELETE(
@@ -64,7 +64,7 @@ export async function DELETE(
 
   const { error } = await supabaseAdmin
     .from('roles')
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), deleted_by: caller.authUserId })
     .eq('id', id)
 
   if (error) return jsonError('No se pudo eliminar el rol', 500, error)

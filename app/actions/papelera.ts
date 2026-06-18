@@ -16,6 +16,7 @@ export type TablaPapelera =
   | 'movimientos'
   | 'product_modifier_groups'
   | 'product_modifier_options'
+  | 'roles'
 
 export interface ItemPapelera {
   id: string
@@ -41,6 +42,8 @@ export interface DatosPapelera {
   // Fase 3
   gruposModificadores:   ItemPapelera[]
   opcionesModificadores: ItemPapelera[]
+  // Fase 4
+  rolesPersonalizados: ItemPapelera[]
 }
 
 // Alias para compatibilidad con imports existentes de Fase 1
@@ -50,7 +53,7 @@ export type PapeleraFase1 = DatosPapelera
 // ─── Lectura ──────────────────────────────────────────────────────────────────
 
 export async function getPapeleraFase1(): Promise<DatosPapelera> {
-  const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos, gruposMod, opcionesMod] =
+  const [mesas, zonas, categorias, platos, productos, usuarios, reservas, movimientos, gruposMod, opcionesMod, roles] =
     await Promise.all([
       supabaseAdmin
         .from('tables')
@@ -111,6 +114,13 @@ export async function getPapeleraFase1(): Promise<DatosPapelera> {
         .select('id, name, price_delta, deleted_at, deleted_by, product_modifier_groups!inner(restaurant_id, restaurants(name))')
         .not('deleted_at', 'is', null)
         .order('deleted_at', { ascending: false }),
+
+      supabaseAdmin
+        .from('roles')
+        .select('id, name, display_name, deleted_at, deleted_by, restaurant_id, restaurants(name)')
+        .not('deleted_at', 'is', null)
+        .not('restaurant_id', 'is', null)
+        .order('deleted_at', { ascending: false }),
     ])
 
   function toItem(row: Record<string, unknown>, nombre: string, extra?: string): ItemPapelera {
@@ -157,6 +167,8 @@ export async function getPapeleraFase1(): Promise<DatosPapelera> {
       )),
     gruposModificadores: (gruposMod.data ?? []).map(r =>
       toItem(r as Record<string, unknown>, r.name as string)),
+    rolesPersonalizados: (roles.data ?? []).map(r =>
+      toItem(r as Record<string, unknown>, (r.display_name ?? r.name) as string, r.name as string)),
     opcionesModificadores: (opcionesMod.data ?? []).map(r => {
       const grp = r.product_modifier_groups as unknown as { restaurant_id: string; restaurants: { name: string } | null } | { restaurant_id: string; restaurants: { name: string } | null }[]
       const grpData = Array.isArray(grp) ? grp[0] : grp
