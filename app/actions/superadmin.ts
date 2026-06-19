@@ -1,8 +1,10 @@
 // app/actions/superadmin.ts
 'use server'
 
+import { cookies } from 'next/headers'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { SA_COOKIE } from '@/lib/auth/restaurant-context'
 import { z } from 'zod'
 
 export type SuperadminActionResult =
@@ -231,4 +233,39 @@ export async function getRestaurantes(): Promise<RestauranteResumen[] | { error:
     num_usuarios: usersByRestaurant.get(r.id) ?? 0,
     num_mesas: tablesByRestaurant.get(r.id) ?? 0,
   }))
+}
+
+export async function iniciarSesionRemota(restaurantId: string): Promise<never> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const admin = getSupabaseAdmin()
+  const { data: callerUser } = await admin
+    .from('users')
+    .select('id')
+    .eq('auth_id', user.id)
+    .single()
+  if (!callerUser) redirect('/login')
+
+  const { data: roleRows } = await admin
+    .from('user_roles')
+    .select('roles(name)')
+    .eq('user_id', callerUser.id)
+  const esSuperadmin = (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
+  if (!esSuperadmin) redirect('/superadmin')
+
+  const cookieStore = await cookies()
+  cookieStore.set(SA_COOKIE, restaurantId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+  })
+  redirect('/dashboard')
+}
+
+export async function cerrarSesionRemota(): Promise<never> {
+  const cookieStore = await cookies()
+  cookieStore.delete(SA_COOKIE)
+  redirect('/superadmin')
 }
