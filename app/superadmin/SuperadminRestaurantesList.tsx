@@ -1,6 +1,7 @@
 'use client'
 
 import type { RestauranteResumen } from '@/app/actions/superadmin'
+import { iniciarSesionRemota } from '@/app/actions/superadmin'
 
 interface Props {
   datos: RestauranteResumen[]
@@ -47,6 +48,7 @@ export default function SuperadminRestaurantesList({ datos }: Props) {
               <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
                 Alta
               </th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)]">
@@ -67,6 +69,16 @@ export default function SuperadminRestaurantesList({ datos }: Props) {
                   {new Date(r.created_at).toLocaleDateString('es-ES', {
                     day: '2-digit', month: 'short', year: 'numeric',
                   })}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <form action={iniciarSesionRemota.bind(null, r.id)}>
+                    <button
+                      type="submit"
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors"
+                    >
+                      Acceder
+                    </button>
+                  </form>
                 </td>
               </tr>
             ))}
