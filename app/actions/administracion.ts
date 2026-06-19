@@ -1,10 +1,10 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { Schedule, ReservasConfig } from '@/types/administracion'
 import { DEFAULT_CONFIG } from '@/types/administracion'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 
 const franjaSchema = z.object({
   apertura: z.string(),
@@ -26,22 +26,10 @@ const reservasConfigSchema = z.object({
 
 export type { Franja, DiaSchedule, Schedule, ReservasConfig } from '@/types/administracion'
 
-async function getRestaurantId(supabase: Awaited<ReturnType<typeof createClient>>, authId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from('users')
-    .select('restaurant_id')
-    .eq('auth_id', authId)
-    .single()
-  return data?.restaurant_id ?? null
-}
-
 export async function getReservasConfig(): Promise<ReservasConfig> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('reservation_settings')
@@ -63,12 +51,9 @@ function isValidTime(t: string): boolean {
 }
 
 export async function guardarReservasConfig(config: ReservasConfig): Promise<{ ok?: boolean; error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return { error: 'Restaurante no encontrado' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) return { error: 'No autenticado' }
+  const { supabase, restaurantId } = ctx
 
   const validated = reservasConfigSchema.safeParse(config)
   if (!validated.success) return { error: 'Configuración no válida' }
@@ -117,11 +102,10 @@ export async function guardarReservasConfig(config: ReservasConfig): Promise<{ o
 }
 
 export async function getAforoOnline(): Promise<number | null> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return null
+  const ctx = await getRestaurantContext()
+  if (!ctx) return null
+  const { supabase, restaurantId } = ctx
+
   const { data } = await supabase
     .from('restaurants')
     .select('max_online_comensales')
@@ -131,11 +115,10 @@ export async function getAforoOnline(): Promise<number | null> {
 }
 
 export async function guardarAforoOnline(max: number | null): Promise<{ ok?: boolean; error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return { error: 'Restaurante no encontrado' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) return { error: 'No autenticado' }
+  const { supabase, restaurantId } = ctx
+
   const parsedMax = z.number().int().max(100000).nullable().safeParse(max)
   if (!parsedMax.success) return { error: 'Valor no válido' }
   const value = parsedMax.data !== null && parsedMax.data > 0 ? parsedMax.data : null

@@ -1,8 +1,8 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 
 export type KitchenStatus = 'pending' | 'preparing' | 'ready'
 
@@ -18,18 +18,10 @@ export interface KitchenItem {
   table_name: string
 }
 
-async function getRestaurantId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<string | null> {
-  const { data } = await supabase.from('users').select('restaurant_id').eq('id', userId).single()
-  return data?.restaurant_id ?? null
-}
-
 export async function getKitchenItems(): Promise<KitchenItem[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data: orderItems } = await supabase
     .from('order_items')
@@ -79,12 +71,9 @@ export async function updateKitchenItemStatus(
   itemId: string,
   status: KitchenStatus
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return { error: 'Sin restaurante' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) return { error: 'No autenticado' }
+  const { supabase, restaurantId } = ctx
 
   const v = z.object({
     itemId: z.string().uuid(),
