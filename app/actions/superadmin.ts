@@ -27,7 +27,8 @@ export async function crearRestauranteConAdmin(
   const { data: { user: caller } } = await supabase.auth.getUser()
   if (!caller) return { error: 'No autenticado.' }
 
-  const { data: callerUser } = await supabase
+  const admin = getSupabaseAdmin()
+  const { data: callerUser } = await admin
     .from('users')
     .select('id, user_roles!user_id(roles(name))')
     .eq('auth_id', caller.id)
