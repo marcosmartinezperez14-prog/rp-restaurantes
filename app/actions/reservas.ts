@@ -1,9 +1,9 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { Schedule } from '@/types/administracion'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 
 const RESERVATION_STATUSES = ['confirmed', 'seated', 'completed', 'cancelled', 'no_show', 'pending'] as const
 
@@ -55,29 +55,12 @@ export type ZoneOption = {
   color: string
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-async function getRestaurantId(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('users')
-    .select('restaurant_id')
-    .eq('id', userId)
-    .single()
-  return data?.restaurant_id ?? null
-}
-
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export async function getReservationsByDate(date: string): Promise<Reservation[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('reservations')
@@ -113,12 +96,9 @@ export async function createReservation(params: {
   zoneId?: string
   notes?: string
 }): Promise<{ id: string } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const validated = createReservationSchema.safeParse(params)
   if (!validated.success) return { error: validated.error.issues[0]?.message ?? 'Datos no válidos' }
@@ -147,7 +127,6 @@ export async function createReservation(params: {
     }
   }
 
-  // Auto-assign best table in zone: smallest capacity >= partySize
   let tableId: string | null = null
   if (params.zoneId) {
     const { data: candidates } = await supabase
@@ -179,7 +158,7 @@ export async function createReservation(params: {
       status: 'confirmed',
       table_id: tableId,
       notes: params.notes?.trim() || null,
-      created_by: user.id,
+      created_by: userId,
     })
     .select('id')
     .single()
@@ -195,12 +174,9 @@ export async function updateReservationStatus(
   reservationId: string,
   status: ReservationStatus
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const v = z.object({
     reservationId: z.string().uuid(),
@@ -222,18 +198,15 @@ export async function updateReservationStatus(
 }
 
 export async function deleteReservation(reservationId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   if (!z.string().uuid().safeParse(reservationId).success) return { error: 'Datos no válidos' }
 
   const { error } = await supabase
     .from('reservations')
-    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
     .eq('id', reservationId)
     .eq('restaurant_id', restaurantId)
 
@@ -245,12 +218,9 @@ export async function deleteReservation(reservationId: string): Promise<{ error?
 }
 
 export async function getTableOptions(): Promise<TableOption[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('tables')
@@ -269,12 +239,9 @@ export async function getTableOptions(): Promise<TableOption[]> {
 }
 
 export async function getZones(): Promise<ZoneOption[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('zones')

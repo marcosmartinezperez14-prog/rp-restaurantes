@@ -2,8 +2,8 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 
 const zoneInputSchema = z.object({
   id: z.string().uuid().optional(),
@@ -59,25 +59,10 @@ export type OnboardingData = {
 
 type ActionResult = { error?: string } | undefined
 
-async function getRestaurantId(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('users')
-    .select('restaurant_id')
-    .eq('id', userId)
-    .single()
-  return data?.restaurant_id ?? null
-}
-
 export async function getOnboardingData(): Promise<OnboardingData> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data: restaurant, error: restaurantError } = await supabase
     .from('restaurants')
@@ -136,11 +121,9 @@ export async function saveRestaurantData(data: {
   phone: string
   schedule: string
 }): Promise<ActionResult> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
   if (!restaurantId) return { error: 'Ha ocurrido un error inesperado.' }
 
   const validated = restaurantDataSchema.safeParse(data)
@@ -162,11 +145,9 @@ export async function saveRestaurantData(data: {
 }
 
 export async function saveZonesAndTables(zones: ZoneInput[]): Promise<ActionResult> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
   if (!restaurantId) return { error: 'Ha ocurrido un error inesperado.' }
 
   const validated = z.array(zoneInputSchema).safeParse(zones)
@@ -247,11 +228,9 @@ export async function saveZonesAndTables(zones: ZoneInput[]): Promise<ActionResu
 }
 
 export async function saveMenuData(categories: CategoryInput[]): Promise<ActionResult> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
   if (!restaurantId) return { error: 'Ha ocurrido un error inesperado.' }
 
   const validated = z.array(categoryInputSchema).safeParse(categories)
@@ -329,12 +308,9 @@ export async function saveMenuData(categories: CategoryInput[]): Promise<ActionR
 }
 
 export async function completeOnboarding(): Promise<never> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   await supabase
     .from('restaurants')
@@ -356,11 +332,9 @@ export async function completeOnboarding(): Promise<never> {
 }
 
 export async function getDiagnostics(): Promise<{ raw: unknown; error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
   if (!restaurantId) return { raw: null, error: 'Sin restaurante' }
 
   // Raw zones with ALL columns
@@ -409,11 +383,9 @@ export async function getDiagnostics(): Promise<{ raw: unknown; error?: string }
 
 // Repairs existing data created by the old onboarding (missing restaurant_id, is_active, etc.)
 export async function repairExistingData(): Promise<{ fixed: number; error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
   if (!restaurantId) return { fixed: 0, error: 'No se encontró el restaurante.' }
 
   let fixed = 0
