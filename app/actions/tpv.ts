@@ -1,9 +1,9 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { ModifierGroup, ModifierOption, ModifierSnapshot } from '@/types/modificadores'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 
 const uuid = z.string().uuid()
 
@@ -85,29 +85,12 @@ export type ProcessPaymentParams =
   | { method: 'bizum'; amount: number }
   | { method: 'mixed'; cashAmount: number; cardAmount: number }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-async function getRestaurantId(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('users')
-    .select('restaurant_id')
-    .eq('id', userId)
-    .single()
-  return data?.restaurant_id ?? null
-}
-
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export async function getZonesWithTables(): Promise<ZoneWithTables[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data: zones } = await supabase
     .from('zones')
@@ -160,12 +143,9 @@ export async function getZonesWithTables(): Promise<ZoneWithTables[]> {
 }
 
 export async function getOpenOrder(tableId: string): Promise<{ orderId: string } | null> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('orders')
@@ -180,12 +160,9 @@ export async function getOpenOrder(tableId: string): Promise<{ orderId: string }
 }
 
 export async function createOrder(tableId: string): Promise<{ orderId: string } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const { data: tableCheck } = await supabase
     .from('tables')
@@ -213,7 +190,7 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
       status: 'open',
       type: 'dine_in',
       order_number: orderNumber,
-      opened_by: user.id,
+      opened_by: userId,
       opened_at: new Date().toISOString(),
       order_date: today,
     })
@@ -228,12 +205,9 @@ export async function createOrder(tableId: string): Promise<{ orderId: string } 
 }
 
 export async function getOrderWithItems(orderId: string): Promise<OrderWithItems | null> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data: order } = await supabase
     .from('orders')
@@ -283,12 +257,9 @@ export async function getOrderWithItems(orderId: string): Promise<OrderWithItems
 }
 
 export async function getMenuData(): Promise<{ categories: Category[]; products: ProductWithModifiers[] }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const [catResult, itemResult, gruposResult] = await Promise.all([
     supabase
@@ -353,12 +324,9 @@ export async function addOrderItem(
   modifiers: SelectedModifier[],
   notes?: string
 ): Promise<{ itemId: string } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const v = z.object({
     orderId: uuid,
@@ -416,12 +384,9 @@ export async function addOrderItem(
 }
 
 export async function markOrderItemServed(itemId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado' }
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return { error: 'Sin restaurante' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) return { error: 'No autenticado' }
+  const { supabase, restaurantId } = ctx
 
   const { error } = await supabase
     .from('order_items')
@@ -436,12 +401,9 @@ export async function markOrderItemServed(itemId: string): Promise<{ error?: str
 export async function getOrderItemStatuses(
   orderId: string
 ): Promise<{ id: string; status: OrderItemStatus }[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) return []
+  const ctx = await getRestaurantContext()
+  if (!ctx) return []
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('order_items')
@@ -457,12 +419,9 @@ export async function updateOrderItemQuantity(
   itemId: string,
   quantity: number
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const v = z.object({ itemId: uuid, quantity: z.number().int().max(999) }).safeParse({ itemId, quantity })
   if (!v.success) return { error: 'Datos no válidos' }
@@ -508,7 +467,7 @@ export async function updateOrderItemQuantity(
         cost_price: null,
         purchase_date: null,
         notes: delta < 0 ? 'Reducción de cantidad en comanda' : null,
-        created_by: user.id,
+        created_by: userId,
       })
     }
   }
@@ -517,12 +476,9 @@ export async function updateOrderItemQuantity(
 }
 
 export async function removeOrderItem(itemId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const { data: item } = await supabase
     .from('order_items')
@@ -536,7 +492,7 @@ export async function removeOrderItem(itemId: string): Promise<{ error?: string 
     .update({
       status: 'cancelled',
       cancelled_at: new Date().toISOString(),
-      cancelled_by: user.id,
+      cancelled_by: userId,
     })
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
@@ -564,7 +520,7 @@ export async function removeOrderItem(itemId: string): Promise<{ error?: string 
         cost_price: null,
         purchase_date: null,
         notes: 'Anulación de línea',
-        created_by: user.id,
+        created_by: userId,
       })
     }
   }
@@ -573,12 +529,9 @@ export async function removeOrderItem(itemId: string): Promise<{ error?: string 
 }
 
 export async function cancelOrder(orderId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const { data: order } = await supabase
     .from('orders')
@@ -598,13 +551,13 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
 
   await supabase
     .from('order_items')
-    .update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: user.id })
+    .update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: userId })
     .eq('order_id', orderId)
     .neq('status', 'cancelled')
 
   const { error } = await supabase
     .from('orders')
-    .update({ status: 'cancelled', closed_by: user.id, closed_at: new Date().toISOString() })
+    .update({ status: 'cancelled', closed_by: userId, closed_at: new Date().toISOString() })
     .eq('id', orderId)
 
   if (error) return { error: 'No se pudo cancelar la comanda' }
@@ -630,7 +583,7 @@ export async function cancelOrder(orderId: string): Promise<{ error?: string }> 
         cost_price: null,
         purchase_date: null,
         notes: 'Cancelación de comanda',
-        created_by: user.id,
+        created_by: userId,
       })
     }
   }
@@ -643,12 +596,9 @@ export async function processPayment(
   orderId: string,
   params: ProcessPaymentParams
 ): Promise<{ ticketId: string } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const money = z.number().nonnegative().max(1_000_000)
   const v = z.intersection(
@@ -732,29 +682,28 @@ export async function processPayment(
 
   if (ticketError || !ticket) return { error: 'Error al crear el ticket' }
 
-  // Insert payment(s)
   const now = new Date().toISOString()
   if (params.method === 'mixed') {
     const { error: payError } = await supabase.from('payments').insert([
-      { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'cash', amount: params.cashAmount, change_given: 0, processed_by: user.id, processed_at: now },
-      { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'card', amount: params.cardAmount, change_given: 0, processed_by: user.id, processed_at: now },
+      { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'cash', amount: params.cashAmount, change_given: 0, processed_by: userId, processed_at: now },
+      { restaurant_id: restaurantId, ticket_id: ticket.id, method: 'card', amount: params.cardAmount, change_given: 0, processed_by: userId, processed_at: now },
     ])
     if (payError) return { error: 'Error al registrar el pago' }
   } else if (params.method === 'cash') {
     const { error: payError } = await supabase.from('payments').insert({
       restaurant_id: restaurantId, ticket_id: ticket.id, method: 'cash',
-      amount: total, change_given: params.changeGiven, processed_by: user.id, processed_at: now,
+      amount: total, change_given: params.changeGiven, processed_by: userId, processed_at: now,
     })
     if (payError) return { error: 'Error al registrar el pago' }
   } else {
     const { error: payError } = await supabase.from('payments').insert({
       restaurant_id: restaurantId, ticket_id: ticket.id, method: params.method,
-      amount: total, change_given: 0, processed_by: user.id, processed_at: now,
+      amount: total, change_given: 0, processed_by: userId, processed_at: now,
     })
     if (payError) return { error: 'Error al registrar el pago' }
   }
 
-  await supabase.from('orders').update({ status: 'paid', closed_by: user.id, closed_at: now }).eq('id', orderId)
+  await supabase.from('orders').update({ status: 'paid', closed_by: userId, closed_at: now }).eq('id', orderId)
   await supabase.from('tables').update({ status: 'free' }).eq('id', order.table_id)
 
   return { ticketId: ticket.id }
@@ -764,12 +713,9 @@ export async function updateOrderItemNote(
   itemId: string,
   notes: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const v = z.object({ itemId: uuid, notes: z.string().max(500) }).safeParse({ itemId, notes })
   if (!v.success) return { error: 'Datos no válidos' }
@@ -785,12 +731,9 @@ export async function updateOrderItemNote(
 }
 
 export async function reserveTable(tableId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data: tableCheck } = await supabase
     .from('tables')
@@ -812,12 +755,9 @@ export async function reserveTable(tableId: string): Promise<{ error?: string }>
 }
 
 export async function cancelReservation(tableId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data: tableCheck } = await supabase
     .from('tables')
@@ -843,12 +783,9 @@ export async function addTable(params: {
   capacity: number
   zoneId: string
 }): Promise<{ table: TableWithOrder } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const v = z.object({
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(60),
@@ -905,12 +842,9 @@ export async function addTable(params: {
 }
 
 export async function deleteTable(tableId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const { data: table } = await supabase
     .from('tables')
@@ -924,7 +858,7 @@ export async function deleteTable(tableId: string): Promise<{ error?: string }> 
 
   const { error } = await supabase
     .from('tables')
-    .update({ deleted_at: new Date().toISOString(), is_active: false, deleted_by: user.id })
+    .update({ deleted_at: new Date().toISOString(), is_active: false, deleted_by: userId })
     .eq('id', tableId)
     .eq('restaurant_id', restaurantId)
 
@@ -936,12 +870,9 @@ export async function addZone(params: {
   name: string
   color: string
 }): Promise<{ zone: ZoneWithTables } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const v = z.object({
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(60),
@@ -977,12 +908,9 @@ export async function addZone(params: {
 }
 
 export async function deleteZone(zoneId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId } = ctx
 
   const { data: activeTables } = await supabase
     .from('tables')
@@ -997,7 +925,7 @@ export async function deleteZone(zoneId: string): Promise<{ error?: string }> {
 
   const { error } = await supabase
     .from('zones')
-    .update({ deleted_at: new Date().toISOString(), is_active: false, deleted_by: user.id })
+    .update({ deleted_at: new Date().toISOString(), is_active: false, deleted_by: userId })
     .eq('id', zoneId)
     .eq('restaurant_id', restaurantId)
 

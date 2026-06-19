@@ -1,8 +1,8 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 
 // Loguea el detalle real en servidor y devuelve un mensaje genérico al cliente (#11).
 function dbError(ctx: string, e: { message?: string } | null, publicMsg: string): { error: string } {
@@ -109,22 +109,10 @@ export type MenuItem = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function getRestaurantId(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('users')
-    .select('restaurant_id')
-    .eq('id', userId)
-    .single()
-  return data?.restaurant_id ?? null
-}
-
 const ROLES_CON_EDICION = ['admin', 'gerente']
 
 async function puedeEditar(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: import('@supabase/supabase-js').SupabaseClient,
   userId: string
 ): Promise<boolean> {
   const { data } = await supabase
@@ -140,12 +128,9 @@ async function puedeEditar(
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export async function getProductos(): Promise<ProductoConCategoria[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('products')
@@ -195,13 +180,10 @@ export async function updateProducto(
     categoryIds?: string[]
   }
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const v = z.object({
     productId: uuid,
@@ -260,13 +242,10 @@ export async function registrarCompra(params: {
   purchaseDate: string
   notes?: string
 }): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const v = z.object({
     productId: uuid,
@@ -288,7 +267,7 @@ export async function registrarCompra(params: {
     cost_price: params.costPrice,
     purchase_date: params.purchaseDate,
     notes: params.notes ?? null,
-    created_by: user.id,
+    created_by: userId,
   })
 
   if (movErr) return dbError('registrarCompra.mov', movErr, 'No se pudo registrar la compra')
@@ -322,13 +301,10 @@ export async function ajustarStock(params: {
   quantity: number
   notes?: string
 }): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const v = z.object({
     productId: uuid,
@@ -358,7 +334,7 @@ export async function ajustarStock(params: {
     cost_price: null,
     purchase_date: null,
     notes: params.notes ?? null,
-    created_by: user.id,
+    created_by: userId,
   })
 
   if (movErr) return dbError('ajustarStock.mov', movErr, 'No se pudo ajustar el stock')
@@ -374,12 +350,9 @@ export async function ajustarStock(params: {
 }
 
 export async function getStockMovements(productId: string): Promise<StockMovement[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('stock_movements')
@@ -402,12 +375,9 @@ export async function getStockMovements(productId: string): Promise<StockMovemen
 }
 
 export async function getCategorias(): Promise<Categoria[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('categories')
@@ -440,13 +410,10 @@ export async function createProduct(params: {
   isVisible: boolean
   unit?: ProductUnit
 }): Promise<{ success: true } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const v = z.object({
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
@@ -511,7 +478,7 @@ export async function createProduct(params: {
       cost_price: params.costPrice ?? null,
       purchase_date: null,
       notes: 'Stock inicial',
-      created_by: user.id,
+      created_by: userId,
     })
     if (movErr) return dbError('createProduct.stock', movErr, 'Producto creado pero no se pudo registrar el stock inicial')
   }
@@ -522,13 +489,10 @@ export async function createProduct(params: {
 export async function createCategoria(
   name: string
 ): Promise<{ id: string; name: string } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   if (!z.string().trim().min(1).max(120).safeParse(name).success) return { error: 'El nombre es obligatorio' }
 
@@ -557,13 +521,10 @@ export async function updateCategoria(
   id: string,
   name: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   if (!uuid.safeParse(id).success) return { error: 'Datos no válidos' }
   if (!z.string().trim().min(1).max(120).safeParse(name).success) return { error: 'El nombre es obligatorio' }
@@ -582,13 +543,10 @@ export async function editarStock(
   productId: string,
   newStock: number
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const v = z.object({ productId: uuid, newStock: z.number().max(1_000_000) }).safeParse({ productId, newStock })
   if (!v.success) return { error: 'Datos no válidos' }
@@ -621,7 +579,7 @@ export async function editarStock(
       cost_price: null,
       purchase_date: null,
       notes: delta > 0 ? 'Ajuste manual (+)' : 'Ajuste manual (-)',
-      created_by: user.id,
+      created_by: userId,
     })
   }
 
@@ -631,13 +589,10 @@ export async function editarStock(
 export async function deleteCategoria(
   id: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const { count } = await supabase
     .from('product_categories')
@@ -653,7 +608,7 @@ export async function deleteCategoria(
 
   const { error } = await supabase
     .from('categories')
-    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
     .eq('id', id)
     .eq('restaurant_id', restaurantId)
 
@@ -669,12 +624,9 @@ export async function getMovimientosGlobal(params: {
   page: number
   pageSize?: number
 }): Promise<{ movements: MovimientoGlobal[]; total: number; stats: StockStats }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const pageSize = params.pageSize ?? 50
   const safePage = Math.max(1, params.page)
@@ -757,12 +709,9 @@ export async function getMovimientosGlobal(params: {
 }
 
 export async function getMenuItems(): Promise<MenuItem[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
   const { data } = await supabase
     .from('menu_items')
@@ -824,13 +773,10 @@ export async function createMenuItem(params: {
   cantidadMinima?: number
   ingredients: { productId: string; quantity: number; unit: string }[]
 }): Promise<{ success: true } | { error: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const v = z.object({
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
@@ -890,13 +836,10 @@ export async function updateMenuItem(
     ingredients?: { productId: string; quantity: number; unit: string }[]
   }
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   const v = z.object({
     itemId: uuid,
@@ -955,19 +898,16 @@ export async function updateMenuItem(
 }
 
 export async function deleteMenuItem(itemId: string): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const restaurantId = await getRestaurantId(supabase, user.id)
-  if (!restaurantId) redirect('/login')
-  if (!await puedeEditar(supabase, user.id)) return { error: 'Sin permisos' }
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   if (!uuid.safeParse(itemId).success) return { error: 'Datos no válidos' }
 
   const { error } = await supabase
     .from('menu_items')
-    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
     .eq('id', itemId)
     .eq('restaurant_id', restaurantId)
 
