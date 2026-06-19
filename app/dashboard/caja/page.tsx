@@ -1,28 +1,28 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 import AppShell from '@/components/AppShell'
 import CajaClient from '@/components/caja/CajaClient'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
 import type { TurnoCaja, ResumenActual } from '@/types/caja'
 
 export default async function CajaPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
 
-  const { data: userData } = await supabase
-    .from('users')
-    .select('id, restaurant_id, user_roles!user_id(roles(name))')
-    .eq('auth_id', user.id)
-    .single()
-
-  if (!userData?.restaurant_id) redirect('/login')
-  const restaurantId = userData.restaurant_id
-
-  const roles = userData.user_roles as unknown as { roles: { name: string } | null }[] | undefined
-  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
-  const tieneAcceso = rol ? PERMISOS_POR_ROL[rol].modulos.includes('administracion') : false
+  let tieneAcceso = isSuperadminMode
+  if (!isSuperadminMode) {
+    const { data: ud } = await supabase
+      .from('users')
+      .select('user_roles!user_id(roles(name))')
+      .eq('auth_id', userId)
+      .single()
+    const roles = ud?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
+    const rolRaw = roles?.[0]?.roles?.name ?? null
+    const rol = (rolRaw && rolRaw in PERMISOS_POR_ROL ? rolRaw : null) as RolNombre | null
+    tieneAcceso = rol ? PERMISOS_POR_ROL[rol].modulos.includes('administracion') : false
+  }
 
   if (!tieneAcceso) {
     return (
@@ -37,7 +37,6 @@ export default async function CajaPage() {
     )
   }
 
-  // Turno activo
   const { data: turnoRaw } = await supabase
     .from('turnos_caja')
     .select('*')
@@ -53,7 +52,6 @@ export default async function CajaPage() {
       .from('users').select('nombre').eq('id', turnoRaw.abierto_por).single()
     turnoActivo = { ...turnoRaw, abierto_por_nombre: u?.nombre ?? undefined }
 
-    // Calcular resumen en tiempo real
     const { data: tickets } = await supabase
       .from('tickets')
       .select('id, total')
@@ -80,7 +78,6 @@ export default async function CajaPage() {
     }
   }
 
-  // Historial (primeras 20 filas)
   const { data: historialRaw, count } = await supabase
     .from('turnos_caja')
     .select('*', { count: 'exact' })

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 import AppShell from '@/components/AppShell'
 import FinanzasClient from '@/components/finanzas/FinanzasClient'
 import type { Movimiento } from '@/types/finanzas'
@@ -8,22 +8,22 @@ import type { TicketResumen } from '@/types/ticket'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
 
 export default async function FinanzasPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
 
-  const { data: userData } = await supabase
-    .from('users')
-    .select('restaurant_id, user_roles!user_id(roles(name))')
-    .eq('auth_id', user.id)
-    .single()
-
-  if (!userData?.restaurant_id) redirect('/login')
-  const restaurantId = userData.restaurant_id
-
-  const roles = userData.user_roles as unknown as { roles: { name: string } | null }[] | undefined
-  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
-  const tieneAcceso = !rol || PERMISOS_POR_ROL[rol].modulos.includes('finanzas')
+  let tieneAcceso = isSuperadminMode
+  if (!isSuperadminMode) {
+    const { data: ud } = await supabase
+      .from('users')
+      .select('user_roles!user_id(roles(name))')
+      .eq('auth_id', userId)
+      .single()
+    const roles = ud?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
+    const rolRaw = roles?.[0]?.roles?.name ?? null
+    const rol = (rolRaw && rolRaw in PERMISOS_POR_ROL ? rolRaw : null) as RolNombre | null
+    tieneAcceso = !rol || PERMISOS_POR_ROL[rol].modulos.includes('finanzas')
+  }
 
   if (!tieneAcceso) {
     return (
@@ -59,7 +59,6 @@ export default async function FinanzasPage() {
   const ingresos_tpv = ticketsRaw.reduce((sum, t) => sum + Number(t.total ?? 0), 0)
   const num_tickets = ticketsRaw.length
 
-  // Obtener nombres de mesa via orders → tables
   const orderIds = [...new Set(ticketsRaw.map(t => t.order_id).filter(Boolean))] as string[]
   const mesaMap: Record<string, string> = {}
 

@@ -1,27 +1,18 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 import AppShell from '@/components/AppShell'
 import ReservasView from '@/components/reservas/ReservasView'
 import type { Reserva } from '@/types/reservas'
 
 export default async function ReservasPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
 
-  const { data: usuarioActual } = await supabase
-    .from('users')
-    .select('restaurant_id')
-    .eq('auth_id', user.id)
-    .single()
-
-  if (!usuarioActual?.restaurant_id) redirect('/login')
-
-  const { data: reservasRaw } = await getSupabaseAdmin()
+  const { data: reservasRaw } = await supabase
     .from('reservations')
     .select('id, restaurant_id, customer_name, customer_phone, customer_email, party_size, reservation_date, reservation_time, status, notes, consentimiento_rgpd, created_at')
-    .eq('restaurant_id', usuarioActual.restaurant_id)
+    .eq('restaurant_id', restaurantId)
     .is('deleted_at', null)
     .order('reservation_date', { ascending: false })
     .order('reservation_time', { ascending: true })

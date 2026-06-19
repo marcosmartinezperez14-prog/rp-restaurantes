@@ -1,24 +1,28 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 import AppShell from '@/components/AppShell'
 import ConfiguracionPermisos from '@/components/permisos/ConfiguracionPermisos'
-import type { RolNombre } from '@/types/equipo'
+import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
 
 export default async function PermisosPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, userId, isSuperadminMode } = ctx
 
-  const { data: userData } = await supabase
-    .from('users')
-    .select('restaurant_id, user_roles!user_id(roles(name))')
-    .eq('auth_id', user.id)
-    .single()
+  let rol: RolNombre | null = null
+  if (!isSuperadminMode) {
+    const { data: ud } = await supabase
+      .from('users')
+      .select('user_roles!user_id(roles(name))')
+      .eq('auth_id', userId)
+      .single()
+    const roles = ud?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
+    const rolRaw = roles?.[0]?.roles?.name ?? null
+    rol = (rolRaw && rolRaw in PERMISOS_POR_ROL ? rolRaw : null) as RolNombre | null
+    if (rol !== 'admin' && rol !== 'gerente') redirect('/dashboard')
+  }
 
-  const roles = userData?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
-  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
-
-  if (rol !== 'admin' && rol !== 'gerente') redirect('/dashboard')
+  const rolMostrado = (isSuperadminMode ? 'admin' : rol) as 'admin' | 'gerente'
 
   return (
     <AppShell title="Permisos">
@@ -29,7 +33,7 @@ export default async function PermisosPage() {
             Los cambios se aplican inmediatamente. Los usuarios afectados verán el nuevo acceso en su próxima navegación (caché de 5 minutos).
           </p>
         </div>
-        <ConfiguracionPermisos rolUsuarioActual={rol as 'admin' | 'gerente'} />
+        <ConfiguracionPermisos rolUsuarioActual={rolMostrado} />
       </div>
     </AppShell>
   )

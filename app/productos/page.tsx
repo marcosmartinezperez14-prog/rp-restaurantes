@@ -1,26 +1,30 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 import { getProductos, getCategorias, getMenuItems } from '@/app/actions/productos'
 import AppShell from '@/components/AppShell'
 import ProductsClient from './ProductsClient'
 import { PERMISOS_POR_ROL, ROLES_EDITORES, type RolNombre } from '@/types/equipo'
 
 export default async function ProductosPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, userId, isSuperadminMode } = ctx
 
-  const { data: usuarioActual } = await supabase
-    .from('users')
-    .select('restaurant_id, user_roles!user_id(roles(name))')
-    .eq('auth_id', user.id)
-    .single()
-
-  const roles = usuarioActual?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
-  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
-  const tieneAcceso = !rol || PERMISOS_POR_ROL[rol].modulos.includes('productos')
-  const canEdit = !rol || ROLES_EDITORES.includes(rol)
+  let tieneAcceso = isSuperadminMode
+  let canEdit = isSuperadminMode
+  if (!isSuperadminMode) {
+    const { data: ud } = await supabase
+      .from('users')
+      .select('user_roles!user_id(roles(name))')
+      .eq('auth_id', userId)
+      .single()
+    const roles = ud?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
+    const rolRaw = roles?.[0]?.roles?.name ?? null
+    const rol = (rolRaw && rolRaw in PERMISOS_POR_ROL ? rolRaw : null) as RolNombre | null
+    tieneAcceso = !rol || PERMISOS_POR_ROL[rol].modulos.includes('productos')
+    canEdit = !rol || ROLES_EDITORES.includes(rol)
+  }
 
   if (!tieneAcceso) {
     return (

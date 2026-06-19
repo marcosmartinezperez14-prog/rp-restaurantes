@@ -1,21 +1,13 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import { getKitchenItems } from '@/app/actions/cocina'
 import CocinaClient from '@/components/cocina/CocinaClient'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 
 export default async function CocinaPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: userData } = await supabase
-    .from('users')
-    .select('restaurant_id')
-    .eq('auth_id', user.id)
-    .single()
-
-  if (!userData?.restaurant_id) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { restaurantId } = ctx
 
   const items = await getKitchenItems()
 
@@ -35,7 +27,7 @@ export default async function CocinaPage() {
       <main className="flex-1 overflow-hidden p-4">
         <CocinaClient
           initialItems={items}
-          restaurantId={userData.restaurant_id}
+          restaurantId={restaurantId}
         />
       </main>
     </div>

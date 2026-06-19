@@ -1,40 +1,42 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 import AppShell from '@/components/AppShell'
 import EquipoClient from '@/components/equipo/EquipoClient'
 import type { UsuarioEquipo, RolNombre } from '@/types/equipo'
+import { PERMISOS_POR_ROL } from '@/types/equipo'
 import Link from 'next/link'
 
 export default async function EquipoPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
 
-  const { data: usuarioActual } = await supabase
-    .from('users')
-    .select('id, restaurant_id, user_roles!user_id(roles(name))')
-    .eq('auth_id', user.id)
-    .single()
+  let rolActual: RolNombre | null = null
+  if (!isSuperadminMode) {
+    const { data: ud } = await supabase
+      .from('users')
+      .select('user_roles!user_id(roles(name))')
+      .eq('auth_id', userId)
+      .single()
+    const roles = ud?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
+    const rolRaw = roles?.[0]?.roles?.name ?? null
+    rolActual = (rolRaw && rolRaw in PERMISOS_POR_ROL ? rolRaw : null) as RolNombre | null
 
-  if (!usuarioActual?.restaurant_id) redirect('/login')
-
-  const roles = usuarioActual.user_roles as unknown as { roles: { name: string } | null }[]
-  const rolActual = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
-
-  if (rolActual !== 'admin' && rolActual !== 'gerente') {
-    return (
-      <AppShell title="Equipo">
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <p className="text-[var(--text-secondary)] text-center">No tienes permisos para acceder a esta sección.</p>
-          <Link
-            href="/dashboard"
-            className="px-4 py-2 text-sm bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors"
-          >
-            Volver al inicio
-          </Link>
-        </div>
-      </AppShell>
-    )
+    if (rolActual !== 'admin' && rolActual !== 'gerente') {
+      return (
+        <AppShell title="Equipo">
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <p className="text-[var(--text-secondary)] text-center">No tienes permisos para acceder a esta sección.</p>
+            <Link
+              href="/dashboard"
+              className="px-4 py-2 text-sm bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors"
+            >
+              Volver al inicio
+            </Link>
+          </div>
+        </AppShell>
+      )
+    }
   }
 
   const { data: usuariosRaw } = await supabase
@@ -49,7 +51,7 @@ export default async function EquipoPage() {
       created_at,
       user_roles!user_id(id, roles(name))
     `)
-    .eq('restaurant_id', usuarioActual.restaurant_id)
+    .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: true })
 
   const usuarios: UsuarioEquipo[] = (usuariosRaw ?? []).map((u) => {
@@ -71,9 +73,9 @@ export default async function EquipoPage() {
     <AppShell title="Equipo">
       <EquipoClient
         usuarios={usuarios}
-        rolActual={rolActual}
-        usuarioActualId={usuarioActual.id}
-        restaurantId={usuarioActual.restaurant_id}
+        rolActual={isSuperadminMode ? 'admin' : rolActual ?? 'camarero'}
+        usuarioActualId={userId}
+        restaurantId={restaurantId}
       />
     </AppShell>
   )
