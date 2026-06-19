@@ -162,7 +162,8 @@ export default async function DashboardPage() {
     .single()
 
   const roles = usuarioActual?.user_roles as unknown as { roles: { name: string } | null }[] | undefined
-  const rol = (roles?.[0]?.roles?.name ?? null) as RolNombre | null
+  const rolRaw = roles?.[0]?.roles?.name ?? null
+  const rol = (rolRaw && rolRaw in PERMISOS_POR_ROL ? rolRaw : null) as RolNombre | null
   const modulosPermitidos = rol ? PERMISOS_POR_ROL[rol].modulos : []
 
   const cardsVisibles = rol
