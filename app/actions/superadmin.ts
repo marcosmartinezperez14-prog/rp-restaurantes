@@ -137,3 +137,98 @@ export async function crearRestauranteConAdmin(
 
   return { success: true, restaurante: restaurant_name, usuario: username }
 }
+
+export interface RestauranteResumen {
+  id: string
+  name: string
+  nif: string | null
+  created_at: string
+  admin_nombre: string | null
+  admin_email: string | null
+  num_usuarios: number
+  num_mesas: number
+}
+
+export async function getRestaurantes(): Promise<RestauranteResumen[] | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user: caller } } = await supabase.auth.getUser()
+  if (!caller) return { error: 'No autenticado.' }
+
+  const admin = getSupabaseAdmin()
+
+  const { data: callerUser } = await admin
+    .from('users')
+    .select('id')
+    .eq('auth_id', caller.id)
+    .single()
+  if (!callerUser) return { error: 'No autenticado.' }
+
+  const { data: roleRows } = await admin
+    .from('user_roles')
+    .select('roles(name)')
+    .eq('user_id', callerUser.id)
+  const esSuperadmin = (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
+  if (!esSuperadmin) return { error: 'No autorizado.' }
+
+  const { data: restaurants, error: restError } = await admin
+    .from('restaurants')
+    .select('id, name, nif, created_at')
+    .order('created_at', { ascending: false })
+  if (restError || !restaurants) return { error: 'Error al obtener restaurantes.' }
+
+  const { data: users } = await admin
+    .from('users')
+    .select('restaurant_id')
+    .is('deleted_at', null)
+
+  const { data: tables } = await admin
+    .from('tables')
+    .select('restaurant_id')
+    .is('deleted_at', null)
+
+  const { data: adminRoleRow } = await admin
+    .from('roles')
+    .select('id')
+    .eq('name', 'admin')
+    .single()
+
+  const { data: adminUserRoles } = adminRoleRow
+    ? await admin
+        .from('user_roles')
+        .select('restaurant_id, users!user_id(nombre, email)')
+        .eq('role_id', adminRoleRow.id)
+    : { data: null }
+
+  const usersByRestaurant = new Map<string, number>()
+  for (const u of users ?? []) {
+    if (u.restaurant_id)
+      usersByRestaurant.set(u.restaurant_id, (usersByRestaurant.get(u.restaurant_id) ?? 0) + 1)
+  }
+
+  const tablesByRestaurant = new Map<string, number>()
+  for (const t of tables ?? []) {
+    if (t.restaurant_id)
+      tablesByRestaurant.set(t.restaurant_id, (tablesByRestaurant.get(t.restaurant_id) ?? 0) + 1)
+  }
+
+  const adminByRestaurant = new Map<string, { nombre: string | null; email: string | null }>()
+  for (const ur of (adminUserRoles ?? []) as any[]) {
+    if (!adminByRestaurant.has(ur.restaurant_id)) {
+      adminByRestaurant.set(ur.restaurant_id, {
+        nombre: ur.users?.nombre ?? null,
+        email: ur.users?.email ?? null,
+      })
+    }
+  }
+
+  return restaurants.map(r => ({
+    id: r.id,
+    name: r.name,
+    nif: r.nif ?? null,
+    created_at: r.created_at,
+    admin_nombre: adminByRestaurant.get(r.id)?.nombre ?? null,
+    admin_email: adminByRestaurant.get(r.id)?.email ?? null,
+    num_usuarios: usersByRestaurant.get(r.id) ?? 0,
+    num_mesas: tablesByRestaurant.get(r.id) ?? 0,
+  }))
+}
