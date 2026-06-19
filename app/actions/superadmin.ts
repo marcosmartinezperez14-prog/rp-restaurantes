@@ -153,25 +153,32 @@ export interface RestauranteResumen {
 }
 
 export async function getRestaurantes(): Promise<RestauranteResumen[] | { error: string }> {
+  try {
   const supabase = await createClient()
   const { data: { user: caller } } = await supabase.auth.getUser()
   if (!caller) return { error: 'No autenticado.' }
 
-  const admin = getSupabaseAdmin()
+  let admin: ReturnType<typeof getSupabaseAdmin>
+  try {
+    admin = getSupabaseAdmin()
+  } catch (e) {
+    console.error('[getRestaurantes] admin client error:', e)
+    return { error: 'Configuración de servidor incompleta (service key).' }
+  }
 
   const { data: callerUser } = await admin
     .from('users')
     .select('id')
     .eq('auth_id', caller.id)
     .single()
-  if (!callerUser) return { error: 'No autenticado.' }
+  if (!callerUser) return { error: `Usuario no encontrado en tabla users (auth_id=${caller.id}).` }
 
   const { data: roleRows } = await admin
     .from('user_roles')
     .select('roles(name)')
     .eq('user_id', callerUser.id)
   const esSuperadmin = (roleRows ?? []).some((r: any) => r.roles?.name === 'superadmin')
-  if (!esSuperadmin) return { error: 'No autorizado.' }
+  if (!esSuperadmin) return { error: `Sin rol superadmin (roles encontrados: ${JSON.stringify(roleRows)}).` }
 
   const { data: restaurants, error: restError } = await admin
     .from('restaurants')
@@ -234,6 +241,10 @@ export async function getRestaurantes(): Promise<RestauranteResumen[] | { error:
     num_usuarios: usersByRestaurant.get(r.id) ?? 0,
     num_mesas: tablesByRestaurant.get(r.id) ?? 0,
   }))
+  } catch (e) {
+    console.error('[getRestaurantes] unexpected error:', e)
+    return { error: `Error inesperado: ${e instanceof Error ? e.message : String(e)}` }
+  }
 }
 
 export async function iniciarSesionRemota(restaurantId: string): Promise<never> {
