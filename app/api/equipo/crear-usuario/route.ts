@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     if (authError || !authData.user) {
       console.error('[crear-usuario] auth error:', authError?.message)
-      return NextResponse.json({ success: false, error: `[DEBUG] auth: ${authError?.message ?? 'sin usuario'}` }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'No se pudo crear el usuario' }, { status: 400 })
     }
 
     const { data: newUser, error: userError } = await getSupabaseAdmin()
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     if (userError || !newUser) {
       await getSupabaseAdmin().auth.admin.deleteUser(authData.user.id)
       console.error('[crear-usuario] profile error:', userError?.message)
-      return NextResponse.json({ success: false, error: `[DEBUG] perfil: ${userError?.message}` }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'No se pudo crear el perfil de usuario' }, { status: 500 })
     }
 
     const { data: rol, error: rolError } = await getSupabaseAdmin()
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
 
     if (userRoleError) {
       console.error('[crear-usuario] role error:', userRoleError.message)
-      return NextResponse.json({ success: false, error: `[DEBUG] rol: ${userRoleError.message}` }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'No se pudo asignar el rol' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, usuario: { ...newUser, rol: role_name } })
