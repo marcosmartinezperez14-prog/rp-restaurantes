@@ -73,7 +73,7 @@ export async function crearRestauranteConAdmin(
 
   if (authError || !authData.user) {
     console.error('[crearRestauranteConAdmin] auth error:', authError?.message)
-    return { error: 'No se pudo crear el usuario.' }
+    return { error: `[DEBUG] auth: ${authError?.message ?? 'sin usuario'}` }
   }
 
   const authUserId = authData.user.id
