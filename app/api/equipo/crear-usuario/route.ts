@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { getRestaurantContext } from '@/lib/auth/restaurant-context'
 import { PERMISOS_POR_ROL } from '@/types/equipo'
 import { z } from 'zod'
 
@@ -24,35 +25,42 @@ export async function POST(req: NextRequest) {
 
     const email = `${username.trim().toLowerCase()}@rp-internal.com`
 
-    const supabase = await createServerClient()
-    const { data: { user: caller } } = await supabase.auth.getUser()
-    if (!caller) {
+    const ctx = await getRestaurantContext()
+    if (!ctx) {
       return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
     }
 
-    const { data: callerUser } = await supabase
-      .from('users')
-      .select('id, restaurant_id, user_roles!user_id(roles(name))')
-      .eq('auth_id', caller.id)
-      .single()
+    const { restaurantId, isSuperadminMode } = ctx
 
-    if (!callerUser?.restaurant_id) {
-      return NextResponse.json({ success: false, error: 'Usuario no encontrado' }, { status: 404 })
+    if (!isSuperadminMode) {
+      // Verificar permisos del caller normal (admin o gerente)
+      const supabase = await createServerClient()
+      const { data: { user: caller } } = await supabase.auth.getUser()
+      if (!caller) {
+        return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 })
+      }
+
+      const { data: callerUser } = await supabase
+        .from('users')
+        .select('id, user_roles!user_id(roles(name))')
+        .eq('auth_id', caller.id)
+        .single()
+
+      const callerRoles = callerUser?.user_roles as unknown as { roles: { name: string } | null }[]
+      const callerRoleName = callerRoles?.[0]?.roles?.name ?? null
+
+      if (callerRoleName !== 'admin' && callerRoleName !== 'gerente') {
+        return NextResponse.json({ success: false, error: 'No tienes permisos para crear usuarios' }, { status: 403 })
+      }
+
+      if (callerRoleName === 'gerente' && role_name === 'admin') {
+        return NextResponse.json({ success: false, error: 'Un gerente no puede crear administradores' }, { status: 403 })
+      }
     }
 
-    const callerRoles = callerUser.user_roles as unknown as { roles: { name: string } | null }[]
-    const callerRoleName = callerRoles?.[0]?.roles?.name ?? null
-
-    if (callerRoleName !== 'admin' && callerRoleName !== 'gerente') {
-      return NextResponse.json({ success: false, error: 'No tienes permisos para crear usuarios' }, { status: 403 })
-    }
-
-    // Lista blanca de roles + escalada: un gerente no puede crear administradores.
+    // Lista blanca de roles
     if (!ROLES_VALIDOS.includes(role_name)) {
       return NextResponse.json({ success: false, error: 'Rol no válido' }, { status: 400 })
-    }
-    if (callerRoleName === 'gerente' && role_name === 'admin') {
-      return NextResponse.json({ success: false, error: 'Un gerente no puede crear administradores' }, { status: 403 })
     }
 
     const { data: authData, error: authError } = await getSupabaseAdmin().auth.admin.createUser({
@@ -63,21 +71,20 @@ export async function POST(req: NextRequest) {
     })
 
     if (authError || !authData.user) {
-      // Mensaje genérico para no permitir enumeración de usuarios existentes (#10).
       console.error('[crear-usuario] auth error:', authError?.message)
-      return NextResponse.json({ success: false, error: 'No se pudo crear el usuario' }, { status: 400 })
+      return NextResponse.json({ success: false, error: `[DEBUG] auth: ${authError?.message ?? 'sin usuario'}` }, { status: 400 })
     }
 
     const { data: newUser, error: userError } = await getSupabaseAdmin()
       .from('users')
-      .insert({ id: authData.user.id, auth_id: authData.user.id, nombre, email, restaurant_id: callerUser.restaurant_id })
+      .insert({ id: authData.user.id, auth_id: authData.user.id, nombre, email, restaurant_id: restaurantId })
       .select()
       .single()
 
     if (userError || !newUser) {
       await getSupabaseAdmin().auth.admin.deleteUser(authData.user.id)
       console.error('[crear-usuario] profile error:', userError?.message)
-      return NextResponse.json({ success: false, error: 'No se pudo crear el perfil de usuario' }, { status: 500 })
+      return NextResponse.json({ success: false, error: `[DEBUG] perfil: ${userError?.message}` }, { status: 500 })
     }
 
     const { data: rol, error: rolError } = await getSupabaseAdmin()
@@ -92,11 +99,11 @@ export async function POST(req: NextRequest) {
 
     const { error: userRoleError } = await getSupabaseAdmin()
       .from('user_roles')
-      .insert({ user_id: newUser.id, role_id: rol.id, restaurant_id: callerUser.restaurant_id })
+      .insert({ user_id: newUser.id, role_id: rol.id, restaurant_id: restaurantId })
 
     if (userRoleError) {
       console.error('[crear-usuario] role error:', userRoleError.message)
-      return NextResponse.json({ success: false, error: 'No se pudo asignar el rol' }, { status: 500 })
+      return NextResponse.json({ success: false, error: `[DEBUG] rol: ${userRoleError.message}` }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, usuario: { ...newUser, rol: role_name } })
