@@ -1,20 +1,20 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import type { MenuItem, Categoria, ProductoConCategoria } from '@/app/actions/productos'
+import type { MenuItem, MenuCategoria, ProductoConCategoria } from '@/app/actions/productos'
 import { getMenuItems } from '@/app/actions/productos'
 import MenuItemCard from '@/components/carta/MenuItemCard'
 import MenuItemFormPanel from '@/components/carta/MenuItemFormPanel'
 
 interface Props {
   initialMenuItems: MenuItem[]
-  categories: Categoria[]
+  menuCategories: MenuCategoria[]
   allProducts: ProductoConCategoria[]
   onProductsRefresh: () => void
   canEdit?: boolean
 }
 
-export default function CartaClient({ initialMenuItems, categories, allProducts, canEdit = false }: Props) {
+export default function CartaClient({ initialMenuItems, menuCategories, allProducts, canEdit = false }: Props) {
   const [menuItems, setMenuItems] = useState(initialMenuItems)
   const [filterCategoryId, setFilterCategoryId] = useState('')
   const [showPanel, setShowPanel] = useState(false)
@@ -44,11 +44,11 @@ export default function CartaClient({ initialMenuItems, categories, allProducts,
   }
 
   const visible = menuItems.filter(item =>
-    !filterCategoryId || item.category_id === filterCategoryId
+    !filterCategoryId || item.menu_category_id === filterCategoryId
   )
 
-  const usedCategoryIds = new Set(menuItems.map(m => m.category_id).filter(Boolean))
-  const visibleCategories = categories.filter(c => usedCategoryIds.has(c.id))
+  const usedCategoryIds = new Set(menuItems.map(m => m.menu_category_id).filter(Boolean))
+  const visibleCategories = menuCategories.filter(c => usedCategoryIds.has(c.id))
 
   return (
     <div className={isPending ? 'opacity-70 pointer-events-none' : ''}>
@@ -139,7 +139,7 @@ export default function CartaClient({ initialMenuItems, categories, allProducts,
       {showPanel && canEdit && (
         <MenuItemFormPanel
           item={editItem}
-          categories={categories}
+          menuCategories={menuCategories}
           allProducts={allProducts}
           onClose={handlePanelClose}
           onSaved={handleRefresh}

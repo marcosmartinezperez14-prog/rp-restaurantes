@@ -2,8 +2,8 @@
 
 import { useState, useTransition, useMemo, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { MenuItem, ProductoConCategoria, Categoria } from '@/app/actions/productos'
-import { createMenuItem, updateMenuItem, createCategoria } from '@/app/actions/productos'
+import type { MenuItem, ProductoConCategoria, MenuCategoria } from '@/app/actions/productos'
+import { createMenuItem, updateMenuItem, createMenuCategoria } from '@/app/actions/productos'
 import GestorModificadores from './GestorModificadores'
 
 const UNIT_OPTIONS = ['unit', 'kg', 'g', 'l', 'ml', 'dozen']
@@ -18,18 +18,18 @@ interface IngredientDraft {
 
 interface Props {
   item?: MenuItem
-  categories: Categoria[]
+  menuCategories: MenuCategoria[]
   allProducts: ProductoConCategoria[]
   onClose: () => void
   onSaved: () => void
 }
 
-export default function MenuItemFormPanel({ item, categories, allProducts, onClose, onSaved }: Props) {
+export default function MenuItemFormPanel({ item, menuCategories, allProducts, onClose, onSaved }: Props) {
   const isEditing = !!item
 
   const [name, setName] = useState(item?.name ?? '')
   const [description, setDescription] = useState(item?.description ?? '')
-  const [categoryId, setCategoryId] = useState(item?.category_id ?? '')
+  const [categoryId, setCategoryId] = useState(item?.menu_category_id ?? '')
   const [price, setPrice] = useState(item?.price.toFixed(2) ?? '')
   const [imageUrl, setImageUrl] = useState(item?.image_url ?? '')
   const [isActive, setIsActive] = useState(item?.is_active ?? true)
@@ -52,7 +52,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
   const [selectedProductName, setSelectedProductName] = useState('')
   const ingDropdownRef = useRef<HTMLDivElement>(null)
 
-  const [localCategories, setLocalCategories] = useState<Categoria[]>(categories)
+  const [localCategories, setLocalCategories] = useState<MenuCategoria[]>(menuCategories)
   const [showNewCat, setShowNewCat] = useState(false)
   const [newCatName, setNewCatName] = useState('')
   const [catPending, setCatPending] = useState(false)
@@ -106,10 +106,10 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
   async function handleCreateCategory() {
     if (!newCatName.trim()) return
     setCatPending(true)
-    const res = await createCategoria(newCatName.trim())
+    const res = await createMenuCategoria(newCatName.trim())
     setCatPending(false)
     if ('error' in res) { setError(res.error); return }
-    const newCat: Categoria = { id: res.id, name: res.name, position: localCategories.length }
+    const newCat: MenuCategoria = { id: res.id, name: res.name, position: localCategories.length }
     setLocalCategories(prev => [...prev, newCat])
     setCategoryId(res.id)
     setNewCatName('')
@@ -176,7 +176,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
         res = await updateMenuItem(item.id, {
           name,
           description: description || null,
-          categoryId: categoryId || null,
+          menuCategoryId: categoryId || null,
           price: priceNum,
           imageUrl: imageUrl || null,
           isActive,
@@ -187,7 +187,7 @@ export default function MenuItemFormPanel({ item, categories, allProducts, onClo
         res = await createMenuItem({
           name,
           description: description || undefined,
-          categoryId: categoryId || undefined,
+          menuCategoryId: categoryId || undefined,
           price: priceNum,
           imageUrl: imageUrl || undefined,
           isActive,

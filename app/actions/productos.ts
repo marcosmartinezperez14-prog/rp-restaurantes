@@ -75,6 +75,12 @@ export type Categoria = {
   position: number
 }
 
+export type MenuCategoria = {
+  id: string
+  name: string
+  position: number
+}
+
 export type MenuItemIngredient = {
   id: string
   menu_item_id: string
@@ -94,6 +100,7 @@ export type MenuItem = {
   id: string
   restaurant_id: string
   category_id: string | null
+  menu_category_id: string | null
   name: string
   description: string | null
   price: number
@@ -104,6 +111,7 @@ export type MenuItem = {
   created_at: string
   updated_at: string
   category?: { name: string }
+  menu_category?: { name: string }
   ingredients: MenuItemIngredient[]
 }
 
@@ -392,6 +400,97 @@ export async function getCategorias(): Promise<Categoria[]> {
     name: c.name,
     position: c.position ?? 0,
   }))
+}
+
+export async function getMenuCategorias(): Promise<MenuCategoria[]> {
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId } = ctx
+
+  const { data } = await supabase
+    .from('menu_categories')
+    .select('id, name, position')
+    .eq('restaurant_id', restaurantId)
+    .order('position', { ascending: true })
+    .order('name', { ascending: true })
+
+  return (data ?? []).map(c => ({ id: c.id, name: c.name, position: c.position ?? 0 }))
+}
+
+export async function createMenuCategoria(
+  name: string
+): Promise<{ id: string; name: string } | { error: string }> {
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
+
+  if (!z.string().trim().min(1).max(120).safeParse(name).success) return { error: 'El nombre es obligatorio' }
+
+  const { data: maxPosRow } = await supabase
+    .from('menu_categories')
+    .select('position')
+    .eq('restaurant_id', restaurantId)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const position = (maxPosRow?.position ?? -1) + 1
+
+  const { data: newCat, error } = await supabase
+    .from('menu_categories')
+    .insert({ restaurant_id: restaurantId, name: name.trim(), position })
+    .select('id, name')
+    .single()
+
+  if (error || !newCat) return dbError('createMenuCategoria', error, 'No se pudo crear la categoría')
+  return { id: newCat.id, name: newCat.name }
+}
+
+export async function updateMenuCategoria(
+  id: string,
+  name: string
+): Promise<{ error?: string }> {
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
+
+  if (!uuid.safeParse(id).success) return { error: 'Datos no válidos' }
+  if (!z.string().trim().min(1).max(120).safeParse(name).success) return { error: 'El nombre es obligatorio' }
+
+  const { error } = await supabase
+    .from('menu_categories')
+    .update({ name: name.trim() })
+    .eq('id', id)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return dbError('updateMenuCategoria', error, 'No se pudo actualizar la categoría')
+  return {}
+}
+
+export async function deleteMenuCategoria(id: string): Promise<{ error?: string }> {
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, restaurantId, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
+
+  if (!uuid.safeParse(id).success) return { error: 'Datos no válidos' }
+
+  await supabase
+    .from('menu_items')
+    .update({ menu_category_id: null })
+    .eq('menu_category_id', id)
+    .eq('restaurant_id', restaurantId)
+
+  const { error } = await supabase
+    .from('menu_categories')
+    .delete()
+    .eq('id', id)
+    .eq('restaurant_id', restaurantId)
+
+  if (error) return dbError('deleteMenuCategoria', error, 'No se pudo eliminar la categoría')
+  return {}
 }
 
 export async function createProduct(params: {
@@ -716,9 +815,10 @@ export async function getMenuItems(): Promise<MenuItem[]> {
   const { data } = await supabase
     .from('menu_items')
     .select(`
-      id, restaurant_id, category_id, name, description, price,
+      id, restaurant_id, category_id, menu_category_id, name, description, price,
       image_url, is_active, cantidad_minima, deleted_at, created_at, updated_at,
       categories(name),
+      menu_categories(name),
       menu_item_ingredients(
         id, menu_item_id, product_id, restaurant_id, quantity, unit,
         products(id, name, cost_price, unit)
@@ -732,6 +832,7 @@ export async function getMenuItems(): Promise<MenuItem[]> {
     id: item.id,
     restaurant_id: item.restaurant_id,
     category_id: item.category_id ?? null,
+    menu_category_id: (item as unknown as { menu_category_id: string | null }).menu_category_id ?? null,
     name: item.name,
     description: item.description ?? null,
     price: Number(item.price),
@@ -742,6 +843,9 @@ export async function getMenuItems(): Promise<MenuItem[]> {
     created_at: item.created_at,
     updated_at: item.updated_at,
     category: item.categories ? { name: (item.categories as unknown as { name: string }).name } : undefined,
+    menu_category: (item as unknown as { menu_categories: { name: string } | null }).menu_categories
+      ? { name: (item as unknown as { menu_categories: { name: string } }).menu_categories.name }
+      : undefined,
     ingredients: ((item.menu_item_ingredients ?? []) as unknown as Array<{
       id: string; menu_item_id: string; product_id: string; restaurant_id: string
       quantity: number | string; unit: string
@@ -767,6 +871,7 @@ export async function createMenuItem(params: {
   name: string
   description?: string
   categoryId?: string
+  menuCategoryId?: string
   price: number
   imageUrl?: string
   isActive: boolean
@@ -782,6 +887,7 @@ export async function createMenuItem(params: {
     name: z.string().trim().min(1, 'El nombre es obligatorio').max(160),
     description: z.string().max(1000).optional(),
     categoryId: uuid.optional(),
+    menuCategoryId: uuid.optional(),
     price: z.number().min(0, 'El precio no puede ser negativo').max(1_000_000),
     imageUrl: z.string().max(2000).optional(),
     isActive: z.boolean(),
@@ -795,6 +901,7 @@ export async function createMenuItem(params: {
     .insert({
       restaurant_id: restaurantId,
       category_id: params.categoryId || null,
+      menu_category_id: params.menuCategoryId || null,
       name: params.name.trim(),
       description: params.description?.trim() || null,
       price: params.price,
@@ -829,6 +936,7 @@ export async function updateMenuItem(
     name?: string
     description?: string | null
     categoryId?: string | null
+    menuCategoryId?: string | null
     price?: number
     imageUrl?: string | null
     isActive?: boolean
@@ -847,6 +955,7 @@ export async function updateMenuItem(
       name: z.string().trim().min(1).max(160).optional(),
       description: z.string().max(1000).nullable().optional(),
       categoryId: uuid.nullable().optional(),
+      menuCategoryId: uuid.nullable().optional(),
       price: z.number().min(0).max(1_000_000).optional(),
       imageUrl: z.string().max(2000).nullable().optional(),
       isActive: z.boolean().optional(),
@@ -860,6 +969,7 @@ export async function updateMenuItem(
   if (params.name !== undefined) updateData.name = params.name.trim()
   if (params.description !== undefined) updateData.description = params.description?.trim() || null
   if (params.categoryId !== undefined) updateData.category_id = params.categoryId || null
+  if (params.menuCategoryId !== undefined) updateData.menu_category_id = params.menuCategoryId || null
   if (params.price !== undefined) updateData.price = params.price
   if (params.imageUrl !== undefined) updateData.image_url = params.imageUrl || null
   if (params.isActive !== undefined) updateData.is_active = params.isActive

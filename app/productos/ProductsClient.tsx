@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import type { ProductoConCategoria, Categoria, MenuItem } from '@/app/actions/productos'
-import { getProductos, getCategorias } from '@/app/actions/productos'
+import type { ProductoConCategoria, Categoria, MenuItem, MenuCategoria } from '@/app/actions/productos'
+import { getProductos, getCategorias, getMenuCategorias } from '@/app/actions/productos'
 import ProductRow from '@/components/productos/ProductRow'
 import AddProductPanel from '@/components/productos/AddProductPanel'
 import CategoriasPanel from '@/components/productos/CategoriasPanel'
@@ -13,13 +13,15 @@ interface Props {
   initialProducts: ProductoConCategoria[]
   initialCategories: Categoria[]
   initialMenuItems: MenuItem[]
+  initialMenuCategories: MenuCategoria[]
   canEdit?: boolean
 }
 
-export default function ProductsClient({ initialProducts, initialCategories, initialMenuItems, canEdit = false }: Props) {
+export default function ProductsClient({ initialProducts, initialCategories, initialMenuItems, initialMenuCategories, canEdit = false }: Props) {
   const [activeTab, setActiveTab] = useState<'productos' | 'carta'>('productos')
   const [products, setProducts] = useState(initialProducts)
   const [categories, setCategories] = useState(initialCategories)
+  const [menuCategories, setMenuCategories] = useState(initialMenuCategories)
   const [search, setSearch] = useState('')
   const [filterLow, setFilterLow] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
@@ -192,7 +194,7 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
       {activeTab === 'carta' && (
         <CartaClient
           initialMenuItems={initialMenuItems}
-          categories={categories}
+          menuCategories={menuCategories}
           allProducts={products}
           onProductsRefresh={handleRefresh}
           canEdit={canEdit}

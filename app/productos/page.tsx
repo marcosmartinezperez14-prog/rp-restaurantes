@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getRestaurantContext } from '@/lib/auth/restaurant-context'
-import { getProductos, getCategorias, getMenuItems } from '@/app/actions/productos'
+import { getProductos, getCategorias, getMenuItems, getMenuCategorias } from '@/app/actions/productos'
 import AppShell from '@/components/AppShell'
 import ProductsClient from './ProductsClient'
 import { PERMISOS_POR_ROL, ROLES_EDITORES, type RolNombre } from '@/types/equipo'
@@ -39,10 +39,11 @@ export default async function ProductosPage() {
     )
   }
 
-  const [products, categories, menuItems] = await Promise.all([
+  const [products, categories, menuItems, menuCategories] = await Promise.all([
     getProductos(),
     getCategorias(),
     getMenuItems(),
+    getMenuCategorias(),
   ])
 
   return (
@@ -51,6 +52,7 @@ export default async function ProductosPage() {
         initialProducts={products}
         initialCategories={categories}
         initialMenuItems={menuItems}
+        initialMenuCategories={menuCategories}
         canEdit={canEdit}
       />
     </AppShell>
