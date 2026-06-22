@@ -76,6 +76,7 @@ export default async function EquipoPage() {
         rolActual={isSuperadminMode ? 'admin' : rolActual ?? 'camarero'}
         usuarioActualId={userId}
         restaurantId={restaurantId}
+        rolUsuarioActual={isSuperadminMode ? 'admin' : (rolActual === 'admin' || rolActual === 'gerente' ? rolActual : null)}
       />
     </AppShell>
   )
