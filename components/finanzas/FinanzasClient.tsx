@@ -857,6 +857,7 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
   const [notas,       setNotas]       = useState('')
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState<string | null>(null)
+  const [focus,       setFocus]       = useState<string | null>(null)
 
   const infoRecurrencia = useMemo(() => {
     if (recurrencia === 'unico') return null
@@ -889,97 +890,205 @@ function MovimientoModal({ tipo, restaurantId, onClose, onSaved }: {
   }
 
   const esIngreso = tipo === 'ingreso'
-  const accentBtn = esIngreso ? 'bg-[var(--accent)] hover:bg-[var(--accent-hover)]' : 'bg-red-600 hover:bg-red-700'
+  const color = esIngreso ? 'var(--accent)' : '#c0492f'
+  const colorBg = esIngreso ? 'rgba(31,93,76,0.09)' : 'rgba(192,73,47,0.09)'
+  const glow = esIngreso ? '0 0 0 4px rgba(31,93,76,0.10)' : '0 0 0 4px rgba(192,73,47,0.10)'
+
+  function fb(k: string) { return focus === k ? color : '#e6e6e8' }
+  function fg(k: string) { return focus === k ? glow : 'none' }
+
+  const REPEAT_DEFS = [
+    { value: 'unico' as Recurrencia, label: 'Único', icon: <path d="M5 12h14"/> },
+    { value: 'mensual' as Recurrencia, label: 'Mensual', icon: <><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></> },
+    { value: 'anual' as Recurrencia, label: 'Anual', icon: <><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v4h-4"/></> },
+  ]
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,29,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '32px 20px' }}
+    >
+      <div style={{ width: '100%', maxWidth: 480, background: '#fff', border: '1px solid #e6e6e8', borderRadius: 18, boxShadow: '0 24px 60px rgba(20,23,29,0.16)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
-          <h3 className="text-base font-bold text-[var(--text-primary)]">
-            {esIngreso ? 'Añadir ingreso' : 'Añadir gasto'}
-          </h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-100 text-xl leading-none">×</button>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '20px 22px', borderBottom: '1px solid #f0f0f1', flexShrink: 0 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: colorBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {esIngreso ? (
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7"/><path d="M3 19h18"/>
+              </svg>
+            ) : (
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v6M12 9l-2.5-2.5M12 9l2.5-2.5"/><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 13h18"/>
+              </svg>
+            )}
+          </div>
+          <div style={{ flex: 1, lineHeight: 1.2 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.3px' }}>{esIngreso ? 'Añadir ingreso' : 'Añadir gasto'}</div>
+            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: '#a7a9af', letterSpacing: '0.2px', marginTop: 2 }}>NUEVO MOVIMIENTO</div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #ededef', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#9a9da3' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
+        {/* Body */}
+        <div style={{ padding: 22, overflowY: 'auto', flex: 1 }}>
+
           {error && (
-            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+            <div style={{ padding: '10px 13px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, fontSize: 13, color: '#dc2626', marginBottom: 16 }}>
+              {error}
+            </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Concepto *</label>
-            <input type="text" value={concepto} onChange={e => setConcepto(e.target.value)}
-              placeholder="Describe el movimiento"
-              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Importe (€) *</label>
-              <input type="number" min="0.01" step="0.01" value={importe} onChange={e => setImporte(e.target.value)}
-                placeholder="0,00"
-                className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
+          {/* Concepto */}
+          <label style={{ display: 'block', marginBottom: 18 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#4d5159' }}>Concepto <span style={{ color }}>*</span></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: `1.5px solid ${fb('concept')}`, background: '#fcfcfd', borderRadius: 11, padding: '0 13px', height: 46, marginTop: 8, boxShadow: fg('concept'), transition: 'border-color .15s ease, box-shadow .15s ease' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b6b8bd" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 7h16M4 12h16M4 17h9"/>
+              </svg>
+              <input
+                value={concepto}
+                onChange={e => setConcepto(e.target.value)}
+                onFocus={() => setFocus('concept')}
+                onBlur={() => setFocus(null)}
+                placeholder="Describe el movimiento"
+                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: '#1b1e24', outline: 'none', width: '100%' }}
+              />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                {recurrencia === 'unico' ? 'Fecha *' : 'Fecha de inicio *'}
-              </label>
-              <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-                className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400" />
+          </label>
+
+          {/* Importe + Fecha */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+            <label style={{ display: 'block' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#4d5159' }}>Importe (€) <span style={{ color }}>*</span></span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1.5px solid ${fb('amount')}`, background: '#fcfcfd', borderRadius: 11, padding: '0 13px', height: 46, marginTop: 8, boxShadow: fg('amount'), transition: 'border-color .15s ease, box-shadow .15s ease' }}>
+                <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 600, color: '#b6b8bd' }}>€</span>
+                <input
+                  value={importe}
+                  onChange={e => setImporte(e.target.value)}
+                  onFocus={() => setFocus('amount')}
+                  onBlur={() => setFocus(null)}
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  style={{ flex: 1, border: 'none', background: 'transparent', fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 600, color: '#1b1e24', outline: 'none', width: '100%' }}
+                />
+              </div>
+            </label>
+            <label style={{ display: 'block' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#4d5159' }}>{recurrencia === 'unico' ? 'Fecha' : 'Fecha de inicio'} <span style={{ color }}>*</span></span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1.5px solid #e6e6e8', background: '#fcfcfd', borderRadius: 11, padding: '0 13px', height: 46, marginTop: 8 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a7a9af" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18"/>
+                </svg>
+                <input
+                  type="date"
+                  value={fecha}
+                  onChange={e => setFecha(e.target.value)}
+                  style={{ flex: 1, border: 'none', background: 'transparent', fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 500, color: '#2c2f36', outline: 'none', width: '100%' }}
+                />
+              </div>
+            </label>
+          </div>
+
+          {/* Categoría */}
+          <label style={{ display: 'block', marginBottom: 20 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#4d5159' }}>Categoría <span style={{ color }}>*</span></span>
+            <div style={{ position: 'relative', marginTop: 8 }}>
+              <select
+                value={categoria}
+                onChange={e => setCategoria(e.target.value)}
+                style={{ appearance: 'none', width: '100%', border: '1.5px solid #e6e6e8', background: '#fcfcfd', borderRadius: 11, padding: '0 38px 0 13px', height: 46, fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: categoria ? '#1b1e24' : '#6b6f77', cursor: 'pointer', outline: 'none' }}
+              >
+                <option value="">Seleccionar categoría</option>
+                {CATEGORIAS[tipo].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <svg style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a7a9af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
             </div>
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Categoría *</label>
-            <select value={categoria} onChange={e => setCategoria(e.target.value)}
-              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 bg-[var(--bg-surface)]">
-              <option value="">Seleccionar categoría</option>
-              {CATEGORIAS[tipo].map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-2">Repetición</label>
-            <div className="grid grid-cols-3 gap-2">
-              {RECURRENCIAS.map(r => (
-                <button
-                  key={r.value}
-                  onClick={() => setRecurrencia(r.value)}
-                  className={`px-3 py-2 text-sm rounded-xl border text-center transition-colors ${
-                    recurrencia === r.value
-                      ? 'bg-violet-600 text-white border-violet-600'
-                      : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-page)]'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
+          {/* Repetición */}
+          <div style={{ marginBottom: 20 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#4d5159' }}>Repetición</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, background: '#f3f3f5', border: '1px solid #e9e9eb', borderRadius: 12, padding: 4, marginTop: 8 }}>
+              {REPEAT_DEFS.map(r => {
+                const on = recurrencia === r.value
+                return (
+                  <button
+                    key={r.value}
+                    onClick={() => setRecurrencia(r.value)}
+                    style={{
+                      cursor: 'pointer', border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+                      padding: '9px 0', borderRadius: 9,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                      background: on ? color : 'transparent',
+                      color: on ? '#fff' : '#6b6f77',
+                      boxShadow: on ? `0 2px 6px rgba(31,93,76,0.22)` : 'none',
+                      transition: 'all .14s ease',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {r.icon}
+                    </svg>
+                    {r.label}
+                  </button>
+                )
+              })}
             </div>
             {infoRecurrencia && (
-              <p className="mt-2 text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
-                🔁 {infoRecurrencia}
-              </p>
+              <div style={{ marginTop: 8, padding: '8px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 9, fontSize: 12, color: '#15803d' }}>
+                ↻ {infoRecurrencia}
+              </div>
             )}
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
-            <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={2}
-              placeholder="Observaciones adicionales..."
-              className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black outline-none focus:border-blue-400 resize-none" />
-          </div>
+          {/* Notas */}
+          <label style={{ display: 'block' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#4d5159' }}>Notas <span style={{ color: '#a7a9af', fontWeight: 500 }}>(opcional)</span></span>
+            <textarea
+              value={notas}
+              onChange={e => setNotas(e.target.value)}
+              onFocus={() => setFocus('notes')}
+              onBlur={() => setFocus(null)}
+              placeholder="Observaciones adicionales…"
+              rows={3}
+              style={{ width: '100%', border: `1.5px solid ${fb('notes')}`, background: '#fcfcfd', borderRadius: 11, padding: '11px 13px', fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: '#1b1e24', marginTop: 8, lineHeight: 1.5, boxShadow: fg('notes'), transition: 'border-color .15s ease, box-shadow .15s ease', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
+            />
+          </label>
         </div>
 
-        <div className="px-6 pb-5 flex justify-end gap-3">
-          <button onClick={onClose}
-            className="px-4 py-2 text-sm border border-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:bg-[var(--bg-page)]">
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '16px 22px', borderTop: '1px solid #f0f0f1', background: '#fafafb', flexShrink: 0 }}>
+          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: '#b6b8bd', flex: 1 }}>Los campos con * son obligatorios</span>
+          <button
+            onClick={onClose}
+            style={{ cursor: 'pointer', height: 44, border: '1.5px solid #e6e6e8', borderRadius: 11, background: '#fff', color: '#4d5159', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, padding: '0 18px', transition: 'all .14s ease' }}
+          >
             Cancelar
           </button>
-          <button onClick={handleGuardar} disabled={saving}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl text-white ${accentBtn} disabled:opacity-50`}>
-            {saving ? 'Guardando...' : 'Guardar'}
+          <button
+            onClick={handleGuardar}
+            disabled={saving}
+            style={{
+              cursor: saving ? 'default' : 'pointer', height: 44, border: 'none', borderRadius: 11,
+              background: color, color: '#fff', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700,
+              padding: '0 22px', display: 'flex', alignItems: 'center', gap: 9,
+              boxShadow: esIngreso ? '0 6px 16px rgba(31,93,76,0.24)' : '0 6px 16px rgba(192,73,47,0.24)',
+              opacity: saving ? 0.7 : 1, transition: 'filter .15s ease, opacity .15s ease',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12l5 5L20 7"/>
+            </svg>
+            {saving ? 'Guardando...' : esIngreso ? 'Guardar ingreso' : 'Guardar gasto'}
           </button>
         </div>
       </div>
