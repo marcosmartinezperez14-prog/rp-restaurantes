@@ -10,23 +10,11 @@ create table if not exists menu_categories (
 
 alter table menu_categories enable row level security;
 
-create policy "restaurant members can read menu_categories"
-  on menu_categories for select
-  using (
-    restaurant_id in (
-      select restaurant_id from user_restaurants where user_id = auth.uid()
-    )
-  );
-
-create policy "editors can manage menu_categories"
+create policy "menu_categories_restaurant"
   on menu_categories for all
-  using (
-    restaurant_id in (
-      select restaurant_id from user_restaurants where user_id = auth.uid()
-    )
-  );
+  using (restaurant_id = get_current_restaurant_id())
+  with check (restaurant_id = get_current_restaurant_id());
 
--- New column on menu_items for the carta category (separate from product category_id)
 alter table menu_items add column if not exists menu_category_id uuid references menu_categories(id) on delete set null;
 
 create index if not exists menu_items_menu_category_id_idx on menu_items(menu_category_id);
