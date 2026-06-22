@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { CategoriaCarta } from '@/app/api/cliente/[slug]/carta/route'
+import type { ReservasConfig } from '@/types/administracion'
+import { DEFAULT_CONFIG } from '@/types/administracion'
 import CartaPublicaClient from '@/components/cliente/CartaPublicaClient'
 
 export default async function ClienteCartaPage({
@@ -64,6 +66,16 @@ export default async function ClienteCartaPage({
     })
   }
 
+  const { data: reservaSettings } = await supabase
+    .from('reservation_settings')
+    .select('schedule, duration_minutes')
+    .eq('restaurant_id', restaurante.id)
+    .maybeSingle()
+
+  const reservasConfig: ReservasConfig = reservaSettings
+    ? { ...DEFAULT_CONFIG, schedule: reservaSettings.schedule, duration_minutes: reservaSettings.duration_minutes }
+    : DEFAULT_CONFIG
+
   return (
     <CartaPublicaClient
       restaurante={{
@@ -73,6 +85,7 @@ export default async function ClienteCartaPage({
         max_online_comensales: restaurante.max_online_comensales ?? null,
       }}
       carta={carta}
+      reservasConfig={reservasConfig}
     />
   )
 }

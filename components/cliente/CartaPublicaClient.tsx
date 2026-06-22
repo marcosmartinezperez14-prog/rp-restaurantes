@@ -1,11 +1,42 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { CategoriaCarta } from '@/app/api/cliente/[slug]/carta/route'
+import type { ReservasConfig, Schedule } from '@/types/administracion'
+
+const DIA_MAP: Record<number, keyof Schedule> = {
+  0: 'domingo', 1: 'lunes', 2: 'martes', 3: 'miercoles',
+  4: 'jueves', 5: 'viernes', 6: 'sabado',
+}
+
+function generarSlots(fecha: string, config: ReservasConfig): string[] {
+  if (!fecha) return []
+  const [anio, mes, dia] = fecha.split('-').map(Number)
+  const diaSemana = new Date(anio, mes - 1, dia).getDay()
+  const diaConfig = config.schedule[DIA_MAP[diaSemana]]
+  if (!diaConfig?.activo) return []
+
+  const slots: string[] = []
+  const intervalo = 30
+  for (const franja of diaConfig.franjas) {
+    const [hA, mA] = franja.apertura.split(':').map(Number)
+    const [hC, mC] = franja.cierre.split(':').map(Number)
+    let minutos = hA * 60 + mA
+    const fin = hC * 60 + mC - config.duration_minutes
+    while (minutos <= fin) {
+      const h = String(Math.floor(minutos / 60)).padStart(2, '0')
+      const m = String(minutos % 60).padStart(2, '0')
+      slots.push(`${h}:${m}`)
+      minutos += intervalo
+    }
+  }
+  return slots
+}
 
 interface Props {
   restaurante: { id: string; name: string; slug: string; max_online_comensales: number | null }
   carta: CategoriaCarta[]
+  reservasConfig: ReservasConfig
 }
 
 const FONTS = `
@@ -19,7 +50,7 @@ const FONTS = `
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 `
 
-export default function CartaPublicaClient({ restaurante, carta }: Props) {
+export default function CartaPublicaClient({ restaurante, carta, reservasConfig }: Props) {
   const { name: nombre, max_online_comensales } = restaurante
 
   const [activeSection, setActiveSection] = useState(carta[0]?.id ?? '')
@@ -31,8 +62,16 @@ export default function CartaPublicaClient({ restaurante, carta }: Props) {
     const t = new Date(); t.setMinutes(t.getMinutes() - t.getTimezoneOffset())
     return t.toISOString().slice(0, 10)
   })
-  const [resvTime, setResvTime] = useState('20:30')
+  const [resvTime, setResvTime] = useState('')
   const [resvDoneMsg, setResvDoneMsg] = useState('')
+
+  const slots = useMemo(() => generarSlots(resvDate, reservasConfig), [resvDate, reservasConfig])
+
+  useEffect(() => {
+    if (slots.length > 0 && !slots.includes(resvTime)) {
+      setResvTime(slots[0])
+    }
+  }, [slots])
 
   const [gateConfirmado, setGateConfirmado] = useState(max_online_comensales === null)
   const [gateComensales, setGateComensales] = useState(1)
@@ -234,16 +273,20 @@ export default function CartaPublicaClient({ restaurante, carta }: Props) {
                   </div>
                   <div style={{ flex: 1, minWidth: '130px' }}>
                     <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 400, color: '#AFA89A', marginBottom: '12px', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Hora</label>
-                    <select value={resvTime} onChange={e => setResvTime(e.target.value)} style={{ width: '100%', padding: '10px 0', border: 'none', borderBottom: '1px solid rgba(33,30,26,0.18)', background: 'none', fontFamily: "'Jost', sans-serif", fontSize: '14px', color: '#211E1A' }}>
-                      {['13:30', '14:00', '14:30', '20:30', '21:00', '21:30', '22:00'].map(t => <option key={t}>{t}</option>)}
-                    </select>
+                    {slots.length > 0 ? (
+                      <select value={resvTime} onChange={e => setResvTime(e.target.value)} style={{ width: '100%', padding: '10px 0', border: 'none', borderBottom: '1px solid rgba(33,30,26,0.18)', background: 'none', fontFamily: "'Jost', sans-serif", fontSize: '14px', color: '#211E1A' }}>
+                        {slots.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    ) : (
+                      <p style={{ margin: '10px 0 0', fontSize: '12.5px', fontWeight: 300, color: '#9E4F2E' }}>Sin disponibilidad ese día</p>
+                    )}
                   </div>
                 </div>
 
                 <label style={{ display: 'block', fontSize: '10.5px', fontWeight: 400, color: '#AFA89A', marginBottom: '12px', letterSpacing: '0.14em', textTransform: 'uppercase' }}>A nombre de</label>
                 <input type="text" placeholder="Tu nombre" value={resvName} onChange={e => setResvName(e.target.value)} style={{ width: '100%', padding: '10px 0', border: 'none', borderBottom: '1px solid rgba(33,30,26,0.18)', background: 'none', fontFamily: "'Jost', sans-serif", fontSize: '14px', color: '#211E1A', marginBottom: '34px' }} />
 
-                <button onClick={handleConfirmarReserva} style={{ width: '100%', border: 'none', cursor: 'pointer', padding: '16px', background: '#211E1A', color: '#F8F6F0', fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '12px', letterSpacing: '0.18em', textTransform: 'uppercase', borderRadius: 0 }}>
+                <button onClick={handleConfirmarReserva} disabled={slots.length === 0} style={{ width: '100%', border: 'none', cursor: slots.length === 0 ? 'default' : 'pointer', padding: '16px', background: slots.length === 0 ? '#AFA89A' : '#211E1A', color: '#F8F6F0', fontFamily: "'Jost', sans-serif", fontWeight: 400, fontSize: '12px', letterSpacing: '0.18em', textTransform: 'uppercase', borderRadius: 0, transition: 'background 0.15s' }}>
                   Confirmar reserva
                 </button>
               </div>
