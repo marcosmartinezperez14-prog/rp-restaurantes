@@ -290,118 +290,209 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div style={{ minHeight: '100vh', width: '100%', background: '#f6f6f7' }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '28px 40px 56px' }}>
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 px-4 py-3 bg-[#0f172a] text-white text-sm rounded-xl shadow-lg">
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 50, padding: '12px 16px', background: '#14171d', color: '#fff', fontSize: 13, borderRadius: 12, boxShadow: '0 8px 24px rgba(20,23,29,0.22)' }}>
           {toast}
         </div>
       )}
 
-      {/* A — Filtro período */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mr-1">Período:</span>
-        {PERIODOS.map(p => (
-          <button
-            key={p.value}
-            onClick={() => setPeriodo(p.value)}
-            className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-              periodo === p.value
-                ? 'bg-[#0f172a] text-white border-[#0f172a]'
-                : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-page)]'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
+      {/* A — Período */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 4 }}>
+        <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, fontWeight: 600, letterSpacing: '0.6px', color: '#9a9da3' }}>PERÍODO</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {PERIODOS.map(p => (
+            <button
+              key={p.value}
+              onClick={() => setPeriodo(p.value)}
+              style={{
+                cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+                padding: '8px 15px', borderRadius: 9,
+                border: `1px solid ${periodo === p.value ? '#14171d' : '#e6e6e8'}`,
+                background: periodo === p.value ? '#14171d' : '#fff',
+                color: periodo === p.value ? '#fff' : '#6b6f77',
+                transition: 'all .14s ease',
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* B — Tabs */}
-      <div className="flex border-b border-[var(--border)]">
-        {(['movimientos', 'tickets'] as Tab[]).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
-              tab === t
-                ? 'border-[#0f172a] text-[var(--text-primary)]'
-                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {t === 'movimientos' ? 'Movimientos' : `Tickets (${num_tickets})`}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: 26, borderBottom: '1px solid #e7e7e9', margin: '18px 0 22px' }}>
+        <button
+          onClick={() => setTab('movimientos')}
+          style={{
+            cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit',
+            fontSize: 14, fontWeight: tab === 'movimientos' ? 700 : 600,
+            color: tab === 'movimientos' ? '#181b21' : '#9a9da3',
+            padding: '0 0 13px', borderBottom: `2px solid ${tab === 'movimientos' ? 'var(--accent)' : 'transparent'}`,
+            marginBottom: -1, transition: 'all .14s ease',
+          }}
+        >
+          Movimientos
+        </button>
+        <button
+          onClick={() => setTab('tickets')}
+          style={{
+            cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit',
+            fontSize: 14, fontWeight: tab === 'tickets' ? 700 : 600,
+            color: tab === 'tickets' ? '#181b21' : '#9a9da3',
+            padding: '0 0 13px', borderBottom: `2px solid ${tab === 'tickets' ? 'var(--accent)' : 'transparent'}`,
+            marginBottom: -1, display: 'flex', alignItems: 'center', gap: 7, transition: 'all .14s ease',
+          }}
+        >
+          Tickets
+          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: '#b6b8bd', background: '#efefef', borderRadius: 5, padding: '1px 6px' }}>
+            {num_tickets}
+          </span>
+        </button>
       </div>
 
-      {/* C — Tarjetas resumen (ambas tabs) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Tarjeta titulo="Ingresos TPV" valor={ingresos_tpv} subtexto={`${num_tickets} ticket${num_tickets !== 1 ? 's' : ''}`} color="verde" />
-        <Tarjeta titulo="Ingresos manuales" valor={ingresos_manuales} color="azul" />
-        <Tarjeta titulo="Gastos" valor={gastos_total} color="rojo" />
-        <Tarjeta titulo="Beneficio neto" valor={beneficio_neto} color={beneficio_neto >= 0 ? 'verde' : 'rojo'} signo />
+      {/* C — KPI cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
+        <KpiCard
+          label="Ingresos TPV" value={fmt(ingresos_tpv)}
+          sub={`${num_tickets} TICKET${num_tickets !== 1 ? 'S' : ''}`}
+          accent="#1f5d4c" valueColor="#16876a" iconBg="rgba(31,93,76,0.08)"
+          icon={<><path d="M3 17l5-5 4 3 6-7"/><path d="M17 8h3v3"/></>}
+        />
+        <KpiCard
+          label="Ingresos manuales" value={fmt(ingresos_manuales)}
+          sub="AÑADIDOS A MANO"
+          accent="#2f5fa6" valueColor="#2f5fa6" iconBg="rgba(47,95,166,0.08)"
+          icon={<path d="M12 5v14M5 12h14"/>}
+        />
+        <KpiCard
+          label="Gastos" value={fmt(gastos_total)}
+          sub={movimientos.filter(m => m.tipo === 'gasto').length === 0 ? 'SIN REGISTROS' : `${movimientos.filter(m => m.tipo === 'gasto').length} MOVIMIENTOS`}
+          accent="#c0492f" valueColor="#c0492f" iconBg="rgba(192,73,47,0.08)"
+          icon={<path d="M5 12h14"/>}
+        />
+        <KpiCard
+          label="Beneficio neto" value={(beneficio_neto >= 0 ? '' : '−') + fmt(Math.abs(beneficio_neto))}
+          sub="INGRESOS − GASTOS"
+          accent={beneficio_neto >= 0 ? '#1f5d4c' : '#c0492f'}
+          valueColor={beneficio_neto >= 0 ? '#181b21' : '#c0492f'}
+          iconBg={beneficio_neto >= 0 ? 'rgba(31,93,76,0.08)' : 'rgba(192,73,47,0.08)'}
+          icon={<path d="M12 2v20M17 7H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>}
+        />
       </div>
 
       {/* D — Contenido por tab */}
       {tab === 'movimientos' && (
         <>
           {/* Gráfico */}
-          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] p-4">
-            <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Últimos 6 meses</h2>
-            <ResponsiveContainer width="100%" height={280}>
+          <section style={{ background: '#fff', border: '1px solid #e8e8ea', borderRadius: 16, padding: '22px 24px', boxShadow: '0 1px 2px rgba(20,23,29,0.04)', marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.2px' }}>Últimos 6 meses</div>
+                <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: '#a7a9af', marginTop: 3 }}>INGRESOS VS. GASTOS</div>
+              </div>
+              <div style={{ display: 'flex', gap: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 18, height: 3, borderRadius: 2, background: 'var(--accent)', display: 'inline-block' }} />
+                  <span style={{ fontSize: 12, color: '#5f636b', fontWeight: 500 }}>Ingresos</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 18, height: 3, borderRadius: 2, background: '#d2554a', display: 'inline-block' }} />
+                  <span style={{ fontSize: 12, color: '#5f636b', fontWeight: 500 }}>Gastos</span>
+                </div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={260}>
               <BarChart data={datosGrafico} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="periodo" tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} width={72} tickFormatter={v => v.toLocaleString('es-ES') + ' €'} />
+                <CartesianGrid strokeDasharray="4 5" stroke="#f0f0f1" vertical={false} />
+                <XAxis dataKey="periodo" tick={{ fontSize: 12, fill: '#9a9da3', fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 500 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#b6b8bd', fontFamily: 'ui-monospace, monospace' }} width={72} tickFormatter={v => '€' + v.toLocaleString('es-ES')} axisLine={false} tickLine={false} />
                 <Tooltip
                   formatter={(value, name) => [fmt(Number(value)), name]}
-                  labelStyle={{ color: '#0f172a', fontWeight: 600 }}
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
+                  labelStyle={{ color: '#181b21', fontWeight: 600, fontSize: 13 }}
+                  contentStyle={{ borderRadius: 10, border: '1px solid #e8e8ea', fontSize: 12, boxShadow: '0 4px 12px rgba(20,23,29,0.08)' }}
+                  cursor={{ fill: '#f8f8f9' }}
                 />
-                <Legend wrapperStyle={{ fontSize: 13 }} />
-                <Bar dataKey="Ingresos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Ingresos" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Gastos" fill="#d2554a" radius={[4, 4, 0, 0]} opacity={0.85} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+            {datosGrafico.every(d => d.Ingresos === 0 && d.Gastos === 0) && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 6, paddingTop: 14, borderTop: '1px solid #f0f0f1' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b6b8bd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>
+                </svg>
+                <span style={{ fontSize: 12.5, color: '#a7a9af' }}>Sin movimientos registrados todavía en este período.</span>
+              </div>
+            )}
+          </section>
 
           {/* Botones añadir */}
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
             <button
               onClick={() => setModalTipo('ingreso')}
-              className="px-4 py-2.5 text-sm bg-[var(--accent)] text-white font-semibold rounded-xl hover:bg-[var(--accent-hover)] flex items-center gap-1.5"
+              style={{
+                cursor: 'pointer', height: 44, border: 'none', borderRadius: 11,
+                background: 'var(--accent)', color: '#fff', fontFamily: 'inherit',
+                fontSize: 13.5, fontWeight: 700, padding: '0 18px',
+                display: 'flex', alignItems: 'center', gap: 9,
+                boxShadow: '0 6px 16px rgba(31,93,76,0.18)', transition: 'filter .15s ease',
+              }}
             >
-              <span className="text-base leading-none">+</span> Añadir ingreso
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Añadir ingreso
             </button>
             <button
               onClick={() => setModalTipo('gasto')}
-              className="px-4 py-2.5 text-sm bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 flex items-center gap-1.5"
+              style={{
+                cursor: 'pointer', height: 44, border: '1.5px solid #e6dede', borderRadius: 11,
+                background: '#fff', color: '#c0492f', fontFamily: 'inherit',
+                fontSize: 13.5, fontWeight: 700, padding: '0 18px',
+                display: 'flex', alignItems: 'center', gap: 9, transition: 'all .15s ease',
+              }}
             >
-              <span className="text-base leading-none">+</span> Añadir gasto
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14"/>
+              </svg>
+              Añadir gasto
             </button>
           </div>
 
           {/* Tabla movimientos */}
-          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border)] overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+          <section style={{ background: '#fff', border: '1px solid #e8e8ea', borderRadius: 16, boxShadow: '0 1px 2px rgba(20,23,29,0.04)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid #f0f0f1' }}>
+              <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.2px' }}>
                 Todos los movimientos {movimientos.length > 0 && `(${movimientos.length})`}
-              </h2>
-              <span className="text-xs text-[var(--text-secondary)]">El período solo afecta al resumen</span>
+              </span>
+              <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: '#b6b8bd' }}>El período solo afecta al resumen</span>
             </div>
 
             {movimientos.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="text-4xl mb-3">📊</div>
-                <p className="text-sm text-[var(--text-secondary)]">Aún no hay movimientos registrados</p>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '52px 20px' }}>
+                <div style={{ width: 46, height: 46, borderRadius: 12, background: '#f5f5f6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c2c4c9" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 7h16M4 12h16M4 17h10"/>
+                  </svg>
+                </div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: '#6b6f77' }}>No hay movimientos registrados</div>
+                <div style={{ fontSize: 12.5, color: '#a7a9af', marginTop: 4 }}>Añade un ingreso o un gasto para empezar a llevar tus cuentas.</div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="border-b border-[var(--border)] bg-[var(--bg-page)]">
+                    <tr style={{ borderBottom: '1px solid #f0f0f1', background: '#fafafa' }}>
                       {['Fecha', 'Tipo', 'Concepto', 'Categoría', 'Importe', 'Acciones'].map(h => (
-                        <th key={h} className={`px-4 py-3 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider ${h === 'Importe' || h === 'Acciones' ? 'text-right' : 'text-left'}`}>
+                        <th key={h} style={{
+                          padding: '12px 16px', fontSize: 11, fontWeight: 700,
+                          color: '#9a9da3', textTransform: 'uppercase', letterSpacing: '0.4px',
+                          textAlign: h === 'Importe' || h === 'Acciones' ? 'right' : 'left',
+                        }}>
                           {h}
                         </th>
                       ))}
@@ -411,34 +502,47 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                     {movimientos.map(m => {
                       const recLabel = etiquetaRecurrencia(m)
                       return (
-                        <tr key={m.id} className="border-b border-[#f1f5f9] hover:bg-[var(--bg-page)]">
-                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)] whitespace-nowrap">{m.fecha}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col gap-1">
-                              <span className={`inline-block w-fit px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'ingreso' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <tr key={m.id} style={{ borderBottom: '1px solid #f4f4f5' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
+                          onMouseLeave={e => (e.currentTarget.style.background = '')}
+                        >
+                          <td style={{ padding: '12px 16px', fontSize: 12, color: '#9a9da3', whiteSpace: 'nowrap', fontFamily: 'ui-monospace, monospace' }}>{m.fecha}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              <span style={{
+                                display: 'inline-block', width: 'fit-content', padding: '2px 8px',
+                                fontSize: 11, fontWeight: 700, borderRadius: 999,
+                                background: m.tipo === 'ingreso' ? 'rgba(22,135,106,0.1)' : 'rgba(192,73,47,0.1)',
+                                color: m.tipo === 'ingreso' ? '#16876a' : '#c0492f',
+                              }}>
                                 {m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
                               </span>
                               {recLabel && (
-                                <span className="inline-block w-fit px-2 py-0.5 text-xs font-medium rounded-full bg-violet-100 text-violet-700">
+                                <span style={{ display: 'inline-block', width: 'fit-content', padding: '2px 8px', fontSize: 11, fontWeight: 600, borderRadius: 999, background: 'rgba(124,58,237,0.08)', color: '#7c3aed' }}>
                                   {recLabel}
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-[var(--text-primary)]">
+                          <td style={{ padding: '12px 16px', fontSize: 13, color: '#1b1e24' }}>
                             <span>{m.concepto}</span>
-                            {m.notas && <span className="block text-xs text-[var(--text-secondary)]">{m.notas}</span>}
+                            {m.notas && <span style={{ display: 'block', fontSize: 12, color: '#9a9da3' }}>{m.notas}</span>}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">{m.categoria}</td>
-                          <td className={`px-4 py-3 text-sm text-right font-semibold whitespace-nowrap ${m.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
+                          <td style={{ padding: '12px 16px', fontSize: 13, color: '#6b6f77' }}>{m.categoria}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', color: m.tipo === 'ingreso' ? '#16876a' : '#c0492f' }}>
                             {m.tipo === 'ingreso' ? '+' : '−'}{fmt(Number(m.importe))}
-                            {recLabel && <span className="block text-xs font-normal text-[var(--text-secondary)]">{m.recurrencia === 'mensual' ? '/mes' : '/año'}</span>}
+                            {recLabel && <span style={{ display: 'block', fontSize: 11, fontWeight: 400, color: '#9a9da3' }}>{m.recurrencia === 'mensual' ? '/mes' : '/año'}</span>}
                           </td>
-                          <td className="px-4 py-3 text-right">
+                          <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                             <button
                               onClick={() => handleEliminar(m.id)}
                               disabled={eliminandoId === m.id}
-                              className="px-2 py-1 text-xs bg-slate-100 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 hover:border-red-200 disabled:opacity-50 transition-colors"
+                              style={{
+                                padding: '5px 10px', fontSize: 12, border: '1px solid #e6e6e8',
+                                borderRadius: 8, background: '#fff', color: '#6b6f77',
+                                cursor: eliminandoId === m.id ? 'default' : 'pointer',
+                                opacity: eliminandoId === m.id ? 0.5 : 1, transition: 'all .15s ease',
+                              }}
                             >
                               {eliminandoId === m.id ? '...' : 'Eliminar'}
                             </button>
@@ -450,7 +554,7 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
                 </table>
               </div>
             )}
-          </div>
+          </section>
 
           {/* Modal movimiento */}
           {modalTipo && (
@@ -710,30 +814,31 @@ export default function FinanzasClient({ movimientos: inicial, ingresos_tpv, num
           )}
         </>
       )}
+      </div>
     </div>
   )
 }
 
-// ─── Tarjeta resumen ──────────────────────────────────────────────────────────
+// ─── KPI card ─────────────────────────────────────────────────────────────────
 
-type ColorTarjeta = 'verde' | 'azul' | 'rojo'
-const COLOR_MAP: Record<ColorTarjeta, { bg: string; border: string; label: string; value: string }> = {
-  verde: { bg: 'bg-green-50',  border: 'border-green-200',  label: 'text-green-600', value: 'text-green-700' },
-  azul:  { bg: 'bg-blue-50',   border: 'border-blue-200',   label: 'text-blue-600',  value: 'text-blue-700' },
-  rojo:  { bg: 'bg-red-50',    border: 'border-red-200',    label: 'text-red-600',   value: 'text-red-700' },
-}
-
-function Tarjeta({ titulo, valor, subtexto, color, signo }: {
-  titulo: string; valor: number; subtexto?: string; color: ColorTarjeta; signo?: boolean
+function KpiCard({ label, value, sub, accent, valueColor, iconBg, icon }: {
+  label: string; value: string; sub: string
+  accent: string; valueColor: string; iconBg: string
+  icon: React.ReactNode
 }) {
-  const c = COLOR_MAP[color]
   return (
-    <div className={`${c.bg} border ${c.border} rounded-xl p-4`}>
-      <p className={`text-xs font-medium ${c.label} mb-1`}>{titulo}</p>
-      <p className={`text-xl font-bold ${c.value}`}>
-        {signo && valor > 0 ? '+' : ''}{valor.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-      </p>
-      {subtexto && <p className={`text-xs ${c.label} mt-0.5`}>{subtexto}</p>}
+    <div style={{ background: '#fff', border: '1px solid #e8e8ea', borderRadius: 15, padding: '18px 20px', boxShadow: '0 1px 2px rgba(20,23,29,0.04)', position: 'relative', overflow: 'hidden' }}>
+      <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: accent }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6b6f77' }}>{label}</span>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            {icon}
+          </svg>
+        </div>
+      </div>
+      <div style={{ fontSize: 25, fontWeight: 800, letterSpacing: '-0.7px', color: valueColor }}>{value}</div>
+      <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: '#a7a9af', marginTop: 5 }}>{sub}</div>
     </div>
   )
 }
