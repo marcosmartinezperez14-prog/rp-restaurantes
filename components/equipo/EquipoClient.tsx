@@ -338,7 +338,7 @@ function ModalCambiarRol({ usuario, rolesDisponibles, onClose, onCambiado, onToa
           </button>
           <button
             onClick={handleGuardar}
-            disabled={guardando}
+            disabled={guardando || rolesDisponibles.length === 0}
             className="flex-1 py-2 text-sm bg-[var(--primary)] text-white rounded-lg hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {guardando ? 'Guardando...' : 'Guardar cambio'}
