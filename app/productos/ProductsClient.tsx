@@ -3,22 +3,25 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import type { ProductoConCategoria, Categoria, MenuItem, MenuCategoria } from '@/app/actions/productos'
+import type { Menu } from '@/app/actions/menus'
 import { getProductos, getCategorias, getMenuCategorias } from '@/app/actions/productos'
 import ProductRow from '@/components/productos/ProductRow'
 import AddProductPanel from '@/components/productos/AddProductPanel'
 import CategoriasPanel from '@/components/productos/CategoriasPanel'
 import CartaClient from './CartaClient'
+import MenusTab from '@/components/menus/MenusTab'
 
 interface Props {
   initialProducts: ProductoConCategoria[]
   initialCategories: Categoria[]
   initialMenuItems: MenuItem[]
   initialMenuCategories: MenuCategoria[]
+  initialMenus: Menu[]
   canEdit?: boolean
 }
 
-export default function ProductsClient({ initialProducts, initialCategories, initialMenuItems, initialMenuCategories, canEdit = false }: Props) {
-  const [activeTab, setActiveTab] = useState<'productos' | 'carta'>('productos')
+export default function ProductsClient({ initialProducts, initialCategories, initialMenuItems, initialMenuCategories, initialMenus, canEdit = false }: Props) {
+  const [activeTab, setActiveTab] = useState<'productos' | 'carta' | 'menus'>('productos')
   const [products, setProducts] = useState(initialProducts)
   const [categories, setCategories] = useState(initialCategories)
   const [menuCategories, setMenuCategories] = useState(initialMenuCategories)
@@ -81,6 +84,16 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
           }`}
         >
           🍽️ Carta
+        </button>
+        <button
+          onClick={() => setActiveTab('menus')}
+          className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+            activeTab === 'menus'
+              ? 'border-blue-600 text-blue-700 bg-blue-50'
+              : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+          }`}
+        >
+          📋 Menús
         </button>
       </div>
 
@@ -197,6 +210,14 @@ export default function ProductsClient({ initialProducts, initialCategories, ini
           menuCategories={menuCategories}
           allProducts={products}
           onProductsRefresh={handleRefresh}
+          canEdit={canEdit}
+        />
+      )}
+
+      {activeTab === 'menus' && (
+        <MenusTab
+          initialMenus={initialMenus}
+          allMenuItems={initialMenuItems}
           canEdit={canEdit}
         />
       )}
