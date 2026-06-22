@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { RolNombre, UsuarioEquipo, PERMISOS_POR_ROL } from '@/types/equipo'
+import { ROLES_PROTEGIDOS, ROLES_OCULTOS } from '@/lib/permisos/modulos'
+import type { MatrizPermisos } from '@/types/permisos'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -21,8 +23,6 @@ const COLOR_ROL: Record<RolNombre, { bg: string; text: string; badge: string; av
   cocinero: { bg: 'bg-orange-50',  text: 'text-orange-700',  badge: 'bg-orange-100 text-orange-700',  avatar: 'bg-orange-200 text-orange-800'},
   contable: { bg: 'bg-yellow-50',  text: 'text-yellow-700',  badge: 'bg-yellow-100 text-yellow-700',  avatar: 'bg-yellow-200 text-yellow-800'},
 }
-
-const ROLES_LISTA: RolNombre[] = ['admin', 'gerente', 'camarero', 'cocinero', 'contable']
 
 const MODULOS_LABELS: Record<string, string> = {
   dashboard:     'Dashboard',
@@ -75,6 +75,19 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [cargando, setCargando] = useState(false)
+  const [rolesDisponibles, setRolesDisponibles] = useState<Array<{role_id: string, role_name: string}>>([])
+
+  useEffect(() => {
+    fetch('/api/permisos/rol')
+      .then(r => r.json())
+      .then(data => {
+        const lista = (data.data as MatrizPermisos[])
+          .filter(r => !ROLES_PROTEGIDOS.includes(r.role_name) && !ROLES_OCULTOS.includes(r.role_name))
+          .map(r => ({ role_id: r.role_id, role_name: r.role_name }))
+        setRolesDisponibles(lista)
+      })
+      .catch(() => {/* silencioso: los modales muestran lista vacía o fallback */})
+  }, [])
 
   const esAdmin = rolActual === 'admin'
   const puedeGestionar = rolActual === 'admin' || rolActual === 'gerente'
@@ -90,7 +103,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
     const [nombre, setNombre] = useState('')
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [rolSeleccionado, setRolSeleccionado] = useState<RolNombre>('camarero')
+    const [rolSeleccionado, setRolSeleccionado] = useState<string>('camarero')
     const [error, setError] = useState<string | null>(null)
     const [guardando, setGuardando] = useState(false)
 
@@ -134,8 +147,6 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
         setGuardando(false)
       }
     }
-
-    const permisoRol = PERMISOS_POR_ROL[rolSeleccionado]
 
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -191,31 +202,33 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
               <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Rol</label>
               <select
                 value={rolSeleccionado}
-                onChange={(e) => setRolSeleccionado(e.target.value as RolNombre)}
+                onChange={(e) => setRolSeleccionado(e.target.value)}
                 className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
               >
-                {ROLES_LISTA.map((r) => (
-                  <option key={r} value={r}>
-                    {PERMISOS_POR_ROL[r].label} — {PERMISOS_POR_ROL[r].descripcion}
+                {rolesDisponibles.map((r) => (
+                  <option key={r.role_id} value={r.role_name}>
+                    {getRolLabel(r.role_name)}{getRolDescripcion(r.role_name) ? ` — ${getRolDescripcion(r.role_name)}` : ''}
                   </option>
                 ))}
               </select>
 
-              <div className={`mt-2 rounded-lg p-3 ${COLOR_ROL[rolSeleccionado].bg}`}>
-                <p className={`text-xs font-medium mb-2 ${COLOR_ROL[rolSeleccionado].text}`}>
-                  Módulos con acceso:
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {permisoRol.modulos.map((m) => (
-                    <span key={m} className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-green-500">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      {MODULOS_LABELS[m] ?? m}
-                    </span>
-                  ))}
+              {PERMISOS_POR_ROL[rolSeleccionado as RolNombre] && (
+                <div className={`mt-2 rounded-lg p-3 ${getColorRol(rolSeleccionado).bg}`}>
+                  <p className={`text-xs font-medium mb-2 ${getColorRol(rolSeleccionado).text}`}>
+                    Módulos con acceso:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {PERMISOS_POR_ROL[rolSeleccionado as RolNombre].modulos.map((m) => (
+                      <span key={m} className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-green-500">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        {MODULOS_LABELS[m] ?? m}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {error && (
@@ -306,27 +319,29 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
                 onChange={(e) => setRolSeleccionado(e.target.value)}
                 className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
               >
-                {ROLES_LISTA.map((r) => (
-                  <option key={r} value={r}>
-                    {PERMISOS_POR_ROL[r].label}
+                {rolesDisponibles.map((r) => (
+                  <option key={r.role_id} value={r.role_name}>
+                    {getRolLabel(r.role_name)}
                   </option>
                 ))}
               </select>
 
               <div className={`mt-2 rounded-lg p-3 ${getColorRol(rolSeleccionado).bg}`}>
                 <p className={`text-xs font-medium ${getColorRol(rolSeleccionado).text}`}>
-                  {getRolDescripcion(rolSeleccionado)}
+                  {getRolDescripcion(rolSeleccionado) || getRolLabel(rolSeleccionado)}
                 </p>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {(PERMISOS_POR_ROL[rolSeleccionado as RolNombre]?.modulos ?? []).map((m) => (
-                    <span key={m} className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-green-500">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      {MODULOS_LABELS[m] ?? m}
-                    </span>
-                  ))}
-                </div>
+                {PERMISOS_POR_ROL[rolSeleccionado as RolNombre] && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {PERMISOS_POR_ROL[rolSeleccionado as RolNombre].modulos.map((m) => (
+                      <span key={m} className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-green-500">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        {MODULOS_LABELS[m] ?? m}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
