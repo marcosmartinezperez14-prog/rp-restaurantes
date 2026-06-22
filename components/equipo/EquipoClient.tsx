@@ -81,7 +81,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
     fetch('/api/permisos/rol')
       .then(r => r.json())
       .then(data => {
-        const lista = (data.data as MatrizPermisos[])
+        const lista = ((data?.data ?? []) as MatrizPermisos[])
           .filter(r => !ROLES_PROTEGIDOS.includes(r.role_name) && !ROLES_OCULTOS.includes(r.role_name))
           .map(r => ({ role_id: r.role_id, role_name: r.role_name }))
         setRolesDisponibles(lista)
@@ -326,11 +326,11 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
                 ))}
               </select>
 
-              <div className={`mt-2 rounded-lg p-3 ${getColorRol(rolSeleccionado).bg}`}>
-                <p className={`text-xs font-medium ${getColorRol(rolSeleccionado).text}`}>
-                  {getRolDescripcion(rolSeleccionado) || getRolLabel(rolSeleccionado)}
-                </p>
-                {PERMISOS_POR_ROL[rolSeleccionado as RolNombre] && (
+              {PERMISOS_POR_ROL[rolSeleccionado as RolNombre] && (
+                <div className={`mt-2 rounded-lg p-3 ${getColorRol(rolSeleccionado).bg}`}>
+                  <p className={`text-xs font-medium ${getColorRol(rolSeleccionado).text}`}>
+                    {getRolDescripcion(rolSeleccionado) || getRolLabel(rolSeleccionado)}
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {PERMISOS_POR_ROL[rolSeleccionado as RolNombre].modulos.map((m) => (
                       <span key={m} className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
@@ -341,8 +341,8 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
                       </span>
                     ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {error && (
