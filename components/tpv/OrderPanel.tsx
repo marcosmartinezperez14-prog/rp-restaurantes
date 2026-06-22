@@ -10,6 +10,7 @@ interface Props {
   order: OrderWithItems
   items: OrderItem[]
   onItemsChange: (items: OrderItem[]) => void
+  hideFooter?: boolean
 }
 
 function formatElapsed(openedAt: string): string {
@@ -19,7 +20,7 @@ function formatElapsed(openedAt: string): string {
   return `${Math.floor(mins / 60)}h ${mins % 60}min`
 }
 
-export default function OrderPanel({ order, items, onItemsChange }: Props) {
+export default function OrderPanel({ order, items, onItemsChange, hideFooter }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const { offlineFetch } = useOfflineFetch()
@@ -219,7 +220,7 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
       </div>
 
       {/* Totals + Actions */}
-      <div className="p-4 border-t border-[var(--border)] flex-shrink-0 flex flex-col gap-2">
+      {!hideFooter && <div className="p-4 border-t border-[var(--border)] flex-shrink-0 flex flex-col gap-2">
         <div className="flex justify-between text-sm text-[var(--text-secondary)]">
           <span>Subtotal</span>
           <span>{Number(subtotal).toFixed(2)} €</span>
@@ -255,7 +256,7 @@ export default function OrderPanel({ order, items, onItemsChange }: Props) {
             Cancelar comanda
           </button>
         )}
-      </div>
+      </div>}
     </div>
   )
 }
