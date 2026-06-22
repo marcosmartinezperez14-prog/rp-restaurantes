@@ -37,7 +37,14 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
   function cargarMatriz() {
     setCargando(true)
     fetch('/api/permisos/rol')
-      .then(r => r.json())
+      .then(async r => {
+        const text = await r.text()
+        try {
+          return JSON.parse(text)
+        } catch {
+          throw new Error(`HTTP ${r.status}: ${text.slice(0, 200)}`)
+        }
+      })
       .then(data => {
         if (data.error) { setErrorCarga(data.error); return }
         const ordenada = ordenarRoles(data.data as MatrizPermisos[])
@@ -47,7 +54,7 @@ export default function ConfiguracionPermisos({ rolUsuarioActual }: Props) {
           setTabActivo(configurables[0].role_name)
         }
       })
-      .catch(() => setErrorCarga('No se pudo cargar la configuración'))
+      .catch((e: unknown) => setErrorCarga(e instanceof Error ? e.message : 'No se pudo cargar la configuración'))
       .finally(() => setCargando(false))
   }
 

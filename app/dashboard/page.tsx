@@ -111,14 +111,6 @@ const NAV_CARDS = [
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="9" cy="8" r="3.5"/><path d="M16 4.2a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-3.6-5.5"/></svg>,
   },
   {
-    href: '/dashboard/permisos',
-    label: 'Permisos',
-    description: 'Accesos y roles de usuario',
-    section: 'gestion',
-    modulo: 'administracion',
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>,
-  },
-  {
     href: '/dashboard/administracion',
     label: 'Administración',
     description: 'Datos fiscales y facturación',

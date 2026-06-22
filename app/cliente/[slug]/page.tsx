@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getSupabaseAdmin } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import type { CategoriaCarta } from '@/app/api/cliente/[slug]/carta/route'
 import CartaGate from '@/components/cliente/CartaGate'
 
@@ -10,8 +10,9 @@ export default async function ClienteCartaPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const supabase = await createClient()
 
-  const { data: restaurante } = await getSupabaseAdmin()
+  const { data: restaurante } = await supabase
     .from('restaurants')
     .select('id, name, slug, max_online_comensales')
     .eq('slug', slug)
@@ -19,13 +20,13 @@ export default async function ClienteCartaPage({
 
   if (!restaurante) notFound()
 
-  const { data: categorias } = await getSupabaseAdmin()
+  const { data: categorias } = await supabase
     .from('menu_categories')
     .select('id, name, position')
     .eq('restaurant_id', restaurante.id)
     .order('position')
 
-  const { data: items } = await getSupabaseAdmin()
+  const { data: items } = await supabase
     .from('menu_items')
     .select('id, name, description, price, image_url, menu_category_id')
     .eq('restaurant_id', restaurante.id)
