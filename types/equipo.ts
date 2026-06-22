@@ -8,7 +8,7 @@ export interface UsuarioEquipo {
   avatar_url: string | null
   activo: boolean
   created_at: string
-  rol: RolNombre
+  rol: string
   user_role_id: string
 }
 

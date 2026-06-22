@@ -35,6 +35,20 @@ const MODULOS_LABELS: Record<string, string> = {
   configuracion: 'Configuración',
 }
 
+const FALLBACK_COLOR = { bg: 'bg-gray-50', text: 'text-gray-700', badge: 'bg-gray-100 text-gray-700', avatar: 'bg-gray-200 text-gray-800' }
+
+function getColorRol(rol: string) {
+  return COLOR_ROL[rol as RolNombre] ?? FALLBACK_COLOR
+}
+
+function getRolLabel(rol: string): string {
+  return PERMISOS_POR_ROL[rol as RolNombre]?.label ?? (rol.charAt(0).toUpperCase() + rol.slice(1))
+}
+
+function getRolDescripcion(rol: string): string {
+  return PERMISOS_POR_ROL[rol as RolNombre]?.descripcion ?? ''
+}
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
 interface ToastState {
@@ -232,7 +246,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
   // ─── Cambiar rol ──────────────────────────────────────────────────────────
 
   function ModalCambiarRol({ usuario }: { usuario: UsuarioEquipo }) {
-    const [rolSeleccionado, setRolSeleccionado] = useState<RolNombre>(usuario.rol)
+    const [rolSeleccionado, setRolSeleccionado] = useState<string>(usuario.rol)
     const [error, setError] = useState<string | null>(null)
     const [guardando, setGuardando] = useState(false)
 
@@ -258,7 +272,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
           prev.map((u) => u.id === usuario.id ? { ...u, rol: rolSeleccionado } : u)
         )
         setUsuarioCambioRol(null)
-        mostrarToast(`Rol de ${usuario.nombre} actualizado a ${PERMISOS_POR_ROL[rolSeleccionado].label}`, 'exito')
+        mostrarToast(`Rol de ${usuario.nombre} actualizado a ${getRolLabel(rolSeleccionado)}`, 'exito')
       } catch {
         setError('Error de conexión. Inténtalo de nuevo.')
       } finally {
@@ -289,7 +303,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
             <div>
               <select
                 value={rolSeleccionado}
-                onChange={(e) => setRolSeleccionado(e.target.value as RolNombre)}
+                onChange={(e) => setRolSeleccionado(e.target.value)}
                 className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
               >
                 {ROLES_LISTA.map((r) => (
@@ -299,12 +313,12 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
                 ))}
               </select>
 
-              <div className={`mt-2 rounded-lg p-3 ${COLOR_ROL[rolSeleccionado].bg}`}>
-                <p className={`text-xs font-medium ${COLOR_ROL[rolSeleccionado].text}`}>
-                  {PERMISOS_POR_ROL[rolSeleccionado].descripcion}
+              <div className={`mt-2 rounded-lg p-3 ${getColorRol(rolSeleccionado).bg}`}>
+                <p className={`text-xs font-medium ${getColorRol(rolSeleccionado).text}`}>
+                  {getRolDescripcion(rolSeleccionado)}
                 </p>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {PERMISOS_POR_ROL[rolSeleccionado].modulos.map((m) => (
+                  {(PERMISOS_POR_ROL[rolSeleccionado as RolNombre]?.modulos ?? []).map((m) => (
                     <span key={m} className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-green-500">
                         <polyline points="20 6 9 17 4 12"/>
@@ -392,7 +406,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
       {/* Grid de tarjetas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {usuarios.map((usuario) => {
-          const colores = COLOR_ROL[usuario.rol]
+          const colores = getColorRol(usuario.rol)
           const esYo = usuario.id === usuarioActualId
           const puedeActuar = esAdmin && !esYo
 
@@ -461,7 +475,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
               {/* Badge de rol */}
               <div className="flex items-center justify-between">
                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${colores.badge}`}>
-                  {PERMISOS_POR_ROL[usuario.rol].label}
+                  {getRolLabel(usuario.rol)}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${usuario.activo ? 'bg-green-400' : 'bg-[var(--text-secondary)]'}`} />
@@ -472,7 +486,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
               </div>
 
               {/* Descripción del rol */}
-              <p className="text-xs text-[var(--text-secondary)]">{PERMISOS_POR_ROL[usuario.rol].descripcion}</p>
+              <p className="text-xs text-[var(--text-secondary)]">{getRolDescripcion(usuario.rol)}</p>
             </div>
           )
         })}
