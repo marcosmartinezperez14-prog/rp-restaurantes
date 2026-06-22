@@ -41,6 +41,22 @@ export default function AppShell({
         {/* Separador */}
         <div style={{ width: 1, height: 24, background: 'var(--border)', flexShrink: 0, marginLeft: 4, marginRight: 4 }} />
 
+        {/* Volver al dashboard */}
+        <Link href="/dashboard" style={{
+          display: 'flex', alignItems: 'center', gap: 5, textDecoration: 'none',
+          color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600,
+          padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)',
+          background: 'var(--bg-page)', flexShrink: 0, transition: 'background .12s',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          Dashboard
+        </Link>
+
+        {/* Separador */}
+        <div style={{ width: 1, height: 24, background: 'var(--border)', flexShrink: 0 }} />
+
         {/* Título de página actual */}
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>
           {title}
