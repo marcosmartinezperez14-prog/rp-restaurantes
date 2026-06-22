@@ -57,15 +57,14 @@ export async function GET(
   if (!mesa) return NextResponse.json({ error: 'Mesa no encontrada' }, { status: 404 })
 
   const { data: categorias } = await getSupabaseAdmin()
-    .from('categories')
+    .from('menu_categories')
     .select('id, name, position')
     .eq('restaurant_id', restaurante.id)
-    .is('deleted_at', null)
     .order('position')
 
   const { data: items } = await getSupabaseAdmin()
     .from('menu_items')
-    .select('id, name, description, price, image_url, category_id, cantidad_minima')
+    .select('id, name, description, price, image_url, menu_category_id, cantidad_minima')
     .eq('restaurant_id', restaurante.id)
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -75,7 +74,7 @@ export async function GET(
     id: cat.id,
     nombre: cat.name,
     items: (items ?? [])
-      .filter(item => item.category_id === cat.id)
+      .filter(item => item.menu_category_id === cat.id)
       .map(item => ({
         id: item.id,
         nombre: item.name,

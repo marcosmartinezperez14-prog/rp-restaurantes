@@ -20,15 +20,14 @@ export default async function ClienteCartaPage({
   if (!restaurante) notFound()
 
   const { data: categorias } = await getSupabaseAdmin()
-    .from('categories')
+    .from('menu_categories')
     .select('id, name, position')
     .eq('restaurant_id', restaurante.id)
-    .is('deleted_at', null)
     .order('position')
 
   const { data: items } = await getSupabaseAdmin()
     .from('menu_items')
-    .select('id, name, description, price, image_url, category_id')
+    .select('id, name, description, price, image_url, menu_category_id')
     .eq('restaurant_id', restaurante.id)
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -38,7 +37,7 @@ export default async function ClienteCartaPage({
     id: cat.id,
     nombre: cat.name,
     items: (items ?? [])
-      .filter(i => i.category_id === cat.id)
+      .filter(i => i.menu_category_id === cat.id)
       .map(i => ({
         id: i.id,
         nombre: i.name,
@@ -50,7 +49,7 @@ export default async function ClienteCartaPage({
   })).filter(cat => cat.items.length > 0)
 
   // Items sin categoría al final
-  const sinCategoria = (items ?? []).filter(i => !i.category_id)
+  const sinCategoria = (items ?? []).filter(i => !i.menu_category_id)
   if (sinCategoria.length > 0) {
     carta.push({
       id: 'sin-categoria',
