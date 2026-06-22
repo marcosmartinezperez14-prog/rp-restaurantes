@@ -8,192 +8,193 @@ interface Props {
   onFichajeCompleto?: () => void
 }
 
-function formatReloj(d: Date): string {
-  return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+function pad(n: number) { return String(n).padStart(2, '0') }
+
+function calcElapsed(entradaAt: string): string {
+  const diff = Math.floor((Date.now() - new Date(entradaAt).getTime()) / 1000)
+  return pad(Math.floor(diff / 3600)) + ':' + pad(Math.floor((diff % 3600) / 60)) + ':' + pad(diff % 60)
 }
 
-function calcDuracion(entradaAt: string): string {
-  const mins = Math.floor((Date.now() - new Date(entradaAt).getTime()) / 60_000)
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  if (h === 0) return `${m} min`
-  return `${h} h ${m} min`
-}
+const DAYS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO']
+const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
 
 export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props) {
   const [estado, setEstado] = useState<EstadoFichaje>(estadoInicial)
-  const [reloj, setReloj] = useState('')
-  const [duracionLabel, setDuracionLabel] = useState('')
-  const [mostrarModal, setMostrarModal] = useState(false)
-  const [notaInput, setNotaInput] = useState('')
+  const [now, setNow] = useState<Date | null>(null)
+  const [elapsed, setElapsed] = useState('')
+  const [modal, setModal] = useState(false)
+  const [nota, setNota] = useState('')
   const [cargando, setCargando] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // Real-time clock — SSR-safe (starts empty, set only in client effect)
   useEffect(() => {
-    setReloj(formatReloj(new Date()))
-    const t = setInterval(() => setReloj(formatReloj(new Date())), 1_000)
+    setNow(new Date())
+    const t = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
 
-  // Duration counter — updates every 30 seconds when clocked in
   useEffect(() => {
-    if (!estado.abierto || !estado.entrada_at) {
-      setDuracionLabel('')
-      return
-    }
-    setDuracionLabel(calcDuracion(estado.entrada_at))
+    if (!estado.abierto || !estado.entrada_at) { setElapsed(''); return }
+    setElapsed(calcElapsed(estado.entrada_at))
     const t = setInterval(() => {
-      if (estado.entrada_at) {
-        setDuracionLabel(calcDuracion(estado.entrada_at))
-      }
-    }, 30_000)
+      if (estado.entrada_at) setElapsed(calcElapsed(estado.entrada_at))
+    }, 1000)
     return () => clearInterval(t)
   }, [estado.abierto, estado.entrada_at])
 
-  function abrirModal() {
-    setErrorMsg(null)
-    setNotaInput('')
-    setMostrarModal(true)
-  }
+  function abrirModal() { setError(null); setNota(''); setModal(true) }
+  function cerrarModal() { if (cargando) return; setModal(false); setNota(''); setError(null) }
 
-  function cerrarModal() {
-    if (cargando) return
-    setMostrarModal(false)
-    setNotaInput('')
-    setErrorMsg(null)
-  }
-
-  async function confirmarAccion() {
+  async function confirmar() {
     setCargando(true)
-    setErrorMsg(null)
-
+    setError(null)
     const endpoint = estado.abierto ? '/api/fichajes/salida' : '/api/fichajes/entrada'
-    const body: { nota?: string } = {}
-    if (notaInput.trim()) body.nota = notaInput.trim()
-
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(nota.trim() ? { nota: nota.trim() } : {}),
       })
       const json = await res.json()
-
-      if (!res.ok) {
-        setErrorMsg(json.error ?? 'Error desconocido. Inténtalo de nuevo.')
-        setCargando(false)
-        return
-      }
-
-      // Refresh estado
+      if (!res.ok) { setError(json.error ?? 'Error desconocido'); setCargando(false); return }
       const estadoRes = await fetch('/api/fichajes/estado')
       const estadoJson = await estadoRes.json()
       setEstado(estadoJson.data as EstadoFichaje)
-      setMostrarModal(false)
-      setNotaInput('')
+      setModal(false)
+      setNota('')
       onFichajeCompleto?.()
     } catch {
-      setErrorMsg('Error de red. Comprueba tu conexión e inténtalo de nuevo.')
+      setError('Error de red. Comprueba tu conexión e inténtalo de nuevo.')
     } finally {
       setCargando(false)
     }
   }
 
-  const tituloModal = estado.abierto ? 'Confirmar salida' : 'Confirmar entrada'
-  const colorBotonConfirmar = estado.abierto
-    ? 'bg-red-500 hover:bg-red-600 text-white font-semibold'
-    : 'bg-green-500 hover:bg-green-600 text-white font-semibold'
+  const working = estado.abierto
+  const clock = now ? pad(now.getHours()) + ':' + pad(now.getMinutes()) : '--:--'
+  const seconds = now ? ':' + pad(now.getSeconds()) : ':00'
+  const dateLabel = now
+    ? DAYS[now.getDay()] + ' · ' + now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear()
+    : ''
 
   return (
-    <div className="w-full max-w-[430px] mx-auto px-4 py-6 space-y-4">
-      {/* Clock card */}
-      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm p-6 text-center">
-        <p className="text-4xl font-mono font-bold text-gray-800 tracking-wider">
-          {reloj}
-        </p>
-      </div>
-
-      {/* Status card */}
-      <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm p-5 space-y-2">
-        <div className="flex items-center gap-2">
-          {estado.abierto ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              Jornada abierta
+    <>
+      {/* ── Clock card ── */}
+      <div style={{
+        background: '#fff', border: '1px solid #e8e8ea', borderRadius: 18,
+        padding: '26px 28px', boxShadow: '0 1px 2px rgba(20,23,29,0.04)',
+        display: 'flex', alignItems: 'center', gap: 22,
+      }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, fontWeight: 600, letterSpacing: '1.5px', color: '#a7a9af', marginBottom: 6 }}>
+            {dateLabel}
+          </div>
+          <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 44, fontWeight: 700, letterSpacing: '-1px', color: '#181b21', lineHeight: 1, display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            {clock}
+            <span style={{ fontSize: 16, fontWeight: 500, color: '#b6b8bd', letterSpacing: 0 }}>{seconds}</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f4f4f5', border: '1px solid #e9e9eb', borderRadius: 999, padding: '5px 12px 5px 10px' }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: working ? '#16876a' : '#b6b8bd',
+              boxShadow: working ? '0 0 0 3px rgba(22,135,106,0.16)' : '0 0 0 3px rgba(182,184,189,0.18)',
+            }} />
+            <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, fontWeight: 600, letterSpacing: '0.4px', color: '#71757c' }}>
+              {working ? 'EN JORNADA' : 'FUERA DE JORNADA'}
             </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-[var(--bg-page)] text-[var(--text-secondary)]">
-              <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
-              Fuera de jornada
+          </div>
+          {working && elapsed && (
+            <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: '#9a9da3' }}>
+              Jornada: {elapsed}
             </span>
           )}
         </div>
-
-        {estado.abierto && duracionLabel && (
-          <p className="text-sm text-[var(--text-secondary)] pl-1">
-            Llevas <span className="font-semibold text-[var(--text-primary)]">{duracionLabel}</span>
-          </p>
-        )}
       </div>
 
-      {/* Main action button */}
+      {/* ── Action button ── */}
       <button
         onClick={abrirModal}
         disabled={cargando}
-        className={`w-full py-4 rounded-2xl text-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-          estado.abierto
-            ? 'bg-red-500 hover:bg-red-600 text-white'
-            : 'bg-green-500 hover:bg-green-600 text-white'
-        }`}
+        style={{
+          width: '100%', height: 56, border: 'none', cursor: cargando ? 'default' : 'pointer',
+          borderRadius: 14,
+          background: working ? '#c0492f' : 'var(--accent)',
+          color: '#fff', fontFamily: 'inherit', fontSize: 15, fontWeight: 700, letterSpacing: '0.1px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          boxShadow: working ? '0 8px 20px rgba(192,73,47,0.22)' : '0 8px 20px rgba(31,93,76,0.20)',
+          opacity: cargando ? 0.7 : 1,
+          transition: 'filter .15s ease, opacity .15s ease',
+        }}
       >
-        {estado.abierto ? 'Fichar salida' : 'Fichar entrada'}
+        {working ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+          </svg>
+        )}
+        {working ? 'Fichar salida' : 'Fichar entrada'}
       </button>
 
-      {/* Modal overlay */}
-      {mostrarModal && (
+      {/* ── Modal ── */}
+      {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) cerrarModal()
-          }}
+          onClick={e => { if (e.target === e.currentTarget) cerrarModal() }}
+          style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 24 }}
         >
-          <div className="bg-[var(--bg-surface)] rounded-2xl shadow-lg w-full max-w-[400px] p-6 space-y-4">
-            <h2 className="text-xl font-bold text-gray-800">{tituloModal}</h2>
+          <div style={{ background: '#fff', borderRadius: 18, padding: '28px 28px 24px', width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(20,23,29,0.18)' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1b1e24', marginBottom: 20 }}>
+              {working ? 'Confirmar salida' : 'Confirmar entrada'}
+            </h2>
 
-            <div className="space-y-1">
-              <label className="block text-sm text-[var(--text-secondary)]">
-                Nota <span className="text-[var(--text-secondary)]">(opcional)</span>
-              </label>
+            <label style={{ display: 'block', marginBottom: 16 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#4d5159', letterSpacing: '0.1px' }}>
+                Nota <span style={{ color: '#a7a9af', fontWeight: 400 }}>(opcional)</span>
+              </span>
               <input
                 type="text"
-                value={notaInput}
-                onChange={(e) => setNotaInput(e.target.value)}
+                value={nota}
+                onChange={e => setNota(e.target.value)}
                 disabled={cargando}
                 placeholder="Añade una nota..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                style={{ color: 'black' }}
+                onKeyDown={e => e.key === 'Enter' && confirmar()}
+                style={{
+                  display: 'block', width: '100%', marginTop: 8,
+                  border: '1.5px solid #e6e6e8', borderRadius: 10, padding: '10px 14px',
+                  fontSize: 14, color: '#1b1e24', background: '#fcfcfd',
+                  outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+                }}
+                autoFocus
               />
-            </div>
+            </label>
 
-            {errorMsg && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-                {errorMsg}
-              </p>
+            {error && (
+              <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, fontSize: 13, color: '#dc2626', marginBottom: 16 }}>
+                {error}
+              </div>
             )}
 
-            <div className="flex gap-3 pt-1">
+            <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={cerrarModal}
                 disabled={cargando}
-                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-[var(--text-primary)] font-semibold text-sm hover:bg-[var(--bg-page)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ flex: 1, height: 44, border: '1.5px solid #e6e6e8', borderRadius: 10, background: '#fff', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: '#4d5159', cursor: 'pointer', opacity: cargando ? 0.5 : 1 }}
               >
                 Cancelar
               </button>
               <button
-                onClick={confirmarAccion}
+                onClick={confirmar}
                 disabled={cargando}
-                className={`flex-1 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${colorBotonConfirmar}`}
+                style={{
+                  flex: 1, height: 44, border: 'none', borderRadius: 10,
+                  background: working ? '#c0492f' : 'var(--accent)',
+                  color: '#fff', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
+                  cursor: cargando ? 'default' : 'pointer', opacity: cargando ? 0.7 : 1,
+                }}
               >
                 {cargando ? 'Procesando...' : 'Confirmar'}
               </button>
@@ -201,6 +202,6 @@ export default function BotonFichaje({ estadoInicial, onFichajeCompleto }: Props
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
