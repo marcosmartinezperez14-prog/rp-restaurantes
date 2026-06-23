@@ -6,7 +6,7 @@ import ComoFunciona from '@/components/landing/ComoFunciona'
 import Funcionalidades from '@/components/landing/Funcionalidades'
 import Pricing from '@/components/landing/Pricing'
 import Footer from '@/components/landing/Footer'
-import ContactarVentasModal from '@/components/landing/ContactarVentasModal'
+import CheckoutModal from '@/components/landing/CheckoutModal'
 
 export default function LandingPage() {
   const [modalOpen, setModalOpen] = useState(false)
@@ -70,7 +70,7 @@ export default function LandingPage() {
       </section>
 
       <Footer />
-      <ContactarVentasModal open={modalOpen} onClose={() => setModalOpen(false)} planSeleccionado={planSeleccionado} />
+      <CheckoutModal open={modalOpen} onClose={() => setModalOpen(false)} planSeleccionado={planSeleccionado} />
     </div>
   )
 }
