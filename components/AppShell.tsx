@@ -30,7 +30,7 @@ export default function AppShell({
           }}>R</div>
           <div style={{ lineHeight: 1.2 }}>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.2px', color: 'var(--text-primary)' }}>
-              RP Restaurantes
+              GestionBar
             </div>
             <div style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)', color: 'var(--text-secondary)', letterSpacing: '0.3px' }}>
               PANEL DE CONTROL

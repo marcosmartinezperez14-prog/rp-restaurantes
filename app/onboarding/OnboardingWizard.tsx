@@ -22,7 +22,7 @@ export default function OnboardingWizard({ initialData }: Props) {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-2xl">
-        <p className="text-center text-sm text-[var(--text-secondary)] mb-6">RP Restaurantes</p>
+        <p className="text-center text-sm text-[var(--text-secondary)] mb-6">GestionBar</p>
 
         <div className="flex items-center justify-center mb-8">
           {STEP_NAMES.map((name, i) => {

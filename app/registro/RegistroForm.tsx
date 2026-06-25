@@ -12,7 +12,7 @@ export default function RegistroForm() {
     return (
       <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
         <div className="w-full max-w-md bg-[var(--bg-surface)] rounded-2xl shadow-md p-8">
-          <p className="text-center text-sm text-[var(--text-secondary)] mb-4">RP Restaurantes</p>
+          <p className="text-center text-sm text-[var(--text-secondary)] mb-4">GestionBar</p>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
             <p className="text-green-800 font-medium">¡Registro exitoso!</p>
             <p className="text-green-700 text-sm mt-1">
@@ -32,7 +32,7 @@ export default function RegistroForm() {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-[var(--bg-surface)] rounded-2xl shadow-md p-8">
-        <p className="text-center text-sm text-[var(--text-secondary)] mb-1">RP Restaurantes</p>
+        <p className="text-center text-sm text-[var(--text-secondary)] mb-1">GestionBar</p>
         <h1 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-6">
           Crear cuenta
         </h1>

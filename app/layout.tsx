@@ -39,7 +39,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RP Restaurantes",
+  title: "GestionBar",
   description: "Sistema de gestión para restaurantes",
 };
 

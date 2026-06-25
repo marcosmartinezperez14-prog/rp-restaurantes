@@ -17,7 +17,7 @@ export default function Footer() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff', fontWeight: 800, fontSize: 15
             }}>R</div>
-            <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>RP Restaurantes</span>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>GestionBar</span>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', fontSize: 14 }}>
             <a href="/privacidad" style={{ color: 'inherit', textDecoration: 'none' }}>Política de privacidad</a>
@@ -28,7 +28,7 @@ export default function Footer() {
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 24 }}>
           <p style={{ fontSize: 12, color: '#4A5568', margin: 0 }}>
-            © {new Date().getFullYear()} RP Restaurantes. Todos los derechos reservados.
+            © {new Date().getFullYear()} GestionBar. Todos los derechos reservados.
           </p>
         </div>
       </div>

@@ -20,7 +20,7 @@ export default function LegalLayout({ titulo, actualizado, children }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontWeight: 800, fontSize: 15,
           }}>R</div>
-          <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.01em' }}>RP Restaurantes</span>
+          <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.01em' }}>GestionBar</span>
         </Link>
         <Link href="/" style={{ fontSize: 14, color: '#5B6477', textDecoration: 'none', fontWeight: 500 }}>
           ← Volver
@@ -39,7 +39,7 @@ export default function LegalLayout({ titulo, actualizado, children }: Props) {
         borderTop: '1px solid #F0F2F8', padding: '24px 28px',
         textAlign: 'center', fontSize: 13, color: '#8A93A6',
       }}>
-        © {new Date().getFullYear()} RP Restaurantes · {' '}
+        © {new Date().getFullYear()} GestionBar · {' '}
         <Link href="/aviso-legal" style={{ color: 'inherit' }}>Aviso legal</Link> · {' '}
         <Link href="/privacidad" style={{ color: 'inherit' }}>Privacidad</Link> · {' '}
         <Link href="/cookies" style={{ color: 'inherit' }}>Cookies</Link>

@@ -1,6 +1,6 @@
 import LegalLayout from '@/components/landing/LegalLayout'
 
-export const metadata = { title: 'Política de Cookies — RP Restaurantes' }
+export const metadata = { title: 'Política de Cookies — GestionBar' }
 
 export default function CookiesPage() {
   return (
@@ -96,7 +96,7 @@ export default function CookiesPage() {
       <h2>5. Más información</h2>
       <p>
         Para cualquier duda sobre el uso de cookies, puede contactar con nosotros en{' '}
-        <a href="mailto:hola@rp-restaurantes.com">hola@rp-restaurantes.com</a>. Puede consultar también
+        <a href="mailto:hola@gestionbar.com">hola@gestionbar.com</a>. Puede consultar también
         nuestra <a href="/privacidad">Política de Privacidad</a>.
       </p>
     </LegalLayout>

@@ -72,7 +72,7 @@ export default function NavDrawer() {
           />
           <aside className="fixed left-0 top-0 h-full w-52 bg-[var(--bg-surface)] z-50 flex flex-col shadow-2xl">
             <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
-              <span className="text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">RP Restaurantes</span>
+              <span className="text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">GestionBar</span>
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar menú"

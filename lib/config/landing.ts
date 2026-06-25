@@ -1,5 +1,5 @@
 export const STRIPE_PAYMENT_LINK = process.env.STRIPE_PAYMENT_LINK ?? ''
-export const CONTACTO_EMAIL = 'hola@rp-restaurantes.com'
+export const CONTACTO_EMAIL = 'hola@gestionbar.com'
 
 // Periodicidades disponibles (meses) y sus descuentos sobre el precio mensual base.
 // Ajusta los porcentajes aquí cuando quieras cambiarlos.

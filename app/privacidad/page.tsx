@@ -1,19 +1,19 @@
 import LegalLayout from '@/components/landing/LegalLayout'
 
-export const metadata = { title: 'Política de Privacidad — RP Restaurantes' }
+export const metadata = { title: 'Política de Privacidad — GestionBar' }
 
 export default function PrivacidadPage() {
   return (
     <LegalLayout titulo="Política de Privacidad" actualizado="junio 2025">
       <h2>1. Responsable del tratamiento</h2>
       <ul>
-        <li><strong>Responsable:</strong> RP Restaurantes</li>
+        <li><strong>Responsable:</strong> GestionBar</li>
         <li><strong>Finalidad:</strong> Prestación del servicio de software de gestión para hostelería</li>
-        <li><strong>Contacto:</strong> hola@rp-restaurantes.com</li>
+        <li><strong>Contacto:</strong> hola@gestionbar.com</li>
       </ul>
 
       <h2>2. Datos que recogemos</h2>
-      <p>RP Restaurantes trata los siguientes datos personales:</p>
+      <p>GestionBar trata los siguientes datos personales:</p>
       <ul>
         <li><strong>Datos de contacto:</strong> nombre, correo electrónico, teléfono y nombre del negocio,
         facilitados al rellenar el formulario de contacto o al contratar el servicio.</li>
@@ -56,7 +56,7 @@ export default function PrivacidadPage() {
 
       <h2>5. Destinatarios</h2>
       <p>
-        RP Restaurantes no cede datos personales a terceros salvo obligación legal. Utiliza proveedores
+        GestionBar no cede datos personales a terceros salvo obligación legal. Utiliza proveedores
         de servicios (infraestructura cloud, procesamiento de pagos) que actúan como encargados del
         tratamiento bajo contrato con las garantías exigidas por el RGPD.
       </p>
@@ -64,7 +64,7 @@ export default function PrivacidadPage() {
       <h2>6. Derechos del interesado</h2>
       <p>
         En virtud del RGPD y la LOPDGDD, el interesado puede ejercer los siguientes derechos dirigiendo
-        un escrito a <strong>hola@rp-restaurantes.com</strong>, acreditando su identidad:
+        un escrito a <strong>hola@gestionbar.com</strong>, acreditando su identidad:
       </p>
       <ul>
         <li><strong>Acceso:</strong> conocer qué datos se tratan sobre su persona.</li>
@@ -81,14 +81,14 @@ export default function PrivacidadPage() {
 
       <h2>7. Seguridad</h2>
       <p>
-        RP Restaurantes aplica medidas técnicas y organizativas adecuadas para proteger los datos
+        GestionBar aplica medidas técnicas y organizativas adecuadas para proteger los datos
         personales frente a accesos no autorizados, pérdida, alteración o divulgación, de acuerdo con
         el artículo 32 del RGPD.
       </p>
 
       <h2>8. Cambios en esta política</h2>
       <p>
-        RP Restaurantes se reserva el derecho a modificar esta Política de Privacidad para adaptarla
+        GestionBar se reserva el derecho a modificar esta Política de Privacidad para adaptarla
         a cambios normativos o de servicio. Los cambios relevantes se comunicarán a los usuarios con
         antelación razonable.
       </p>

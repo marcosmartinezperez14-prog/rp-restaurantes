@@ -120,14 +120,14 @@ export default function CartaPublicaClient({ restaurante, carta, reservasConfig 
 
         {/* App bar */}
         <div style={{ position: 'sticky', top: 0, zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', background: 'rgba(248,246,240,0.88)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' }}>
-          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '21px', color: '#211E1A', letterSpacing: '0.04em' }}>{nombre}</span>
+          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, fontSize: '21px', color: '#211E1A', letterSpacing: '0.04em' }}>Carta</span>
           <span style={{ fontSize: '11px', fontWeight: 400, color: '#AFA89A', letterSpacing: '0.08em' }}>Abierto</span>
         </div>
 
         {/* Hero */}
         <div style={{ padding: '64px 32px 56px', textAlign: 'center' }}>
           <p style={{ margin: '0 0 24px', fontSize: '10.5px', fontWeight: 400, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#9E4F2E' }}>Carta del restaurante</p>
-          <h1 style={{ margin: 0, fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '72px', lineHeight: 0.95, color: '#211E1A', letterSpacing: '0.01em' }}>{nombre}</h1>
+          <h1 style={{ margin: 0, fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, fontSize: '72px', lineHeight: 0.95, color: '#211E1A', letterSpacing: '0.01em' }}>Nuestra carta</h1>
           <p style={{ margin: '26px auto 0', maxWidth: '300px', fontSize: '14px', fontWeight: 300, lineHeight: 1.7, color: '#837C70' }}>Disfruta de nuestra selección de platos. Escanea, elige y disfruta.</p>
           <div style={{ display: 'flex', gap: '0', justifyContent: 'center', marginTop: '38px' }}>
             <button
@@ -239,7 +239,7 @@ export default function CartaPublicaClient({ restaurante, carta, reservasConfig 
                 Reservar mesa
               </button>
               <div style={{ marginTop: '46px', fontSize: '12.5px', fontWeight: 300, color: '#AFA89A', lineHeight: 1.9, letterSpacing: '0.02em' }}>
-                <div>Powered by RP Restaurantes</div>
+                <div>Powered by GestionBar</div>
               </div>
             </div>
           </>

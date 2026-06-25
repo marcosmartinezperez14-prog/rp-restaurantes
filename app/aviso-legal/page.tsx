@@ -1,6 +1,6 @@
 import LegalLayout from '@/components/landing/LegalLayout'
 
-export const metadata = { title: 'Aviso Legal — RP Restaurantes' }
+export const metadata = { title: 'Aviso Legal — GestionBar' }
 
 export default function AvisoLegalPage() {
   return (
@@ -12,14 +12,14 @@ export default function AvisoLegalPage() {
         sitio web:
       </p>
       <ul>
-        <li><strong>Denominación social:</strong> RP Restaurantes</li>
+        <li><strong>Denominación social:</strong> GestionBar</li>
         <li><strong>Actividad:</strong> Prestación de software de gestión para hostelería</li>
-        <li><strong>Correo electrónico:</strong> hola@rp-restaurantes.com</li>
+        <li><strong>Correo electrónico:</strong> hola@gestionbar.com</li>
       </ul>
 
       <h2>2. Objeto y ámbito de aplicación</h2>
       <p>
-        El presente Aviso Legal regula el acceso y uso del sitio web <strong>rp-restaurantes.com</strong>
+        El presente Aviso Legal regula el acceso y uso del sitio web <strong>gestionbar.com</strong>
         (en adelante, «el Sitio»), así como los servicios disponibles a través del mismo. El acceso al
         Sitio atribuye la condición de usuario e implica la aceptación plena y sin reservas de todas las
         disposiciones incluidas en este Aviso Legal.
@@ -28,7 +28,7 @@ export default function AvisoLegalPage() {
       <h2>3. Propiedad intelectual e industrial</h2>
       <p>
         Todos los contenidos del Sitio —incluyendo textos, imágenes, logotipos, iconos, código fuente,
-        diseño gráfico y cualquier otro elemento— son propiedad de RP Restaurantes o de sus licenciantes,
+        diseño gráfico y cualquier otro elemento— son propiedad de GestionBar o de sus licenciantes,
         y están protegidos por la legislación española e internacional en materia de propiedad intelectual
         e industrial.
       </p>
@@ -48,12 +48,12 @@ export default function AvisoLegalPage() {
 
       <h2>5. Exclusión de garantías y responsabilidad</h2>
       <p>
-        RP Restaurantes no garantiza la disponibilidad, continuidad ni infalibilidad del Sitio.
+        GestionBar no garantiza la disponibilidad, continuidad ni infalibilidad del Sitio.
         Tampoco será responsable de los daños o perjuicios causados por interrupciones del servicio,
         errores tipográficos o inexactitudes en la información publicada.
       </p>
       <p>
-        El Sitio puede contener enlaces a páginas de terceros. RP Restaurantes no se hace responsable
+        El Sitio puede contener enlaces a páginas de terceros. GestionBar no se hace responsable
         del contenido de dichos sitios ni de las prácticas de privacidad de los mismos.
       </p>
 
