@@ -37,14 +37,14 @@ export default function Pricing({ onCtaClick }: { onCtaClick?: (planNombre: stri
                 {plan.features.map(f => <span key={f}>✓ {f}</span>)}
               </div>
               <button
-                onClick={() => onCtaClick?.(plan.nombre)}
+                onClick={() => onCtaClick?.(plan.id)}
                 style={{
                   width: '100%', marginTop: 24, background: '#2F54EB', color: '#fff',
                   border: 'none', padding: 13, borderRadius: 11,
                   fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer', fontSize: 15
                 }}
               >
-                Solicitar {plan.nombre}
+                Contratar {plan.nombre}
               </button>
             </div>
           ) : (
@@ -63,14 +63,14 @@ export default function Pricing({ onCtaClick }: { onCtaClick?: (planNombre: stri
                 {plan.features.map(f => <span key={f}>✓ {f}</span>)}
               </div>
               <button
-                onClick={() => onCtaClick?.(plan.nombre)}
+                onClick={() => onCtaClick?.(plan.id)}
                 style={{
                   width: '100%', marginTop: 24, background: '#fff', color: '#0B1020',
                   border: '1.5px solid #D9DFEC', padding: 13, borderRadius: 11,
                   fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer', fontSize: 15
                 }}
               >
-                Solicitar {plan.nombre}
+                Contratar {plan.nombre}
               </button>
             </div>
           )
