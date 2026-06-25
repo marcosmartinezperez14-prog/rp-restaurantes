@@ -38,6 +38,14 @@ const NAV_CARDS = [
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 14h12v5a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"/><path d="M6 14a4 4 0 0 1-1-7.8A4 4 0 0 1 12 4.6 4 4 0 0 1 19 6.2 4 4 0 0 1 18 14"/></svg>,
   },
   {
+    href: '/barra',
+    label: 'Barra',
+    description: 'Bebidas y pedidos de barra pendientes',
+    section: 'operacion',
+    modulo: 'pedidos',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22V12H5L12 2l7 10h-3v10"/><path d="M8 22h8"/></svg>,
+  },
+  {
     href: '/reservas',
     label: 'Reservas',
     description: 'Gestión de reservas del día',

@@ -377,7 +377,7 @@ export default function EquipoClient({ usuarios: usuariosIniciales, rolActual, u
       .then(r => r.json())
       .then(data => {
         const lista = ((data?.data ?? []) as MatrizPermisos[])
-          .filter(r => !ROLES_PROTEGIDOS.includes(r.role_name) && !ROLES_OCULTOS.includes(r.role_name))
+          .filter(r => r.restaurant_id !== null && !ROLES_PROTEGIDOS.includes(r.role_name) && !ROLES_OCULTOS.includes(r.role_name))
           .map(r => ({ role_id: r.role_id, role_name: r.role_name }))
         setRolesDisponibles(lista)
       })

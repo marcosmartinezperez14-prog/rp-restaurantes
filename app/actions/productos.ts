@@ -79,6 +79,7 @@ export type MenuCategoria = {
   id: string
   name: string
   position: number
+  station: 'cocina' | 'barra'
 }
 
 export type MenuItemIngredient = {
@@ -409,17 +410,18 @@ export async function getMenuCategorias(): Promise<MenuCategoria[]> {
 
   const { data } = await supabase
     .from('menu_categories')
-    .select('id, name, position')
+    .select('id, name, position, station')
     .eq('restaurant_id', restaurantId)
     .order('position', { ascending: true })
     .order('name', { ascending: true })
 
-  return (data ?? []).map(c => ({ id: c.id, name: c.name, position: c.position ?? 0 }))
+  return (data ?? []).map(c => ({ id: c.id, name: c.name, position: c.position ?? 0, station: (c.station ?? 'cocina') as 'cocina' | 'barra' }))
 }
 
 export async function createMenuCategoria(
-  name: string
-): Promise<{ id: string; name: string } | { error: string }> {
+  name: string,
+  station: 'cocina' | 'barra' = 'cocina'
+): Promise<{ id: string; name: string; station: 'cocina' | 'barra' } | { error: string }> {
   const ctx = await getRestaurantContext()
   if (!ctx) redirect('/login')
   const { supabase, restaurantId, userId, isSuperadminMode } = ctx
@@ -439,17 +441,18 @@ export async function createMenuCategoria(
 
   const { data: newCat, error } = await supabase
     .from('menu_categories')
-    .insert({ restaurant_id: restaurantId, name: name.trim(), position })
-    .select('id, name')
+    .insert({ restaurant_id: restaurantId, name: name.trim(), position, station })
+    .select('id, name, station')
     .single()
 
   if (error || !newCat) return dbError('createMenuCategoria', error, 'No se pudo crear la categoría')
-  return { id: newCat.id, name: newCat.name }
+  return { id: newCat.id, name: newCat.name, station: (newCat.station ?? 'cocina') as 'cocina' | 'barra' }
 }
 
 export async function updateMenuCategoria(
   id: string,
-  name: string
+  name: string,
+  station?: 'cocina' | 'barra'
 ): Promise<{ error?: string }> {
   const ctx = await getRestaurantContext()
   if (!ctx) redirect('/login')
@@ -459,9 +462,12 @@ export async function updateMenuCategoria(
   if (!uuid.safeParse(id).success) return { error: 'Datos no válidos' }
   if (!z.string().trim().min(1).max(120).safeParse(name).success) return { error: 'El nombre es obligatorio' }
 
+  const updateData: Record<string, unknown> = { name: name.trim() }
+  if (station) updateData.station = station
+
   const { error } = await supabase
     .from('menu_categories')
-    .update({ name: name.trim() })
+    .update(updateData)
     .eq('id', id)
     .eq('restaurant_id', restaurantId)
 

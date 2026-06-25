@@ -23,8 +23,10 @@ export default function MenusTab({ initialMenus, allMenuItems, canEdit }: Props)
 
   function refresh() {
     startTransition(async () => {
-      const fresh = await getMenus()
-      setMenus(fresh)
+      try {
+        const fresh = await getMenus()
+        setMenus(fresh)
+      } catch { /* silencioso — los datos actuales permanecen */ }
     })
   }
 

@@ -55,6 +55,7 @@ export default function MenuItemFormPanel({ item, menuCategories, allProducts, o
   const [localCategories, setLocalCategories] = useState<MenuCategoria[]>(menuCategories)
   const [showNewCat, setShowNewCat] = useState(false)
   const [newCatName, setNewCatName] = useState('')
+  const [newCatStation, setNewCatStation] = useState<'cocina' | 'barra'>('cocina')
   const [catPending, setCatPending] = useState(false)
 
   const [imageUploading, setImageUploading] = useState(false)
@@ -106,13 +107,14 @@ export default function MenuItemFormPanel({ item, menuCategories, allProducts, o
   async function handleCreateCategory() {
     if (!newCatName.trim()) return
     setCatPending(true)
-    const res = await createMenuCategoria(newCatName.trim())
+    const res = await createMenuCategoria(newCatName.trim(), newCatStation)
     setCatPending(false)
     if ('error' in res) { setError(res.error); return }
-    const newCat: MenuCategoria = { id: res.id, name: res.name, position: localCategories.length }
+    const newCat: MenuCategoria = { id: res.id, name: res.name, position: localCategories.length, station: res.station }
     setLocalCategories(prev => [...prev, newCat])
     setCategoryId(res.id)
     setNewCatName('')
+    setNewCatStation('cocina')
     setShowNewCat(false)
   }
 
@@ -243,29 +245,43 @@ export default function MenuItemFormPanel({ item, menuCategories, allProducts, o
                   </button>
                 </div>
                 {showNewCat ? (
-                  <div className="flex gap-1">
-                    <input
-                      value={newCatName}
-                      onChange={e => setNewCatName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory() } }}
-                      placeholder="Nombre categoría"
-                      autoFocus
-                      className={inputClass}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleCreateCategory}
-                      disabled={catPending || !newCatName.trim()}
-                      className="px-2 py-1 text-xs bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-40 whitespace-nowrap"
-                    >
-                      {catPending ? '...' : 'Crear'}
-                    </button>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-1">
+                      <input
+                        value={newCatName}
+                        onChange={e => setNewCatName(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory() } }}
+                        placeholder="Nombre categoría"
+                        autoFocus
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateCategory}
+                        disabled={catPending || !newCatName.trim()}
+                        className="px-2 py-1 text-xs bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-40 whitespace-nowrap"
+                      >
+                        {catPending ? '...' : 'Crear'}
+                      </button>
+                    </div>
+                    <div className="flex gap-1">
+                      {(['cocina', 'barra'] as const).map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setNewCatStation(s)}
+                          className={`flex-1 py-1 text-xs font-medium rounded-lg border transition-colors ${newCatStation === s ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]'}`}
+                        >
+                          {s === 'cocina' ? '🍳 Cocina' : '🍹 Barra'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className={inputClass}>
                     <option value="">Sin categoría</option>
                     {localCategories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>{c.station === 'barra' ? '🍹 ' : '🍳 '}{c.name}</option>
                     ))}
                   </select>
                 )}

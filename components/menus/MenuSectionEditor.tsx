@@ -5,7 +5,7 @@ import type { Menu, MenuSection, MenuSectionItem } from '@/app/actions/menus'
 import type { MenuItem } from '@/app/actions/productos'
 import {
   createMenuSection, updateMenuSection, deleteMenuSection, reorderMenuSections,
-  addMenuSectionItem, removeMenuSectionItem, toggleMenuSectionItem,
+  addMenuSectionItem, addMenuSectionCustomItem, removeMenuSectionItem, toggleMenuSectionItem,
 } from '@/app/actions/menus'
 
 interface Props {
@@ -18,11 +18,13 @@ interface Props {
 export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved }: Props) {
   const [sections, setSections] = useState<MenuSection[]>(menu.sections)
   const [newSectionName, setNewSectionName] = useState('')
+  const [newSectionSeleccion, setNewSectionSeleccion] = useState(true)
   const [addingSectionLoading, setAddingSectionLoading] = useState(false)
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [editingSectionName, setEditingSectionName] = useState('')
   const [openSectionId, setOpenSectionId] = useState<string | null>(sections[0]?.id ?? null)
   const [itemSearches, setItemSearches] = useState<Record<string, string>>({})
+  const [customNames, setCustomNames] = useState<Record<string, string>>({})
   const [addingItem, setAddingItem] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -31,12 +33,13 @@ export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved
   async function handleAddSection() {
     if (!newSectionName.trim()) return
     setAddingSectionLoading(true)
-    const res = await createMenuSection(menu.id, newSectionName.trim())
+    const res = await createMenuSection(menu.id, newSectionName.trim(), newSectionSeleccion)
     setAddingSectionLoading(false)
     if ('error' in res) { setError(res.error); return }
-    const newSection: MenuSection = { id: res.id, menu_id: menu.id, name: newSectionName.trim(), sort_order: sections.length, items: [] }
+    const newSection: MenuSection = { id: res.id, menu_id: menu.id, name: newSectionName.trim(), sort_order: sections.length, seleccion: newSectionSeleccion, items: [] }
     setSections(prev => [...prev, newSection])
     setNewSectionName('')
+    setNewSectionSeleccion(true)
     setOpenSectionId(res.id)
   }
 
@@ -50,10 +53,16 @@ export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved
 
   async function handleRenameSection(sectionId: string) {
     if (!editingSectionName.trim()) return
-    const res = await updateMenuSection(sectionId, editingSectionName.trim())
+    const res = await updateMenuSection(sectionId, { name: editingSectionName.trim() })
     if (res.error) { setError(res.error); return }
     setSections(prev => prev.map(s => s.id === sectionId ? { ...s, name: editingSectionName.trim() } : s))
     setEditingSectionId(null)
+  }
+
+  async function handleToggleSeleccion(sectionId: string, seleccion: boolean) {
+    const res = await updateMenuSection(sectionId, { seleccion })
+    if (res.error) { setError(res.error); return }
+    setSections(prev => prev.map(s => s.id === sectionId ? { ...s, seleccion } : s))
   }
 
   async function handleMoveSection(idx: number, dir: -1 | 1) {
@@ -73,12 +82,27 @@ export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved
     if ('error' in res) { setError(res.error); return }
     const found = allMenuItems.find(m => m.id === menuItemId)
     const newItem: MenuSectionItem = {
-      id: res.id, section_id: section.id, menu_item_id: menuItemId,
+      id: res.id, section_id: section.id, menu_item_id: menuItemId, custom_name: null,
       is_active: true, sort_order: section.items.length,
       menu_item: found ? { id: found.id, name: found.name, price: found.price } : null,
     }
     setSections(prev => prev.map(s => s.id === section.id ? { ...s, items: [...s.items, newItem] } : s))
     setItemSearches(prev => ({ ...prev, [section.id]: '' }))
+  }
+
+  async function handleAddCustomItem(section: MenuSection) {
+    const name = (customNames[section.id] ?? '').trim()
+    if (!name) return
+    setAddingItem(prev => ({ ...prev, [section.id]: true }))
+    const res = await addMenuSectionCustomItem(section.id, name)
+    setAddingItem(prev => ({ ...prev, [section.id]: false }))
+    if ('error' in res) { setError(res.error); return }
+    const newItem: MenuSectionItem = {
+      id: res.id, section_id: section.id, menu_item_id: null, custom_name: name,
+      is_active: true, sort_order: section.items.length, menu_item: null,
+    }
+    setSections(prev => prev.map(s => s.id === section.id ? { ...s, items: [...s.items, newItem] } : s))
+    setCustomNames(prev => ({ ...prev, [section.id]: '' }))
   }
 
   async function handleRemoveItem(sectionId: string, itemId: string) {
@@ -135,13 +159,13 @@ export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved
 
           {/* Add section */}
           <div style={{ background: '#fff', border: '1px solid #e8e8ea', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', color: '#6b6f77', marginBottom: 10 }}>Nueva sección</div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase', color: '#6b6f77', marginBottom: 10 }}>Nuevo pase</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               <input
                 value={newSectionName}
                 onChange={e => setNewSectionName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddSection()}
-                placeholder="Ej: Primeros, Segundos, Postres..."
+                placeholder="Ej: Entrantes, Primer plato, Postre..."
                 style={{ ...inputStyle, flex: 1 }}
               />
               <button
@@ -155,6 +179,20 @@ export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved
                 }}
               >
                 {addingSectionLoading ? '...' : '+ Añadir'}
+              </button>
+            </div>
+            {/* Selección toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: '#f8f8f9', borderRadius: 9, border: '1px solid #efefef' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#25282f' }}>Con selección</div>
+                <div style={{ fontSize: 11, color: '#a7a9af', marginTop: 1 }}>El cliente elige un plato de este pase</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNewSectionSeleccion(v => !v)}
+                style={{ width: 36, height: 20, borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0, background: newSectionSeleccion ? 'var(--accent)' : '#d1d5db', position: 'relative', transition: 'background .15s' }}
+              >
+                <span style={{ position: 'absolute', top: 3, left: newSectionSeleccion ? 18 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .15s', display: 'block' }} />
               </button>
             </div>
           </div>
@@ -200,7 +238,21 @@ export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved
                     </button>
                   )}
 
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {/* Selección badge + toggle */}
+                    {editingSectionId !== section.id && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSeleccion(section.id, !section.seleccion)}
+                        title={section.seleccion ? 'Con selección (pulsa para desactivar)' : 'Sin selección (pulsa para activar)'}
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 999, border: `1px solid ${section.seleccion ? 'var(--accent)' : '#d1d5db'}`, background: section.seleccion ? 'rgba(22,135,106,0.07)' : '#f4f4f5', cursor: 'pointer' }}
+                      >
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: section.seleccion ? 'var(--accent)' : '#a7a9af', flexShrink: 0 }} />
+                        <span style={{ fontSize: 11, fontWeight: 700, color: section.seleccion ? 'var(--accent)' : '#82858d', letterSpacing: '0.2px' }}>
+                          {section.seleccion ? 'Selección' : 'Fijo'}
+                        </span>
+                      </button>
+                    )}
                     {editingSectionId === section.id ? (
                       <>
                         <button onClick={() => handleRenameSection(section.id)}
@@ -222,44 +274,54 @@ export default function MenuSectionEditor({ menu, allMenuItems, onClose, onSaved
                 {isOpen && (
                   <div style={{ padding: '12px 14px' }}>
                     {/* Items list */}
-                    {section.items.map(item => (
-                      <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#fafafa', borderRadius: 9, marginBottom: 6, border: '1px solid #f0f0f1' }}>
-                        {isMenuDelDia && (
-                          <button
-                            onClick={() => handleToggleItem(section.id, item.id, !item.is_active)}
-                            style={{
-                              width: 32, height: 18, borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
-                              background: item.is_active ? 'var(--accent)' : '#d1d5db',
-                              position: 'relative', transition: 'background .15s',
-                            }}
-                          >
-                            <span style={{
-                              position: 'absolute', top: 2, left: item.is_active ? 16 : 2,
-                              width: 14, height: 14, borderRadius: '50%', background: '#fff',
-                              transition: 'left .15s', display: 'block',
-                            }} />
-                          </button>
-                        )}
-                        <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: item.is_active ? '#1b1e24' : '#a7a9af' }}>
-                          {item.menu_item?.name ?? '—'}
-                        </span>
-                        <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: '#6b6f77' }}>
-                          {item.menu_item?.price.toFixed(2)} €
-                        </span>
-                        <button
-                          onClick={() => handleRemoveItem(section.id, item.id)}
-                          style={{ color: '#c0492f', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1 }}
-                        >✕</button>
-                      </div>
-                    ))}
+                    {section.items.map(item => {
+                      const displayName = item.menu_item?.name ?? item.custom_name ?? '—'
+                      const displayPrice = item.menu_item?.price
+                      return (
+                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#fafafa', borderRadius: 9, marginBottom: 6, border: '1px solid #f0f0f1' }}>
+                          {isMenuDelDia && (
+                            <button
+                              onClick={() => handleToggleItem(section.id, item.id, !item.is_active)}
+                              style={{ width: 32, height: 18, borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0, background: item.is_active ? 'var(--accent)' : '#d1d5db', position: 'relative', transition: 'background .15s' }}
+                            >
+                              <span style={{ position: 'absolute', top: 2, left: item.is_active ? 16 : 2, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .15s', display: 'block' }} />
+                            </button>
+                          )}
+                          <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: item.is_active ? '#1b1e24' : '#a7a9af' }}>{displayName}</span>
+                          {!item.menu_item_id && (
+                            <span style={{ fontSize: 10, fontWeight: 600, color: '#a7a9af', background: '#f0f0f2', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.2px' }}>LIBRE</span>
+                          )}
+                          {displayPrice != null && (
+                            <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: '#6b6f77' }}>{displayPrice.toFixed(2)} €</span>
+                          )}
+                          <button onClick={() => handleRemoveItem(section.id, item.id)} style={{ color: '#c0492f', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1 }}>✕</button>
+                        </div>
+                      )
+                    })}
 
                     {/* Add item */}
-                    <div style={{ marginTop: 8 }}>
+                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {/* Nombre libre */}
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <input
+                          value={customNames[section.id] ?? ''}
+                          onChange={e => setCustomNames(prev => ({ ...prev, [section.id]: e.target.value }))}
+                          onKeyDown={e => e.key === 'Enter' && handleAddCustomItem(section)}
+                          placeholder="Escribir plato libre (sin carta)..."
+                          style={{ ...inputStyle, flex: 1 }}
+                        />
+                        <button
+                          onClick={() => handleAddCustomItem(section)}
+                          disabled={addingItem[section.id] || !(customNames[section.id] ?? '').trim()}
+                          style={{ height: 38, padding: '0 14px', border: 'none', borderRadius: 10, background: '#25282f', color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: !(customNames[section.id] ?? '').trim() ? 0.4 : 1 }}
+                        >+ Libre</button>
+                      </div>
+                      {/* Buscar en carta */}
                       <input
                         value={itemSearches[section.id] ?? ''}
                         onChange={e => setItemSearches(prev => ({ ...prev, [section.id]: e.target.value }))}
-                        placeholder="Buscar plato para añadir..."
-                        style={{ ...inputStyle, width: '100%', marginBottom: 6 }}
+                        placeholder="O buscar en la carta..."
+                        style={{ ...inputStyle, width: '100%' }}
                       />
                       {(itemSearches[section.id] ?? '').length > 0 && available.length > 0 && (
                         <div style={{ border: '1px solid #e8e8ea', borderRadius: 10, overflow: 'hidden', maxHeight: 180, overflowY: 'auto' }}>

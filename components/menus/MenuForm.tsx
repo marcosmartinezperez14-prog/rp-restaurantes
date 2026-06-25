@@ -28,14 +28,19 @@ export default function MenuForm({ menu, onClose, onSaved }: Props) {
     setLoading(true)
     setError(null)
 
-    const res = isEditing
-      ? await updateMenu(menu.id, { name, tipo, price: priceNum, description: description || null })
-      : await createMenu({ name, tipo, price: priceNum, description: description || undefined })
+    try {
+      const res = isEditing
+        ? await updateMenu(menu.id, { name, tipo, price: priceNum, description: description || null })
+        : await createMenu({ name, tipo, price: priceNum, description: description || undefined })
 
-    setLoading(false)
-    if ('error' in res && res.error) { setError(res.error); return }
-    onSaved()
-    onClose()
+      if ('error' in res && res.error) { setError(res.error); return }
+      onSaved()
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error inesperado')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const inputStyle: React.CSSProperties = {

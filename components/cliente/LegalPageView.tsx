@@ -51,7 +51,6 @@ export default async function LegalPageView({
         <MarkdownLegal contenido={contenido} />
       </article>
 
-      <p className="mt-8 text-xs text-gray-400">{restaurante.name}</p>
     </div>
   )
 }

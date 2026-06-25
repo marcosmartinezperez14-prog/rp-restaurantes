@@ -348,12 +348,23 @@ export async function addOrderItem(
 
   const { data: product } = await supabase
     .from('menu_items')
-    .select('name, price')
+    .select('name, price, menu_category_id')
     .eq('id', productId)
     .eq('restaurant_id', restaurantId)
     .single()
 
   if (!product) return { error: 'Producto no encontrado' }
+
+  let station: 'cocina' | 'barra' = 'cocina'
+  if (product.menu_category_id) {
+    const { data: cat } = await supabase
+      .from('menu_categories')
+      .select('station')
+      .eq('id', product.menu_category_id)
+      .eq('restaurant_id', restaurantId)
+      .maybeSingle()
+    if (cat?.station === 'barra') station = 'barra'
+  }
 
   const basePrice = Number(product.price)
   const unitPrice = basePrice + modifiers.reduce((sum, m) => sum + m.price_adjustment, 0)
@@ -374,6 +385,7 @@ export async function addOrderItem(
       modifiers,
       notes: notes ?? null,
       status: 'pending',
+      station,
     })
     .select('id')
     .single()

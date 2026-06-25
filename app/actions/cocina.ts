@@ -18,7 +18,7 @@ export interface KitchenItem {
   table_name: string
 }
 
-export async function getKitchenItems(): Promise<KitchenItem[]> {
+async function getItemsByStation(station: 'cocina' | 'barra'): Promise<KitchenItem[]> {
   const ctx = await getRestaurantContext()
   if (!ctx) redirect('/login')
   const { supabase, restaurantId } = ctx
@@ -27,6 +27,7 @@ export async function getKitchenItems(): Promise<KitchenItem[]> {
     .from('order_items')
     .select('id, product_name, quantity, status, notes, created_at, order_id')
     .eq('restaurant_id', restaurantId)
+    .eq('station', station)
     .in('status', ['pending', 'preparing', 'ready'])
     .order('created_at', { ascending: true })
 
@@ -65,6 +66,14 @@ export async function getKitchenItems(): Promise<KitchenItem[]> {
       table_name: table?.name ?? 'Mesa ?',
     }
   })
+}
+
+export async function getKitchenItems(): Promise<KitchenItem[]> {
+  return getItemsByStation('cocina')
+}
+
+export async function getBarItems(): Promise<KitchenItem[]> {
+  return getItemsByStation('barra')
 }
 
 export async function updateKitchenItemStatus(

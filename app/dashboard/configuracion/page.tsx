@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell'
 import AparienciaPanel from '@/components/configuracion/AparienciaPanel'
 import CambiarPasswordPanel from '@/components/configuracion/CambiarPasswordPanel'
 import VerifactuConfigPanel from '@/components/verifactu/VerifactuConfigPanel'
+import CancelacionPanel from '@/components/configuracion/CancelacionPanel'
 import { PERMISOS_POR_ROL, type RolNombre } from '@/types/equipo'
 
 export default async function ConfiguracionPage() {
@@ -28,6 +29,7 @@ export default async function ConfiguracionPage() {
         <AparienciaPanel temaActual={tema} />
         <CambiarPasswordPanel />
         {esAdmin && <VerifactuConfigPanel />}
+        {esAdmin && <CancelacionPanel />}
       </div>
     </AppShell>
   )

@@ -31,7 +31,7 @@ type ItemPedido = z.infer<typeof itemPedidoSchema>
 async function getRestauranteBySlug(slug: string) {
   const { data } = await getSupabaseAdmin()
     .from('restaurants')
-    .select('id')
+    .select('id, name')
     .eq('slug', slug)
     .single()
   return data
@@ -70,22 +70,27 @@ export async function GET(
     .is('deleted_at', null)
     .order('name')
 
+  const mapItem = (item: NonNullable<typeof items>[number]) => ({
+    id: item.id,
+    nombre: item.name,
+    descripcion: item.description ?? null,
+    precio: Number(item.price),
+    imagen_url: item.image_url ?? null,
+    cantidad_minima: Number(item.cantidad_minima) || 1,
+  })
+
   const carta = (categorias ?? []).map(cat => ({
     id: cat.id,
     nombre: cat.name,
-    items: (items ?? [])
-      .filter(item => item.menu_category_id === cat.id)
-      .map(item => ({
-        id: item.id,
-        nombre: item.name,
-        descripcion: item.description ?? null,
-        precio: Number(item.price),
-        imagen_url: item.image_url ?? null,
-        cantidad_minima: Number(item.cantidad_minima) || 1,
-      })),
+    items: (items ?? []).filter(item => item.menu_category_id === cat.id).map(mapItem),
   })).filter(cat => cat.items.length > 0)
 
-  return NextResponse.json({ mesa: { id: mesa.id, nombre: mesa.name }, carta })
+  const sinCategoria = (items ?? []).filter(i => !i.menu_category_id)
+  if (sinCategoria.length > 0) {
+    carta.push({ id: 'sin-categoria', nombre: 'Otros', items: sinCategoria.map(mapItem) })
+  }
+
+  return NextResponse.json({ restaurante: { nombre: restaurante.name }, mesa: { id: mesa.id, nombre: mesa.name }, carta })
 }
 
 export async function POST(
@@ -168,10 +173,10 @@ export async function POST(
         .eq('id', mesa_id)
     }
 
-    // Verificar items contra la BD (precio real, items del restaurante)
+    // Verificar items contra la BD (precio real, items del restaurante) + obtener categoría para la estación
     const { data: menuItems, error: menuError } = await getSupabaseAdmin()
       .from('menu_items')
-      .select('id, name, price')
+      .select('id, name, price, menu_category_id')
       .in('id', items.map(i => i.menu_item_id))
       .eq('restaurant_id', restaurante.id)
       .eq('is_active', true)
@@ -187,6 +192,17 @@ export async function POST(
       return NextResponse.json({ error: 'Algunos productos no están disponibles' }, { status: 400 })
     }
 
+    // Obtener estaciones de las categorías implicadas
+    const categoryIds = [...new Set(menuItems.map(m => m.menu_category_id).filter(Boolean))]
+    const { data: categories } = categoryIds.length > 0
+      ? await getSupabaseAdmin()
+          .from('menu_categories')
+          .select('id, station')
+          .in('id', categoryIds)
+          .eq('restaurant_id', restaurante.id)
+      : { data: [] as { id: string; station: string }[] }
+    const stationMap = new Map((categories ?? []).map(c => [c.id, c.station as 'cocina' | 'barra']))
+
     // Insertar items
     const orderItemsData = items.map(item => {
       const menuItem = menuItemsMap.get(item.menu_item_id)!
@@ -194,6 +210,7 @@ export async function POST(
       const snapshot = item.modifiers_snapshot ?? []
       const supplementSum = snapshot.reduce((sum: number, s: { price_delta: number }) => sum + (s.price_delta ?? 0), 0)
       const unitPrice = Math.max(0, basePrice + supplementSum)
+      const station = menuItem.menu_category_id ? (stationMap.get(menuItem.menu_category_id) ?? 'cocina') : 'cocina'
       return {
         restaurant_id: restaurante.id,
         order_id: orderId,
@@ -212,6 +229,7 @@ export async function POST(
         modifiers_snapshot: snapshot,
         notes: item.nota ?? null,
         status: 'pending',
+        station,
       }
     })
 

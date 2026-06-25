@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
-import { PERMISOS_POR_ROL } from '@/types/equipo'
 import { z } from 'zod'
-
-
-const ROLES_VALIDOS = Object.keys(PERMISOS_POR_ROL)
 
 const schema = z.object({
   user_role_id: z.string().uuid('Datos no válidos'),
-  // Lista blanca: solo se pueden asignar roles válidos del sistema.
-  nuevo_rol: z.string().refine(r => ROLES_VALIDOS.includes(r), 'Rol no válido'),
+  nuevo_rol: z.string().min(1, 'Rol no válido').max(100),
 })
 
 export async function POST(req: NextRequest) {
@@ -60,10 +55,12 @@ export async function POST(req: NextRequest) {
       .from('roles')
       .select('id')
       .eq('name', nuevo_rol)
+      .eq('restaurant_id', callerUser.restaurant_id)
+      .is('deleted_at', null)
       .single()
 
     if (rolError || !rol) {
-      return NextResponse.json({ success: false, error: 'Rol no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Rol no encontrado o no pertenece a este restaurante' }, { status: 404 })
     }
 
     const { error: updateError } = await getSupabaseAdmin()

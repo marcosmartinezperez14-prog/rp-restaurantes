@@ -30,7 +30,8 @@ async function puedeEditar(
 export type MenuSectionItem = {
   id: string
   section_id: string
-  menu_item_id: string
+  menu_item_id: string | null
+  custom_name: string | null
   is_active: boolean
   sort_order: number
   menu_item: { id: string; name: string; price: number } | null
@@ -41,6 +42,7 @@ export type MenuSection = {
   menu_id: string
   name: string
   sort_order: number
+  seleccion: boolean
   items: MenuSectionItem[]
 }
 
@@ -70,9 +72,9 @@ export async function getMenus(): Promise<Menu[]> {
     .select(`
       id, restaurant_id, name, tipo, price, description, is_active, deleted_at, created_at, updated_at,
       menu_sections(
-        id, menu_id, name, sort_order,
+        id, menu_id, name, sort_order, seleccion,
         menu_section_items(
-          id, section_id, menu_item_id, is_active, sort_order,
+          id, section_id, menu_item_id, custom_name, is_active, sort_order,
           menu_items(id, name, price)
         )
       )
@@ -93,9 +95,9 @@ export async function getMenus(): Promise<Menu[]> {
     created_at: m.created_at,
     updated_at: m.updated_at,
     sections: ((m.menu_sections ?? []) as unknown as Array<{
-      id: string; menu_id: string; name: string; sort_order: number
+      id: string; menu_id: string; name: string; sort_order: number; seleccion: boolean
       menu_section_items: Array<{
-        id: string; section_id: string; menu_item_id: string; is_active: boolean; sort_order: number
+        id: string; section_id: string; menu_item_id: string | null; custom_name: string | null; is_active: boolean; sort_order: number
         menu_items: { id: string; name: string; price: number } | null
       }>
     }>)
@@ -105,12 +107,14 @@ export async function getMenus(): Promise<Menu[]> {
         menu_id: s.menu_id,
         name: s.name,
         sort_order: s.sort_order,
+        seleccion: s.seleccion ?? true,
         items: (s.menu_section_items ?? [])
           .sort((a, b) => a.sort_order - b.sort_order)
           .map(i => ({
             id: i.id,
             section_id: i.section_id,
-            menu_item_id: i.menu_item_id,
+            menu_item_id: i.menu_item_id ?? null,
+            custom_name: i.custom_name ?? null,
             is_active: i.is_active,
             sort_order: i.sort_order,
             menu_item: i.menu_items ? { id: i.menu_items.id, name: i.menu_items.name, price: Number(i.menu_items.price) } : null,
@@ -223,7 +227,8 @@ export async function deleteMenu(id: string): Promise<{ error?: string }> {
 
 export async function createMenuSection(
   menuId: string,
-  name: string
+  name: string,
+  seleccion = true
 ): Promise<{ id: string } | { error: string }> {
   const ctx = await getRestaurantContext()
   if (!ctx) redirect('/login')
@@ -253,7 +258,7 @@ export async function createMenuSection(
 
   const { data, error } = await supabase
     .from('menu_sections')
-    .insert({ menu_id: menuId, name: name.trim(), sort_order })
+    .insert({ menu_id: menuId, name: name.trim(), sort_order, seleccion })
     .select('id')
     .single()
 
@@ -261,18 +266,22 @@ export async function createMenuSection(
   return { id: data.id }
 }
 
-export async function updateMenuSection(id: string, name: string): Promise<{ error?: string }> {
+export async function updateMenuSection(id: string, params: { name?: string; seleccion?: boolean }): Promise<{ error?: string }> {
   const ctx = await getRestaurantContext()
   if (!ctx) redirect('/login')
   const { supabase, userId, isSuperadminMode } = ctx
   if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
 
   if (!uuid.safeParse(id).success) return { error: 'Datos no válidos' }
-  if (!z.string().trim().min(1).max(80).safeParse(name).success) return { error: 'Nombre obligatorio' }
+  if (params.name !== undefined && !z.string().trim().min(1).max(80).safeParse(params.name).success) return { error: 'Nombre obligatorio' }
+
+  const updateData: Record<string, unknown> = {}
+  if (params.name !== undefined) updateData.name = params.name.trim()
+  if (params.seleccion !== undefined) updateData.seleccion = params.seleccion
 
   const { error } = await supabase
     .from('menu_sections')
-    .update({ name: name.trim() })
+    .update(updateData)
     .eq('id', id)
 
   if (error) return dbError('updateMenuSection', error, 'No se pudo actualizar la sección')
@@ -307,6 +316,39 @@ export async function reorderMenuSections(
 }
 
 // ─── Section Items CRUD ───────────────────────────────────────────────────────
+
+export async function addMenuSectionCustomItem(
+  sectionId: string,
+  customName: string
+): Promise<{ id: string } | { error: string }> {
+  const ctx = await getRestaurantContext()
+  if (!ctx) redirect('/login')
+  const { supabase, userId, isSuperadminMode } = ctx
+  if (!isSuperadminMode && !await puedeEditar(supabase, userId)) return { error: 'Sin permisos' }
+
+  if (!uuid.safeParse(sectionId).success) return { error: 'Datos no válidos' }
+  const name = customName.trim()
+  if (!name) return { error: 'Nombre obligatorio' }
+
+  const { data: maxRow } = await supabase
+    .from('menu_section_items')
+    .select('sort_order')
+    .eq('section_id', sectionId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const sort_order = (maxRow?.sort_order ?? -1) + 1
+
+  const { data, error } = await supabase
+    .from('menu_section_items')
+    .insert({ section_id: sectionId, custom_name: name, sort_order })
+    .select('id')
+    .single()
+
+  if (error || !data) return dbError('addMenuSectionCustomItem', error, 'No se pudo añadir el plato')
+  return { id: data.id }
+}
 
 export async function addMenuSectionItem(
   sectionId: string,

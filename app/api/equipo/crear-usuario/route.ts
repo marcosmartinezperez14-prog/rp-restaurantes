@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
 import { getRestaurantContext } from '@/lib/auth/restaurant-context'
-import { PERMISOS_POR_ROL } from '@/types/equipo'
 import { z } from 'zod'
 
-
-const ROLES_VALIDOS = Object.keys(PERMISOS_POR_ROL)
 
 const schema = z.object({
   username: z.string().trim().min(1).max(50).regex(/^[a-z0-9_-]+$/i, 'El usuario solo puede contener letras, números, guiones y guiones bajos'),
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(120, 'El nombre es demasiado largo'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(72, 'La contraseña es demasiado larga'),
-  role_name: z.string().refine(r => ROLES_VALIDOS.includes(r), 'Rol no válido'),
+  role_name: z.string().min(1, 'El rol es obligatorio').max(100),
 })
 
 export async function POST(req: NextRequest) {
@@ -58,11 +55,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Lista blanca de roles
-    if (!ROLES_VALIDOS.includes(role_name)) {
-      return NextResponse.json({ success: false, error: 'Rol no válido' }, { status: 400 })
-    }
-
     const { data: authData, error: authError } = await getSupabaseAdmin().auth.admin.createUser({
       email,
       password,
@@ -91,10 +83,12 @@ export async function POST(req: NextRequest) {
       .from('roles')
       .select('id')
       .eq('name', role_name)
+      .eq('restaurant_id', restaurantId)
+      .is('deleted_at', null)
       .single()
 
     if (rolError || !rol) {
-      return NextResponse.json({ success: false, error: 'Rol no encontrado' }, { status: 404 })
+      return NextResponse.json({ success: false, error: 'Rol no encontrado o no pertenece a este restaurante' }, { status: 404 })
     }
 
     const { error: userRoleError } = await getSupabaseAdmin()
