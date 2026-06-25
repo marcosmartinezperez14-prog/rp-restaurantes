@@ -16,7 +16,7 @@ export default function Footer() {
               width: 28, height: 28, borderRadius: 8, background: '#2F54EB',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff', fontWeight: 800, fontSize: 15
-            }}>R</div>
+            }}>G</div>
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>GestionBar</span>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', fontSize: 14 }}>

@@ -27,7 +27,7 @@ export default function AppShell({
             background: 'var(--accent)', color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 16,
-          }}>R</div>
+          }}>G</div>
           <div style={{ lineHeight: 1.2 }}>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.2px', color: 'var(--text-primary)' }}>
               GestionBar

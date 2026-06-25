@@ -25,7 +25,7 @@ export default function LandingPage() {
             width: 30, height: 30, borderRadius: 9, background: '#2F54EB',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontWeight: 800, fontSize: 17
-          }}>R</div>
+          }}>G</div>
           <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em' }}>GestionBar</span>
         </div>
         <div className="landing-nav-links">

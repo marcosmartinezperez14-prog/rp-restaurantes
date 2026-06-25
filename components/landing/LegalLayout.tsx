@@ -19,7 +19,7 @@ export default function LegalLayout({ titulo, actualizado, children }: Props) {
             width: 28, height: 28, borderRadius: 8, background: '#2F54EB',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontWeight: 800, fontSize: 15,
-          }}>R</div>
+          }}>G</div>
           <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.01em' }}>GestionBar</span>
         </Link>
         <Link href="/" style={{ fontSize: 14, color: '#5B6477', textDecoration: 'none', fontWeight: 500 }}>
