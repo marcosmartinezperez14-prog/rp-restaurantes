@@ -19,13 +19,41 @@ export async function POST(req: NextRequest) {
 
     const { nombre, nombre_restaurante, email, telefono, mensaje } = parsed.data
 
-    const { error } = await getSupabaseAdmin()
+    const db = getSupabaseAdmin()
+
+    const { error } = await db
       .from('leads_contacto')
       .insert({ nombre, nombre_restaurante, email, telefono, mensaje: mensaje ?? null })
 
     if (error) return jsonError('No se pudo enviar el mensaje', 500, error)
 
-    // TODO: enviar notificación por email al equipo de RP cuando se integre un proveedor de email
+    // Crear contacto + deal en el CRM (errores no críticos — no bloquean la respuesta)
+    const { data: contact } = await db
+      .from('crm_contacts')
+      .insert({
+        name: nombre,
+        company: nombre_restaurante,
+        email,
+        phone: telefono,
+        status: 'Lead',
+        value: 0,
+        owner: 'Sin asignar',
+        notes: mensaje ?? '',
+        last_contact: 'hoy',
+      })
+      .select('id')
+      .single()
+
+    if (contact) {
+      await db.from('crm_deals').insert({
+        title: `Contacto web — ${nombre_restaurante}`,
+        company: nombre_restaurante,
+        value: 0,
+        stage: 'Lead',
+        owner: 'Sin asignar',
+        contact_id: contact.id,
+      })
+    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

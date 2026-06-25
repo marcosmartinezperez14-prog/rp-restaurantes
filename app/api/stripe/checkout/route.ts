@@ -50,6 +50,35 @@ export async function POST(req: NextRequest) {
 
     if (dbError || !lead) return jsonError('No se pudo procesar la solicitud', 500, dbError)
 
+    // Crear contacto + deal en el CRM (errores no críticos)
+    const db = getSupabaseAdmin()
+    const { data: contact } = await db
+      .from('crm_contacts')
+      .insert({
+        name: nombre,
+        company: nombre_restaurante,
+        email,
+        phone: telefono,
+        status: 'Oportunidad',
+        value: totalEuros,
+        owner: 'Sin asignar',
+        notes: '',
+        last_contact: 'hoy',
+      })
+      .select('id')
+      .single()
+
+    if (contact) {
+      await db.from('crm_deals').insert({
+        title: `${plan.nombre} — ${meses === 1 ? 'mensual' : `${meses} meses`}`,
+        company: nombre_restaurante,
+        value: totalEuros,
+        stage: 'Lead',
+        owner: 'Sin asignar',
+        contact_id: contact.id,
+      })
+    }
+
     // Construir URL base desde los headers de la request
     const origin = req.headers.get('origin') ?? req.headers.get('referer')?.replace(/\/$/, '') ?? ''
 

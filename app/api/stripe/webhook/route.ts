@@ -24,8 +24,10 @@ export async function POST(req: NextRequest) {
     const leadId = session.metadata?.lead_id ?? session.client_reference_id
 
     if (leadId) {
+      const db = getSupabaseAdmin()
+
       // Idempotente: solo actualiza si no está ya pagado
-      await getSupabaseAdmin()
+      await db
         .from('leads_pago')
         .update({
           estado: 'pagado',
@@ -34,6 +36,30 @@ export async function POST(req: NextRequest) {
         })
         .eq('id', leadId)
         .neq('estado', 'pagado')
+
+      // Marcar deal del CRM como Ganado usando el email del cliente
+      if (session.customer_email) {
+        const { data: contact } = await db
+          .from('crm_contacts')
+          .select('id')
+          .eq('email', session.customer_email)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (contact) {
+          await db
+            .from('crm_deals')
+            .update({ stage: 'Ganado' })
+            .eq('contact_id', contact.id)
+            .eq('stage', 'Lead')
+
+          await db
+            .from('crm_contacts')
+            .update({ status: 'Cliente' })
+            .eq('id', contact.id)
+        }
+      }
     }
   }
 
