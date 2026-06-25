@@ -29,6 +29,12 @@ export default async function SuperadminLayout({ children }: { children: React.R
             + Nuevo restaurante
           </Link>
           <Link
+            href="/crm"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
+          >
+            CRM
+          </Link>
+          <Link
             href="/superadmin/leads"
             className="px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-page)] transition-colors"
           >
