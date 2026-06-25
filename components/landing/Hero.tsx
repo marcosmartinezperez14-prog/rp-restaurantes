@@ -2,11 +2,8 @@
 
 export default function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
   return (
-    <header style={{
-      maxWidth: 1180, margin: '0 auto', padding: '56px 28px 40px',
-      display: 'grid', gridTemplateColumns: '1.02fr 1fr', gap: 56, alignItems: 'center'
-    }}>
-      <div style={{ animation: 'svFade .6s ease both' }}>
+    <header className="hero-section">
+      <div className="hero-text" style={{ animation: 'svFade .6s ease both' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           background: '#E8EDFF', color: '#2F54EB',
@@ -15,10 +12,7 @@ export default function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
         }}>
           Software de gestión gastronómica
         </div>
-        <h1 style={{
-          fontSize: 56, lineHeight: 1.04, letterSpacing: '-0.03em',
-          fontWeight: 800, margin: '0 0 18px'
-        }}>
+        <h1 className="hero-h1">
           Todo tu restaurante en un solo lugar
         </h1>
         <p style={{
@@ -56,7 +50,7 @@ export default function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
       </div>
 
       {/* Dashboard mockup */}
-      <div style={{ animation: 'svFloat 6s ease-in-out infinite' }}>
+      <div className="hero-mockup" style={{ animation: 'svFloat 6s ease-in-out infinite' }}>
         <div style={{
           background: '#F6F7FB', border: '1px solid #ECEFF6',
           borderRadius: 22, padding: 18,
@@ -96,8 +90,37 @@ export default function Hero({ onCtaClick }: { onCtaClick?: () => void }) {
       </div>
 
       <style>{`
+        .hero-section {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 56px 28px 40px;
+          display: grid;
+          grid-template-columns: 1.02fr 1fr;
+          gap: 56px;
+          align-items: center;
+        }
+        .hero-h1 {
+          font-size: 56px;
+          line-height: 1.04;
+          letter-spacing: -0.03em;
+          font-weight: 800;
+          margin: 0 0 18px;
+        }
         @keyframes svFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
         @keyframes svFade { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @media (max-width: 768px) {
+          .hero-section {
+            grid-template-columns: 1fr;
+            gap: 32px;
+            padding: 36px 20px 32px;
+          }
+          .hero-h1 {
+            font-size: 36px;
+          }
+          .hero-mockup {
+            animation: none !important;
+          }
+        }
       `}</style>
     </header>
   )

@@ -3,16 +3,13 @@ import { PLANES } from '@/lib/config/landing'
 export default function Pricing({ onCtaClick }: { onCtaClick?: (planNombre: string) => void }) {
   return (
     <section id="pricing" style={{ maxWidth: 1180, margin: '0 auto', padding: '70px 28px' }}>
-      <h2 style={{
-        fontSize: 36, fontWeight: 800, letterSpacing: '-0.025em',
-        textAlign: 'center', margin: '0 0 8px'
-      }}>
+      <h2 className="pricing-heading">
         Precios claros, sin sorpresas
       </h2>
       <p style={{ textAlign: 'center', color: '#5B6477', fontSize: 17, margin: '0 0 44px' }}>
         Empieza por un local y crece cuando quieras.
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, alignItems: 'start' }}>
+      <div className="pricing-grid">
         {PLANES.map(plan => (
           plan.destacado ? (
             <div key={plan.id} style={{
@@ -82,6 +79,25 @@ export default function Pricing({ onCtaClick }: { onCtaClick?: (planNombre: stri
       <p style={{ fontSize: 12, color: '#8A93A6', textAlign: 'center', marginTop: 20 }}>
         El precio del montaje inicial se acuerda individualmente según las necesidades de tu negocio.
       </p>
+      <style>{`
+        .pricing-heading {
+          font-size: 36px;
+          font-weight: 800;
+          letter-spacing: -0.025em;
+          text-align: center;
+          margin: 0 0 8px;
+        }
+        .pricing-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 18px;
+          align-items: start;
+        }
+        @media (max-width: 900px) {
+          .pricing-grid { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; }
+          .pricing-heading { font-size: 28px; }
+        }
+      `}</style>
     </section>
   )
 }

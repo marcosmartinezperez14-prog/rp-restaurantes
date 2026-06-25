@@ -34,10 +34,7 @@ const FEATURES = [
 export default function Funcionalidades() {
   return (
     <section id="funcionalidades" style={{ maxWidth: 1180, margin: '0 auto', padding: '60px 28px' }}>
-      <h2 style={{
-        fontSize: 36, fontWeight: 800, letterSpacing: '-0.025em',
-        textAlign: 'center', margin: '0 0 8px'
-      }}>
+      <h2 className="feat-heading">
         Una sola herramienta para todo el servicio
       </h2>
       <p style={{
@@ -46,7 +43,7 @@ export default function Funcionalidades() {
       }}>
         Diseñado para restaurantes independientes, bares y cafeterías.
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18 }}>
+      <div className="feat-grid">
         {FEATURES.map(f => (
           <div key={f.title} style={{
             background: '#F6F7FB', border: '1px solid #EEF1F8',
@@ -66,6 +63,27 @@ export default function Funcionalidades() {
           </div>
         ))}
       </div>
+      <style>{`
+        .feat-heading {
+          font-size: 36px;
+          font-weight: 800;
+          letter-spacing: -0.025em;
+          text-align: center;
+          margin: 0 0 8px;
+        }
+        .feat-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 18px;
+        }
+        @media (max-width: 900px) {
+          .feat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 560px) {
+          .feat-grid { grid-template-columns: 1fr; }
+          .feat-heading { font-size: 28px; }
+        }
+      `}</style>
     </section>
   )
 }

@@ -12,13 +12,10 @@ export default function ComoFunciona() {
       padding: '70px 28px', marginTop: 20
     }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
-        <h2 style={{
-          fontSize: 36, fontWeight: 800, letterSpacing: '-0.025em',
-          textAlign: 'center', margin: '0 0 50px'
-        }}>
+        <h2 className="steps-heading">
           Listo para operar en 4 pasos
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 22 }}>
+        <div className="steps-grid">
           {PASOS.map(s => (
             <div key={s.n}>
               <div style={{
@@ -34,6 +31,27 @@ export default function ComoFunciona() {
           ))}
         </div>
       </div>
+      <style>{`
+        .steps-heading {
+          font-size: 36px;
+          font-weight: 800;
+          letter-spacing: -0.025em;
+          text-align: center;
+          margin: 0 0 50px;
+        }
+        .steps-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 22px;
+        }
+        @media (max-width: 768px) {
+          .steps-grid { grid-template-columns: repeat(2, 1fr); gap: 28px; }
+          .steps-heading { font-size: 28px; }
+        }
+        @media (max-width: 420px) {
+          .steps-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </section>
   )
 }
